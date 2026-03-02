@@ -6,4 +6,5 @@ Sistema web desenvolvido para médicos independentes gerirem consultas, paciente
 - Manuel Ferreira  
 - Pedro Araujo  
 - Afonso Silva  
-- Pedro Arias  
+- Pedro Arias
+- Guilherme Maciel
