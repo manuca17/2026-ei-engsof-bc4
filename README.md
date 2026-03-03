@@ -8,6 +8,9 @@ Sistema web desenvolvido para médicos independentes gerirem consultas, paciente
 - Afonso Silva  
 - Pedro Arias
 - Guilherme Maciel
+- 
 ##  Discord
-
 https://discord.gg/fPkrUKRV
+
+##  Figma
+https://www.figma.com/team_invite/redeem/oV9wD6B1w7JbTfRJoiKM7P?t=PPqnjRkwHvZsCRIS-21
