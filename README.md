@@ -8,7 +8,7 @@ Sistema web desenvolvido para médicos independentes gerirem consultas, paciente
 - Afonso Silva  
 - Pedro Arias
 - Guilherme Maciel
-- 
+
 ##  Discord
 https://discord.gg/fPkrUKRV
 
