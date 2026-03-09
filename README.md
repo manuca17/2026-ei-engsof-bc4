@@ -21,3 +21,7 @@ https://www.figma.com/team_invite/redeem/oV9wD6B1w7JbTfRJoiKM7P?t=PPqnjRkwHvZsCR
 
 ## Diagrama de casos de uso
 ![Diagrama de casos de uso](https://github.com/manuca17/2026-ei-engsof-bc4/blob/main/diagramas/DiagramaDeCasosDeUsoES2.drawio.png)
+
+## Diagrama de Classes de Domínio
+
+![Diagrama de Classes de Domínio](https://github.com/manuca17/2026-ei-engsof-bc4/blob/main/diagramas/DiagramaClassesDominioES2.drawio.png)
