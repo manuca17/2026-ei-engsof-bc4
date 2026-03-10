@@ -4,9 +4,9 @@
 
 ##  Sprint 1
 
-- **Início:** 23/02/2026  
-- **Fim:** 3/03/2026  
-- **Duração:** 7 dias  
+- **Início:** 2/02/2026  
+- **Fim:** 16/03/2026  
+- **Duração:** 14 dias  
 - **Scrum Master:** Afonso Silva  
 
 ---
@@ -14,36 +14,36 @@
 
 ##  Sprint 2
 
-- **Início:** 3/03/2026  
-- **Fim:** 10/03/2026  
-- **Duração:** 7 dias  
-- **Scrum Master:**Afonso Silva   
+- **Início:** 16/03/2026  
+- **Fim:** 30/03/2026  
+- **Duração:** 14 dias  
+- **Scrum Master:** Guilherme Maciel   
 
 ---
 
 ##  Sprint 3
 
-- **Início:** 10/03/2026  
-- **Fim:** 17/03/2026  
-- **Duração:** 7 dias  
-- **Scrum Master:** Afonso Silva
+- **Início:** 30/03/2026  
+- **Fim:** 13/04/2026  
+- **Duração:** 14 dias  
+- **Scrum Master:** Manuel Ferreira
 
 ---
 
 ##  Sprint 4
 
-- **Início:** 17/03/2026  
-- **Fim:** 24/03/2026  
-- **Duração:** 7 dias  
-- **Scrum Master:**   Pedro Arias
+- **Início:** 13/04/2026  
+- **Fim:** 27/04/2026  
+- **Duração:** 14 dias  
+- **Scrum Master:** Pedro Araújo
 
 ---
 
 ##  Sprint 5
 
-- **Início:** 24/03/2026  
-- **Fim:** 31/03/2026  
-- **Duração:** 7 dias  
-- **Scrum Master:**  Pedro Arias
+- **Início:** 27/04/2026  
+- **Fim:** 11/05/2026  
+- **Duração:** 14 dias  
+- **Scrum Master:**  Pedro Árias
 
 ---
