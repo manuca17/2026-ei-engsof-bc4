@@ -1,0 +1,203 @@
+-- ============================================================
+-- Script de Criação da Base de Dados - PostgreSQL
+-- ============================================================
+
+-- Apagar tabelas existentes (ordem inversa das dependências)
+DROP TABLE IF EXISTS anotacao CASCADE;
+DROP TABLE IF EXISTS utilizador_consulta CASCADE;
+DROP TABLE IF EXISTS estado CASCADE;
+DROP TABLE IF EXISTS consulta CASCADE;
+DROP TABLE IF EXISTS exame_medico CASCADE;
+DROP TABLE IF EXISTS tipo_consulta CASCADE;
+DROP TABLE IF EXISTS fatura CASCADE;
+DROP TABLE IF EXISTS paciente CASCADE;
+DROP TABLE IF EXISTS utilizador CASCADE;
+DROP TABLE IF EXISTS codigo_postal CASCADE;
+
+-- ============================================================
+-- TABELA: codigo_postal
+-- ============================================================
+CREATE TABLE codigo_postal (
+    cod_postal  VARCHAR(10)  NOT NULL,
+    localidade  VARCHAR(100) NOT NULL,
+
+    CONSTRAINT pk_codigo_postal PRIMARY KEY (cod_postal)
+);
+
+-- ============================================================
+-- TABELA: utilizador
+-- ============================================================
+CREATE TABLE utilizador (
+    id_utilizador  SERIAL        NOT NULL,
+    is_manager     BOOLEAN       NOT NULL DEFAULT FALSE,
+    is_admin       BOOLEAN       NOT NULL DEFAULT FALSE,
+    nome           VARCHAR(150)  NOT NULL,
+    username       VARCHAR(100)  NOT NULL UNIQUE,
+    password       VARCHAR(255)  NOT NULL,
+    telefone       VARCHAR(20),
+    email          VARCHAR(150),
+    num_porta      VARCHAR(10),
+    rua            VARCHAR(200),
+    cod_postal     VARCHAR(10),
+    num_carteira   VARCHAR(50),
+    especialidade  VARCHAR(100),
+
+    CONSTRAINT pk_utilizador  PRIMARY KEY (id_utilizador),
+    CONSTRAINT fk_util_codpostal
+        FOREIGN KEY (cod_postal) REFERENCES codigo_postal (cod_postal)
+);
+
+-- ============================================================
+-- TABELA: paciente
+-- ============================================================
+CREATE TABLE paciente (
+    id_paciente  SERIAL        NOT NULL,
+    nome         VARCHAR(150)  NOT NULL,
+    telefone     VARCHAR(20),
+    email        VARCHAR(150),
+    num_porta    VARCHAR(10),
+    rua          VARCHAR(200),
+    cod_postal   VARCHAR(10),
+    nif          VARCHAR(20),
+    dt_nasc      DATE,
+
+    CONSTRAINT pk_paciente PRIMARY KEY (id_paciente),
+    CONSTRAINT fk_pac_codpostal
+        FOREIGN KEY (cod_postal) REFERENCES codigo_postal (cod_postal)
+);
+
+-- ============================================================
+-- TABELA: tipo_consulta
+-- ============================================================
+CREATE TABLE tipo_consulta (
+    id_tipo_consulta  SERIAL          NOT NULL,
+    descricao         VARCHAR(200)    NOT NULL,
+    preco_fixo        NUMERIC(10, 2),
+    preco_hora        NUMERIC(10, 2),
+    id_utilizador     INTEGER,
+
+    CONSTRAINT pk_tipo_consulta PRIMARY KEY (id_tipo_consulta),
+    CONSTRAINT fk_tc_utilizador
+        FOREIGN KEY (id_utilizador) REFERENCES utilizador (id_utilizador)
+);
+
+-- ============================================================
+-- TABELA: exame_medico
+-- ============================================================
+CREATE TABLE exame_medico (
+    id_exame_medico  SERIAL        NOT NULL,
+    dh_exame         TIMESTAMP     NOT NULL,
+    tipo             VARCHAR(100),
+    resultado        TEXT,
+    id_utilizador    INTEGER,
+
+    CONSTRAINT pk_exame_medico PRIMARY KEY (id_exame_medico),
+    CONSTRAINT fk_em_utilizador
+        FOREIGN KEY (id_utilizador) REFERENCES utilizador (id_utilizador)
+);
+
+-- ============================================================
+-- TABELA: fatura
+-- ============================================================
+CREATE TABLE fatura (
+    id_fatura     SERIAL          NOT NULL,
+    valor_pago    NUMERIC(10, 2),
+    dh_pagamento  TIMESTAMP,
+    metodo        VARCHAR(50),
+
+    CONSTRAINT pk_fatura PRIMARY KEY (id_fatura)
+);
+
+-- ============================================================
+-- TABELA: consulta
+-- ============================================================
+CREATE TABLE consulta (
+    id_consulta       SERIAL          NOT NULL,
+    dh_inicio         TIMESTAMP       NOT NULL,
+    dh_fim            TIMESTAMP,
+    valor_total       NUMERIC(10, 2),
+    valor_hora        NUMERIC(10, 2),
+    id_paciente       INTEGER,
+    id_exame_medico   INTEGER,
+    id_fatura         INTEGER,
+    id_tipo_consulta  INTEGER,
+
+    CONSTRAINT pk_consulta PRIMARY KEY (id_consulta),
+    CONSTRAINT fk_con_paciente
+        FOREIGN KEY (id_paciente)      REFERENCES paciente (id_paciente),
+    CONSTRAINT fk_con_exame
+        FOREIGN KEY (id_exame_medico)  REFERENCES exame_medico (id_exame_medico),
+    CONSTRAINT fk_con_fatura
+        FOREIGN KEY (id_fatura)        REFERENCES fatura (id_fatura),
+    CONSTRAINT fk_con_tipo
+        FOREIGN KEY (id_tipo_consulta) REFERENCES tipo_consulta (id_tipo_consulta)
+);
+
+-- ============================================================
+-- TABELA: utilizador_consulta  (tabela associativa N:M)
+-- ============================================================
+CREATE TABLE utilizador_consulta (
+    id_utilizador   INTEGER NOT NULL,
+    id_consulta     INTEGER NOT NULL,
+    is_criador      BOOLEAN NOT NULL DEFAULT FALSE,
+    convite_aceite  BOOLEAN NOT NULL DEFAULT FALSE,
+
+    CONSTRAINT pk_utilizador_consulta
+        PRIMARY KEY (id_utilizador, id_consulta),
+    CONSTRAINT fk_uc_utilizador
+        FOREIGN KEY (id_utilizador) REFERENCES utilizador (id_utilizador),
+    CONSTRAINT fk_uc_consulta
+        FOREIGN KEY (id_consulta)   REFERENCES consulta (id_consulta)
+);
+
+-- ============================================================
+-- TABELA: estado
+-- ============================================================
+CREATE TABLE estado (
+    id_estado    SERIAL       NOT NULL,
+    estado_to    VARCHAR(100) NOT NULL,
+    dh_registo   TIMESTAMP    NOT NULL DEFAULT NOW(),
+    comentario   TEXT,
+    id_consulta  INTEGER      NOT NULL,
+
+    CONSTRAINT pk_estado PRIMARY KEY (id_estado),
+    CONSTRAINT fk_est_consulta
+        FOREIGN KEY (id_consulta) REFERENCES consulta (id_consulta)
+);
+
+-- ============================================================
+-- TABELA: anotacao
+-- ============================================================
+CREATE TABLE anotacao (
+    id_anotacao      SERIAL    NOT NULL,
+    descricao        TEXT,
+    dh_criacao       TIMESTAMP NOT NULL DEFAULT NOW(),
+    dh_ultima_edicao TIMESTAMP,
+    id_utilizador    INTEGER,
+    id_consulta      INTEGER,
+
+    CONSTRAINT pk_anotacao PRIMARY KEY (id_anotacao),
+    CONSTRAINT fk_anot_utilizador
+        FOREIGN KEY (id_utilizador) REFERENCES utilizador (id_utilizador),
+    CONSTRAINT fk_anot_consulta
+        FOREIGN KEY (id_consulta)   REFERENCES consulta (id_consulta)
+);
+
+-- ============================================================
+-- ÍNDICES (performance)
+-- ============================================================
+CREATE INDEX idx_utilizador_codpostal   ON utilizador (cod_postal);
+CREATE INDEX idx_paciente_codpostal     ON paciente (cod_postal);
+CREATE INDEX idx_tipo_consulta_util     ON tipo_consulta (id_utilizador);
+CREATE INDEX idx_exame_medico_util      ON exame_medico (id_utilizador);
+CREATE INDEX idx_consulta_paciente      ON consulta (id_paciente);
+CREATE INDEX idx_consulta_exame         ON consulta (id_exame_medico);
+CREATE INDEX idx_consulta_fatura        ON consulta (id_fatura);
+CREATE INDEX idx_consulta_tipo          ON consulta (id_tipo_consulta);
+CREATE INDEX idx_estado_consulta        ON estado (id_consulta);
+CREATE INDEX idx_anotacao_utilizador    ON anotacao (id_utilizador);
+CREATE INDEX idx_anotacao_consulta      ON anotacao (id_consulta);
+
+-- ============================================================
+-- FIM DO SCRIPT
+-- ============================================================
