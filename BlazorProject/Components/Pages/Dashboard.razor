@@ -1,0 +1,140 @@
+﻿@page "/dashboard"
+@rendermode InteractiveServer
+@inject NavigationManager NavigationManager
+
+<PageTitle>Dashboard</PageTitle>
+
+<div class="dashboard">
+
+    <!-- Header -->
+    <div class="dash-header">
+        <h1>Dashboard</h1>
+        <p class="dash-subtitle">Bem-vindo de volta, Dr. João Silva</p>
+    </div>
+
+    <!-- Stat Cards -->
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-top">
+                <span class="stat-label">Total de Pacientes</span>
+                <div class="stat-icon bg-blue">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                         stroke="#2563eb" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
+                        <circle cx="9" cy="7" r="4"/>
+                        <path d="M22 21v-2a4 4 0 0 0-3-3.87"/>
+                        <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                    </svg>
+                </div>
+            </div>
+            <div class="stat-value">12</div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-top">
+                <span class="stat-label">Total de Consultas</span>
+                <div class="stat-icon bg-green">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                         stroke="#16a34a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect width="18" height="18" x="3" y="4" rx="2" ry="2"/>
+                        <line x1="16" x2="16" y1="2" y2="6"/>
+                        <line x1="8" x2="8" y1="2" y2="6"/>
+                        <line x1="3" x2="21" y1="10" y2="10"/>
+                    </svg>
+                </div>
+            </div>
+            <div class="stat-value">48</div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-top">
+                <span class="stat-label">Consultas Pendentes</span>
+                <div class="stat-icon bg-orange">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                         stroke="#ea580c" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="10"/>
+                        <polyline points="12 6 12 12 16 14"/>
+                    </svg>
+                </div>
+            </div>
+            <div class="stat-value">5</div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-top">
+                <span class="stat-label">Receita Mensal</span>
+                <div class="stat-icon bg-purple">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                         stroke="#9333ea" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="12" x2="12" y1="2" y2="22"/>
+                        <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+                    </svg>
+                </div>
+            </div>
+            <div class="stat-value">€1 240,00</div>
+        </div>
+    </div>
+
+    <!-- Bottom Cards -->
+    <div class="bottom-grid">
+
+        <!-- Ações Rápidas -->
+        <div class="info-card">
+            <div class="card-header">
+                <h5>Ações Rápidas</h5>
+            </div>
+            <div class="card-body actions-list">
+                <button class="action-btn" @onclick='() => NavigationManager.NavigateTo("/patients")'>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                         stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
+                        <circle cx="9" cy="7" r="4"/>
+                        <path d="M22 21v-2a4 4 0 0 0-3-3.87"/>
+                        <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                    </svg>
+                    Registar Novo Paciente
+                </button>
+                <button class="action-btn" @onclick='() => NavigationManager.NavigateTo("/consultations")'>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                         stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect width="18" height="18" x="3" y="4" rx="2" ry="2"/>
+                        <line x1="16" x2="16" y1="2" y2="6"/>
+                        <line x1="8" x2="8" y1="2" y2="6"/>
+                        <line x1="3" x2="21" y1="10" y2="10"/>
+                    </svg>
+                    Agendar Consulta
+                </button>
+                <button class="action-btn" @onclick='() => NavigationManager.NavigateTo("/reports")'>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                         stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="10"/>
+                        <polyline points="12 6 12 12 16 14"/>
+                    </svg>
+                    Ver Relatórios
+                </button>
+            </div>
+        </div>
+
+        <!-- Informações -->
+        <div class="info-card">
+            <div class="card-header">
+                <h5>Informações</h5>
+            </div>
+            <div class="card-body">
+                <div class="info-row">
+                    <p class="info-label">Email</p>
+                    <p class="info-value">joao@example.com</p>
+                </div>
+                <div class="info-row">
+                    <p class="info-label">Especialidade</p>
+                    <p class="info-value">Cardiologia</p>
+                </div>
+                <div class="info-row">
+                    <p class="info-label">Telefone</p>
+                    <p class="info-value">+351 912 345 678</p>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>

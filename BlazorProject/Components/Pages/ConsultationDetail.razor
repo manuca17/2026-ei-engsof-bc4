@@ -1,0 +1,16 @@
+﻿@page "/consultations/{Id}"
+@using Microsoft.AspNetCore.Components
+@rendermode InteractiveServer
+@inject NavigationManager NavigationManager
+
+<PageTitle>Consulta</PageTitle>
+
+<div class="consult-detail">
+    <h1>Consulta</h1>
+    <p>Detalhe da consulta <strong>@Id</strong> (placeholder visual).</p>
+    <button class="back-btn" @onclick='() => NavigationManager.NavigateTo("/consultations")'>Voltar</button>
+</div>
+
+@code {
+    [Parameter] public string Id { get; set; } = string.Empty;
+}

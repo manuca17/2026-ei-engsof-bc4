@@ -1,0 +1,318 @@
+﻿@page "/consultations"
+@rendermode InteractiveServer
+@inject NavigationManager NavigationManager
+
+<PageTitle>Consultations</PageTitle>
+
+<div class="consult-page">
+    <div class="consult-header">
+        <div>
+            <h1>Gestao de Consultas</h1>
+            <p>Total de @_consultationItems.Count consulta@(_consultationItems.Count == 1 ? "" : "s")</p>
+        </div>
+        <button class="btn-primary" @onclick="OpenDialog">
+            <span>+</span>
+            Nova Consulta
+        </button>
+    </div>
+
+    <section class="panel">
+        <div class="panel-title-row">
+            <h3>Filtros</h3>
+        </div>
+
+        <div class="filter-grid">
+            <div class="field">
+                <label>Estado</label>
+                <select @bind="FilterStatus">
+                    <option value="all">Todos</option>
+                    <option value="agendada">Agendada</option>
+                    <option value="em_andamento">Em andamento</option>
+                    <option value="encerrada">Encerrada</option>
+                </select>
+            </div>
+
+            <div class="field">
+                <label>Paciente</label>
+                <select @bind="FilterPatient">
+                    <option value="all">Todos</option>
+                    @foreach (var patient in Patients)
+                    {
+                        <option value="@patient.Id">@patient.Name</option>
+                    }
+                </select>
+            </div>
+
+            <div class="field">
+                <label>Data inicio</label>
+                <input type="date" @bind="DateFromInput" @bind:format="yyyy-MM-dd" />
+            </div>
+
+            <div class="field">
+                <label>Data fim</label>
+                <input type="date" @bind="DateToInput" @bind:format="yyyy-MM-dd" />
+            </div>
+        </div>
+
+        <div class="filter-actions">
+            <button class="btn-secondary" @onclick="ApplyDateFilter">Aplicar filtro de data</button>
+            <button class="btn-outline" @onclick="ClearDateFilter">Limpar datas</button>
+        </div>
+    </section>
+
+    @if (FilteredConsultations.Count == 0)
+    {
+        <section class="panel empty">
+            Nenhuma consulta encontrada
+        </section>
+    }
+    else
+    {
+        <section class="cards-grid">
+            @foreach (var consultation in FilteredConsultations)
+            {
+                <article class="consult-card" @onclick='() => NavigationManager.NavigateTo($"/consultations/{consultation.Id}")'>
+                    <div class="card-top">
+                        <h4>@consultation.PatientName</h4>
+                        <span class="status @StatusClass(consultation.Status)">@StatusLabel(consultation.Status)</span>
+                    </div>
+
+                    <p class="desc">@consultation.Description</p>
+
+                    @if (consultation.StartAt is not null)
+                    {
+                        <p class="meta">@consultation.StartAt.Value.ToString("dd/MM/yyyy HH:mm")</p>
+                    }
+
+                    <p class="meta"><strong>Cobranca:</strong> @ChargingText(consultation)</p>
+
+                    <div class="details">
+                        <div><span>Exames:</span><strong>@consultation.Exams</strong></div>
+                        <div><span>Anotacoes:</span><strong>@consultation.Notes</strong></div>
+                        <div><span>Convites:</span><strong>@consultation.Invites</strong></div>
+                    </div>
+                </article>
+            }
+        </section>
+    }
+</div>
+
+@if (DialogOpen)
+{
+    <div class="modal-backdrop" @onclick="CloseDialog">
+        <div class="modal" @onclick:stopPropagation="true">
+            <div class="modal-header">
+                <h3>Criar Nova Consulta</h3>
+                <p>Preencha os dados da consulta abaixo</p>
+            </div>
+
+            <div class="modal-body">
+                <div class="field">
+                    <label>Paciente</label>
+                    <select @bind="FormPatientId">
+                        <option value="">Selecione um paciente</option>
+                        @foreach (var patient in Patients)
+                        {
+                            <option value="@patient.Id">@patient.Name</option>
+                        }
+                    </select>
+                </div>
+
+                <div class="field">
+                    <label>Descricao</label>
+                    <textarea rows="3" placeholder="Motivo da consulta..." @bind="FormDescription"></textarea>
+                </div>
+
+                <div class="field">
+                    <label>Tipo de cobranca</label>
+                    <select @bind="FormChargingType">
+                        <option value="fixo">Preco fixo</option>
+                        <option value="por_hora">Preco por hora</option>
+                    </select>
+                </div>
+
+                @if (FormChargingType == "fixo")
+                {
+                    <div class="field">
+                        <label>Preco fixo (EUR)</label>
+                        <input type="number" step="0.01" placeholder="80.00" @bind="FormFixedPrice" />
+                    </div>
+                }
+                else
+                {
+                    <div class="field">
+                        <label>Preco por hora (EUR)</label>
+                        <input type="number" step="0.01" placeholder="60.00" @bind="FormHourlyPrice" />
+                    </div>
+                }
+            </div>
+
+            <div class="modal-actions">
+                <button class="btn-primary" @onclick="CreateConsultation">Criar Consulta</button>
+                <button class="btn-outline" @onclick="CloseDialog">Cancelar</button>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private bool DialogOpen;
+
+    private string FilterStatus = "all";
+    private string FilterPatient = "all";
+    private DateTime? DateFromInput;
+    private DateTime? DateToInput;
+    private DateTime? DateFromApplied;
+    private DateTime? DateToApplied;
+
+    private string FormPatientId = string.Empty;
+    private string FormDescription = string.Empty;
+    private string FormChargingType = "fixo";
+    private decimal? FormFixedPrice = 80m;
+    private decimal? FormHourlyPrice = 60m;
+
+    private readonly List<PatientItem> Patients = new()
+    {
+        new() { Id = "p1", Name = "Joao Mendes" },
+        new() { Id = "p2", Name = "Ana Costa" },
+        new() { Id = "p3", Name = "Rui Alves" }
+    };
+
+    private readonly List<ConsultationItem> _consultationItems = new()
+    {
+        new()
+        {
+            Id = "c1", PatientId = "p1", PatientName = "Joao Mendes", Description = "Avaliacao de rotina",
+            Status = "agendada", ChargingType = "fixo", FixedPrice = 80m, StartAt = DateTime.Now.AddDays(1),
+            Exams = 1, Notes = 2, Invites = 0
+        },
+        new()
+        {
+            Id = "c2", PatientId = "p2", PatientName = "Ana Costa", Description = "Revisao cardiologia",
+            Status = "encerrada", ChargingType = "por_hora", HourlyPrice = 60m, StartAt = DateTime.Now.AddDays(-3),
+            Exams = 3, Notes = 4, Invites = 1
+        },
+        new()
+        {
+            Id = "c3", PatientId = "p3", PatientName = "Rui Alves", Description = "Consulta de seguimento",
+            Status = "em_andamento", ChargingType = "fixo", FixedPrice = 95m, StartAt = DateTime.Now,
+            Exams = 2, Notes = 1, Invites = 0
+        }
+    };
+
+    private List<ConsultationItem> FilteredConsultations => _consultationItems.Where(c =>
+    {
+        if (FilterStatus != "all" && c.Status != FilterStatus) return false;
+        if (FilterPatient != "all" && c.PatientId != FilterPatient) return false;
+
+        if (DateFromApplied is not null)
+        {
+            if (c.StartAt is null || c.StartAt.Value.Date < DateFromApplied.Value.Date) return false;
+        }
+
+        if (DateToApplied is not null)
+        {
+            if (c.StartAt is null || c.StartAt.Value.Date > DateToApplied.Value.Date) return false;
+        }
+
+        return true;
+    }).ToList();
+
+    private void OpenDialog() => DialogOpen = true;
+
+    private void CloseDialog() => DialogOpen = false;
+
+    private void ApplyDateFilter()
+    {
+        DateFromApplied = DateFromInput?.Date;
+        DateToApplied = DateToInput?.Date;
+    }
+
+    private void ClearDateFilter()
+    {
+        DateFromInput = null;
+        DateToInput = null;
+        DateFromApplied = null;
+        DateToApplied = null;
+    }
+
+    private void CreateConsultation()
+    {
+        var selectedPatient = Patients.FirstOrDefault(p => p.Id == FormPatientId);
+        var patientName = selectedPatient?.Name ?? "Paciente";
+
+        _consultationItems.Insert(0, new ConsultationItem
+        {
+            Id = Guid.NewGuid().ToString("N"),
+            PatientId = string.IsNullOrWhiteSpace(FormPatientId) ? "p0" : FormPatientId,
+            PatientName = patientName,
+            Description = string.IsNullOrWhiteSpace(FormDescription) ? "Sem descricao" : FormDescription,
+            Status = "agendada",
+            ChargingType = FormChargingType,
+            FixedPrice = FormChargingType == "fixo" ? FormFixedPrice : null,
+            HourlyPrice = FormChargingType == "por_hora" ? FormHourlyPrice : null,
+            StartAt = DateTime.Now,
+            Exams = 0,
+            Notes = 0,
+            Invites = 0
+        });
+
+        FormPatientId = string.Empty;
+        FormDescription = string.Empty;
+        FormChargingType = "fixo";
+        FormFixedPrice = 80m;
+        FormHourlyPrice = 60m;
+
+        DialogOpen = false;
+    }
+
+    private static string StatusClass(string status) => status switch
+    {
+        "agendada" => "status-gray",
+        "em_andamento" => "status-blue",
+        "encerrada" => "status-green",
+        _ => "status-gray"
+    };
+
+    private static string StatusLabel(string status) => status switch
+    {
+        "agendada" => "Agendada",
+        "em_andamento" => "Em andamento",
+        "encerrada" => "Encerrada",
+        _ => "Desconhecido"
+    };
+
+    private static string ChargingText(ConsultationItem consultation)
+    {
+        if (consultation.ChargingType == "fixo")
+        {
+            var value = consultation.FixedPrice ?? 0m;
+            return $"EUR {value:0.00} (fixo)";
+        }
+
+        var hourly = consultation.HourlyPrice ?? 0m;
+        return $"EUR {hourly:0.00}/hora";
+    }
+
+    private sealed class PatientItem
+    {
+        public string Id { get; init; } = string.Empty;
+        public string Name { get; init; } = string.Empty;
+    }
+
+    private sealed class ConsultationItem
+    {
+        public string Id { get; init; } = string.Empty;
+        public string PatientId { get; init; } = string.Empty;
+        public string PatientName { get; init; } = string.Empty;
+        public string Description { get; init; } = string.Empty;
+        public string Status { get; init; } = "agendada";
+        public string ChargingType { get; init; } = "fixo";
+        public decimal? FixedPrice { get; init; }
+        public decimal? HourlyPrice { get; init; }
+        public DateTime? StartAt { get; init; }
+        public int Exams { get; init; }
+        public int Notes { get; init; }
+        public int Invites { get; init; }
+    }
+}
