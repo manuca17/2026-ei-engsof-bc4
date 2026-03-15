@@ -2,6 +2,10 @@
 
 Sistema web desenvolvido para médicos independentes gerirem consultas, pacientes, exames e faturação de forma simples e organizada.
 
+## Correr no Rider
+- Abrir a solução `BlazorProject.sln` (na raiz do repositório).
+- Selecionar o perfil `https` e clicar em Run.
+
 ##  Autores
 - Manuel Ferreira  
 - Pedro Araujo  
