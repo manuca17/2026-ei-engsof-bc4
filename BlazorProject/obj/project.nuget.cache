@@ -1,0 +1,10 @@
+{
+  "version": 2,
+  "dgSpecHash": "OqdMtwYWg9s=",
+  "success": true,
+  "projectFilePath": "/home/manuca17/RiderProjects/2026-ei-engsof-bc4/BlazorProject/BlazorProject.csproj",
+  "expectedPackageFiles": [
+    "/home/manuca17/.nuget/packages/microsoft.aspnetcore.app.internal.assets/10.0.4/microsoft.aspnetcore.app.internal.assets.10.0.4.nupkg.sha512"
+  ],
+  "logs": []
+}

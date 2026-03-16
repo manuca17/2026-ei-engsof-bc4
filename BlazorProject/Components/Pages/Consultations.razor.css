@@ -1,0 +1,343 @@
+/* Scoped CSS for Consultations.razor */
+
+.consult-page {
+    padding: 1.25rem 0;
+    max-width: 1100px;
+    margin: 0 auto;
+}
+
+.consult-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+    flex-wrap: wrap;
+    margin-bottom: 1.25rem;
+}
+
+.consult-header h1 {
+    font-size: 1.875rem;
+    line-height: 2.25rem;
+    margin: 0 0 .25rem 0;
+    color: #111827;
+    letter-spacing: -0.02em;
+}
+
+.consult-header p {
+    margin: 0;
+    color: #6b7280;
+}
+
+.panel {
+    background: #fff;
+    border: 1px solid rgba(17, 24, 39, 0.08);
+    border-radius: .75rem;
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.06);
+    padding: 1rem;
+}
+
+.panel.empty {
+    padding: 3rem 1rem;
+    text-align: center;
+    color: #6b7280;
+}
+
+.panel-title-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: .75rem;
+}
+
+.panel-title-row h3 {
+    margin: 0;
+    font-size: 1.1rem;
+    color: #111827;
+}
+
+.filter-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1rem;
+}
+
+@media (min-width: 768px) {
+    .filter-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (min-width: 1024px) {
+    .filter-grid {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+}
+
+.field label {
+    display: block;
+    font-weight: 500;
+    margin-bottom: .35rem;
+    color: #111827;
+}
+
+.field input[type="date"],
+.field input[type="number"],
+.field input[type="text"],
+.field select,
+.field textarea {
+    width: 100%;
+    border-radius: .5rem;
+    border: 1px solid #d1d5db;
+    padding: .6rem .75rem;
+    background: #fff;
+    color: #111827;
+    outline: none;
+    transition: border-color 160ms ease, box-shadow 160ms ease;
+}
+
+.field textarea {
+    resize: vertical;
+    min-height: 92px;
+}
+
+.field input:focus,
+.field select:focus,
+.field textarea:focus {
+    border-color: #2563eb;
+    box-shadow: 0 0 0 .2rem rgba(37, 99, 235, 0.18);
+}
+
+.filter-actions {
+    display: flex;
+    gap: .5rem;
+    margin-top: .9rem;
+    flex-wrap: wrap;
+}
+
+/* Buttons (scoped so it won't affect other pages) */
+.btn-primary,
+.btn-secondary,
+.btn-outline {
+    border: 0;
+    border-radius: .5rem;
+    padding: .6rem .9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 160ms ease, border-color 160ms ease, transform 80ms ease;
+    display: inline-flex;
+    align-items: center;
+    gap: .5rem;
+}
+
+.btn-primary {
+    background: #2563eb;
+    color: #fff;
+}
+
+.btn-primary:hover {
+    background: #1d4ed8;
+}
+
+.btn-secondary {
+    background: #e5e7eb;
+    color: #111827;
+}
+
+.btn-secondary:hover {
+    background: #d1d5db;
+}
+
+.btn-outline {
+    background: transparent;
+    color: #111827;
+    border: 1px solid #d1d5db;
+}
+
+.btn-outline:hover {
+    background: #f9fafb;
+    border-color: #cbd5e1;
+}
+
+.btn-primary:active,
+.btn-secondary:active,
+.btn-outline:active {
+    transform: translateY(1px);
+}
+
+.btn-primary:focus-visible,
+.btn-secondary:focus-visible,
+.btn-outline:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 .2rem rgba(37, 99, 235, 0.22);
+}
+
+.cards-grid {
+    margin-top: 1rem;
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1rem;
+}
+
+@media (min-width: 768px) {
+    .cards-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (min-width: 1024px) {
+    .cards-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+}
+
+.consult-card {
+    background: #fff;
+    border: 1px solid rgba(17, 24, 39, 0.08);
+    border-radius: .75rem;
+    padding: 1rem;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+    cursor: pointer;
+    transition: box-shadow 180ms ease, transform 180ms ease;
+}
+
+.consult-card:hover {
+    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.10);
+    transform: translateY(-1px);
+}
+
+.card-top {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: .75rem;
+    margin-bottom: .5rem;
+}
+
+.card-top h4 {
+    margin: 0;
+    font-size: 1.1rem;
+    color: #111827;
+}
+
+.status {
+    display: inline-flex;
+    align-items: center;
+    border-radius: 9999px;
+    padding: .2rem .55rem;
+    font-size: .8rem;
+    font-weight: 600;
+    border: 1px solid transparent;
+    white-space: nowrap;
+}
+
+.status-gray {
+    background: #f3f4f6;
+    color: #374151;
+    border-color: #e5e7eb;
+}
+
+.status-blue {
+    background: #2563eb;
+    color: #fff;
+}
+
+.status-green {
+    background: #16a34a;
+    color: #fff;
+}
+
+.desc {
+    margin: .25rem 0 .5rem;
+    color: #4b5563;
+    font-size: .95rem;
+}
+
+.meta {
+    margin: 0 0 .35rem;
+    color: #374151;
+    font-size: .9rem;
+}
+
+.details {
+    margin-top: .75rem;
+    padding-top: .75rem;
+    border-top: 1px solid rgba(17, 24, 39, 0.08);
+    display: grid;
+    gap: .35rem;
+}
+
+.details > div {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: .9rem;
+    color: #374151;
+}
+
+.details span {
+    color: #6b7280;
+}
+
+/* Modal */
+.modal-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(17, 24, 39, 0.45);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+    z-index: 1000;
+}
+
+.modal {
+    width: 100%;
+    max-width: 720px;
+    background: #fff;
+    border-radius: .75rem;
+    border: 1px solid rgba(17, 24, 39, 0.10);
+    box-shadow: 0 20px 45px rgba(0, 0, 0, 0.22);
+    overflow: hidden;
+}
+
+.modal-header {
+    padding: 1rem 1.25rem;
+    border-bottom: 1px solid rgba(17, 24, 39, 0.08);
+}
+
+.modal-header h3 {
+    margin: 0;
+    color: #111827;
+}
+
+.modal-header p {
+    margin: .25rem 0 0;
+    color: #6b7280;
+}
+
+.modal-body {
+    padding: 1rem 1.25rem;
+    display: grid;
+    gap: 1rem;
+}
+
+.modal-actions {
+    padding: 1rem 1.25rem;
+    border-top: 1px solid rgba(17, 24, 39, 0.08);
+    display: flex;
+    gap: .75rem;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .consult-card,
+    .btn-primary,
+    .btn-secondary,
+    .btn-outline,
+    .field input,
+    .field select,
+    .field textarea {
+        transition: none;
+    }
+}
