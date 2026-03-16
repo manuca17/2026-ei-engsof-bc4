@@ -1,0 +1,256 @@
+@page "/patients"
+@rendermode InteractiveServer
+@inject NavigationManager NavigationManager
+@inject IJSRuntime JSRuntime
+
+<PageTitle>Pacientes</PageTitle>
+
+<div class="patients-page">
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mb-4">
+        <div>
+            <h1 class="h3 mb-1">Gestão de Pacientes</h1>
+            <p class="text-muted mb-0">
+                Total de @PatientList.Count paciente@(@PatientList.Count == 1 ? "" : "s")
+            </p>
+        </div>
+
+        <button class="btn btn-primary" @onclick="() => DialogOpen = true">
+            <span class="me-2">+</span>
+            Novo Paciente
+        </button>
+    </div>
+
+    <div class="mb-4">
+        <input
+            class="form-control"
+            placeholder="Pesquisar pacientes..."
+            @bind="SearchTerm"
+        />
+    </div>
+
+    @if (FilteredPatients.Count == 0)
+    {
+        <div class="card">
+            <div class="card-body text-center text-muted py-5">
+                @if (string.IsNullOrWhiteSpace(SearchTerm))
+                {
+                    <div>Nenhum paciente registado ainda</div>
+                }
+                else
+                {
+                    <div>Nenhum paciente encontrado</div>
+                }
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="row g-3">
+            @foreach (var patient in FilteredPatients)
+            {
+                <div class="col-12 col-md-6 col-lg-4">
+                    <div class="card h-100 shadow-sm">
+                        <div class="card-body d-flex flex-column">
+                            <h5 class="card-title d-flex align-items-center">
+                                <span class="badge bg-primary me-2">👤</span>
+                                @patient.Name
+                            </h5>
+
+                            <div class="text-muted small mb-2">
+                                @CalculateAge(patient.BirthDate) anos (
+                                @patient.BirthDate.ToString("dd/MM/yyyy"))
+                            </div>
+
+                            <div class="mb-2">
+                                <div class="small text-muted">Telefone</div>
+                                <div>@patient.Phone</div>
+                            </div>
+
+                            @if (!string.IsNullOrWhiteSpace(patient.Email))
+                            {
+                                <div class="mb-2">
+                                    <div class="small text-muted">Email</div>
+                                    <div class="text-truncate">@patient.Email</div>
+                                </div>
+                            }
+
+                            @if (!string.IsNullOrWhiteSpace(patient.Address))
+                            {
+                                <div class="mb-2">
+                                    <div class="small text-muted">Endereço</div>
+                                    <div class="text-truncate">@patient.Address</div>
+                                </div>
+                            }
+
+                            @if (!string.IsNullOrWhiteSpace(patient.Notes))
+                            {
+                                <div class="mt-auto pt-3 border-top">
+                                    <div class="small text-muted">Observações</div>
+                                    <div class="text-truncate">@patient.Notes</div>
+                                </div>
+                            }
+
+                            <button class="btn btn-outline-primary w-100 mt-3" @onclick="() => NavigateToPatientConsultations(patient.Id)">
+                                Ver Consultas
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+</div>
+
+@if (DialogOpen)
+{
+    <div class="modal show d-block" style="background-color: rgba(0, 0, 0, 0.45);" @onclick="CloseDialog">
+        <div class="modal-dialog modal-dialog-centered" @onclick:stopPropagation="true">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Registar Novo Paciente</h5>
+                    <button type="button" class="btn-close" @onclick="CloseDialog" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form onsubmit="return false;">
+                        <div class="mb-3">
+                            <label class="form-label" for="name">Nome Completo *</label>
+                            <input id="name" class="form-control" @bind="NewPatient.Name" required />
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label" for="birthDate">Data de Nascimento *</label>
+                            <InputDate id="birthDate" class="form-control" @bind-Value="NewPatient.BirthDate" required />
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label" for="phone">Telefone *</label>
+                            <input id="phone" type="tel" class="form-control" placeholder="+351 912 345 678" @bind="NewPatient.Phone" required />
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label" for="email">Email</label>
+                            <input id="email" type="email" class="form-control" placeholder="paciente@example.com" @bind="NewPatient.Email" />
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label" for="address">Endereço</label>
+                            <input id="address" class="form-control" placeholder="Rua, número, cidade" @bind="NewPatient.Address" />
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label" for="notes">Observações</label>
+                            <textarea id="notes" class="form-control" rows="4" placeholder="Alergias, condições médicas, etc." @bind="NewPatient.Notes"></textarea>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-primary" @onclick="SavePatient">Registar Paciente</button>
+                    <button type="button" class="btn btn-outline-secondary" @onclick="CloseDialog">Cancelar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private bool DialogOpen;
+    private string SearchTerm { get; set; } = string.Empty;
+
+    private PatientForm NewPatient { get; set; } = new();
+
+    private List<Patient> PatientList { get; set; } = new()
+    {
+        new Patient
+        {
+            Id = "p1",
+            Name = "João Mendes",
+            BirthDate = new DateTime(1985, 5, 10),
+            Phone = "+351 912 345 678",
+            Email = "joao.mendes@example.com",
+            Address = "Rua do Sol, 12, Lisboa",
+            Notes = "Hipertensão",
+            CreatedAt = DateTime.Now
+        },
+        new Patient
+        {
+            Id = "p2",
+            Name = "Ana Costa",
+            BirthDate = new DateTime(1990, 8, 23),
+            Phone = "+351 965 432 100",
+            Email = "ana.costa@example.com",
+            Address = "Av. da República, 45, Porto",
+            Notes = "Diabetes tipo 2",
+            CreatedAt = DateTime.Now
+        }
+    };
+
+    private IReadOnlyList<Patient> FilteredPatients => PatientList
+        .Where(p => string.IsNullOrWhiteSpace(SearchTerm) || p.Name.Contains(SearchTerm, StringComparison.InvariantCultureIgnoreCase))
+        .ToList();
+
+    private void NavigateToPatientConsultations(string patientId)
+    {
+        NavigationManager.NavigateTo($"/consultations?patient={patientId}");
+    }
+
+    private int CalculateAge(DateTime birthDate)
+    {
+        var today = DateTime.Today;
+        var age = today.Year - birthDate.Year;
+        if (birthDate > today.AddYears(-age)) age--;
+        return age;
+    }
+
+    private async Task SavePatient()
+    {
+        if (string.IsNullOrWhiteSpace(NewPatient.Name) || NewPatient.BirthDate is null || string.IsNullOrWhiteSpace(NewPatient.Phone))
+        {
+            await JSRuntime.InvokeVoidAsync("alert", "Por favor preencha os campos obrigatórios.");
+            return;
+        }
+
+        var patient = new Patient
+        {
+            Id = Guid.NewGuid().ToString("N"),
+            Name = NewPatient.Name.Trim(),
+            BirthDate = NewPatient.BirthDate.Value,
+            Phone = NewPatient.Phone.Trim(),
+            Email = NewPatient.Email?.Trim() ?? string.Empty,
+            Address = NewPatient.Address?.Trim() ?? string.Empty,
+            Notes = NewPatient.Notes?.Trim() ?? string.Empty,
+            CreatedAt = DateTime.Now
+        };
+        PatientList.Insert(0, patient);
+        ClearForm();
+        DialogOpen = false;
+
+        await JSRuntime.InvokeVoidAsync("alert", "Paciente registado com sucesso!");
+    }
+
+    private void ClearForm()
+    {
+        NewPatient = new PatientForm();
+    }
+
+    private void CloseDialog()
+    {
+        DialogOpen = false;
+    }
+
+    private sealed class Patient
+    {
+        public string Id { get; init; } = string.Empty;
+        public string Name { get; init; } = string.Empty;
+        public DateTime BirthDate { get; init; }
+        public string Phone { get; init; } = string.Empty;
+        public string Email { get; init; } = string.Empty;
+        public string Address { get; init; } = string.Empty;
+        public string Notes { get; init; } = string.Empty;
+        public DateTime CreatedAt { get; init; }
+    }
+
+    private sealed class PatientForm
+    {
+        public string Name { get; set; } = string.Empty;
+        public DateTime? BirthDate { get; set; }
+        public string Phone { get; set; } = string.Empty;
+        public string Email { get; set; } = string.Empty;
+        public string Address { get; set; } = string.Empty;
+        public string Notes { get; set; } = string.Empty;
+    }
+}
