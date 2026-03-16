@@ -8,11 +8,11 @@ Sistema web desenvolvido para médicos independentes gerirem consultas, paciente
 - Selecionar o perfil `https` e clicar em Run.
 
 ##  Autores
-- Manuel Ferreira 
-- Pedro Araujo  
-- Afonso Silva  
-- Pedro Arias
-- Guilherme Maciel
+- Manuel Ferreira - 33196
+- Pedro Araujo - 33412
+- Afonso Silva - 33276
+- Pedro Arias - 33191
+- Guilherme Maciel - 33245
 
 ##  Discord
 https://discord.gg/fPkrUKRV
