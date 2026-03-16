@@ -1,0 +1,267 @@
+-- ============================================================
+-- Script de Dados de Teste - 20 entradas por tabela
+-- ============================================================
+
+-- ============================================================
+-- codigo_postal (20 entradas)
+-- ============================================================
+INSERT INTO codigo_postal (cod_postal, localidade) VALUES
+('1000-001', 'Lisboa'),
+('1050-002', 'Lisboa - Avenidas Novas'),
+('1200-003', 'Lisboa - Chiado'),
+('1300-004', 'Lisboa - Alcântara'),
+('2700-001', 'Amadora'),
+('2750-001', 'Cascais'),
+('2800-001', 'Almada'),
+('3000-001', 'Coimbra'),
+('3800-001', 'Aveiro'),
+('4000-001', 'Porto'),
+('4050-002', 'Porto - Bonfim'),
+('4100-003', 'Porto - Foz do Douro'),
+('4150-004', 'Porto - Lordelo do Ouro'),
+('4200-005', 'Porto - Campanhã'),
+('4470-001', 'Maia'),
+('4480-001', 'Vila do Conde'),
+('4700-001', 'Braga'),
+('4710-002', 'Braga - Maximinos'),
+('4900-001', 'Viana do Castelo'),
+('5000-001', 'Vila Real');
+
+
+-- ============================================================
+-- utilizador (20 entradas)
+-- ============================================================
+INSERT INTO utilizador (is_manager, is_admin, nome, username, password, telefone, email, num_porta, rua, cod_postal, num_carteira, especialidade) VALUES
+(TRUE,  TRUE,  'Ana Ferreira',       'ana.ferreira',    'hashed_pw_01', '912000001', 'ana.ferreira@clinica.pt',    '10', 'Rua das Flores',          '1000-001', 'CAR-001', 'Cardiologia'),
+(TRUE,  FALSE, 'Bruno Matos',        'bruno.matos',     'hashed_pw_02', '912000002', 'bruno.matos@clinica.pt',     '22', 'Av. da Liberdade',        '1050-002', 'NEU-002', 'Neurologia'),
+(FALSE, FALSE, 'Carla Nunes',        'carla.nunes',     'hashed_pw_03', '912000003', 'carla.nunes@clinica.pt',     '5',  'Rua do Carmo',            '1200-003', 'ORT-003', 'Ortopedia'),
+(FALSE, FALSE, 'Diogo Sousa',        'diogo.sousa',     'hashed_pw_04', '912000004', 'diogo.sousa@clinica.pt',     '8',  'Rua de Alcântara',        '1300-004', 'DER-004', 'Dermatologia'),
+(FALSE, FALSE, 'Elisa Rodrigues',    'elisa.rodrigues', 'hashed_pw_05', '912000005', 'elisa.rodrigues@clinica.pt', '3',  'Rua Nova da Amadora',     '2700-001', 'PED-005', 'Pediatria'),
+(FALSE, FALSE, 'Fábio Costa',        'fabio.costa',     'hashed_pw_06', '912000006', 'fabio.costa@clinica.pt',     '15', 'Av. Marginal',            '2750-001', 'PSI-006', 'Psiquiatria'),
+(FALSE, FALSE, 'Gabriela Lima',      'gabriela.lima',   'hashed_pw_07', '912000007', 'gabriela.lima@clinica.pt',   '7',  'Rua Almirante Reis',      '2800-001', 'GER-007', 'Geriatria'),
+(FALSE, FALSE, 'Hugo Pinto',         'hugo.pinto',      'hashed_pw_08', '912000008', 'hugo.pinto@clinica.pt',      '20', 'Rua de Coimbra',          '3000-001', 'OFT-008', 'Oftalmologia'),
+(FALSE, FALSE, 'Inês Tavares',       'ines.tavares',    'hashed_pw_09', '912000009', 'ines.tavares@clinica.pt',    '1',  'Rua de Aveiro',           '3800-001', 'END-009', 'Endocrinologia'),
+(FALSE, FALSE, 'João Oliveira',      'joao.oliveira',   'hashed_pw_10', '912000010', 'joao.oliveira@clinica.pt',   '33', 'Rua de Santa Catarina',   '4000-001', 'GIN-010', 'Ginecologia'),
+(TRUE,  FALSE, 'Katia Mendes',       'katia.mendes',    'hashed_pw_11', '912000011', 'katia.mendes@clinica.pt',    '9',  'Rua do Bonfim',           '4050-002', 'MFR-011', 'Medicina Física'),
+(FALSE, FALSE, 'Luís Barbosa',       'luis.barbosa',    'hashed_pw_12', '912000012', 'luis.barbosa@clinica.pt',    '44', 'Rua da Foz',              '4100-003', 'URO-012', 'Urologia'),
+(FALSE, FALSE, 'Marta Cardoso',      'marta.cardoso',   'hashed_pw_13', '912000013', 'marta.cardoso@clinica.pt',   '6',  'Rua de Lordelo',          '4150-004', 'GAT-013', 'Gastrenterologia'),
+(FALSE, FALSE, 'Nuno Alves',         'nuno.alves',      'hashed_pw_14', '912000014', 'nuno.alves@clinica.pt',      '12', 'Rua de Campanhã',         '4200-005', 'PNE-014', 'Pneumologia'),
+(FALSE, FALSE, 'Olga Figueiredo',    'olga.figueiredo', 'hashed_pw_15', '912000015', 'olga.figueiredo@clinica.pt', '2',  'Rua da Maia',             '4470-001', 'REU-015', 'Reumatologia'),
+(FALSE, FALSE, 'Paulo Serra',        'paulo.serra',     'hashed_pw_16', '912000016', 'paulo.serra@clinica.pt',     '18', 'Rua de Vila do Conde',    '4480-001', 'HEM-016', 'Hematologia'),
+(FALSE, FALSE, 'Raquel Monteiro',    'raquel.monteiro',  'hashed_pw_17', '912000017', 'raquel.monteiro@clinica.pt', '11', 'Av. Central de Braga',    '4700-001', 'NEF-017', 'Nefrologia'),
+(FALSE, FALSE, 'Sérgio Teixeira',    'sergio.teixeira', 'hashed_pw_18', '912000018', 'sergio.teixeira@clinica.pt', '25', 'Rua de Maximinos',        '4710-002', 'ONC-018', 'Oncologia'),
+(FALSE, FALSE, 'Teresa Vieira',      'teresa.vieira',   'hashed_pw_19', '912000019', 'teresa.vieira@clinica.pt',   '4',  'Rua do Lima',             '4900-001', 'IMG-019', 'Imagiologia'),
+(FALSE, FALSE, 'Ulisses Gomes',      'ulisses.gomes',   'hashed_pw_20', '912000020', 'ulisses.gomes@clinica.pt',   '30', 'Rua de Vila Real',        '5000-001', 'MED-020', 'Medicina Geral');
+
+
+-- ============================================================
+-- paciente (20 entradas)
+-- ============================================================
+INSERT INTO paciente (nome, telefone, email, num_porta, rua, cod_postal, nif, dt_nasc) VALUES
+('Alfredo Cunha',       '961000001', 'alfredo.cunha@email.pt',       '3',  'Rua da Saudade',          '1000-001', '123456789', '1975-03-12'),
+('Beatriz Lopes',       '961000002', 'beatriz.lopes@email.pt',       '7',  'Rua do Sol',              '1050-002', '234567890', '1990-06-25'),
+('Carlos Esteves',      '961000003', 'carlos.esteves@email.pt',      '14', 'Rua das Acácias',         '1200-003', '345678901', '1965-11-08'),
+('Diana Ramos',         '961000004', 'diana.ramos@email.pt',         '2',  'Rua das Palmeiras',       '1300-004', '456789012', '1982-09-17'),
+('Eduardo Pires',       '961000005', 'eduardo.pires@email.pt',       '9',  'Av. das Descobertas',     '2700-001', '567890123', '1955-01-30'),
+('Filomena Carvalho',   '961000006', 'filomena.carvalho@email.pt',   '5',  'Rua do Pinhal',           '2750-001', '678901234', '1998-07-14'),
+('Gonçalo Bento',       '961000007', 'goncalo.bento@email.pt',       '21', 'Rua da República',        '2800-001', '789012345', '1970-04-03'),
+('Helena Fonseca',      '961000008', 'helena.fonseca@email.pt',      '16', 'Av. da Universidade',     '3000-001', '890123456', '1988-12-22'),
+('Ivo Antunes',         '961000009', 'ivo.antunes@email.pt',         '8',  'Rua do Canal',            '3800-001', '901234567', '1960-08-05'),
+('Joana Ferraz',        '961000010', 'joana.ferraz@email.pt',        '31', 'Rua dos Clérigos',        '4000-001', '012345678', '1993-02-19'),
+('Kevin Saraiva',       '961000011', 'kevin.saraiva@email.pt',       '6',  'Rua do Heroísmo',         '4050-002', '112345678', '1979-10-11'),
+('Leonor Braga',        '961000012', 'leonor.braga@email.pt',        '40', 'Rua da Praia',            '4100-003', '223456789', '2000-05-28'),
+('Manuel Azevedo',      '961000013', 'manuel.azevedo@email.pt',      '13', 'Rua da Torrinha',         '4150-004', '334567890', '1950-07-07'),
+('Natália Correia',     '961000014', 'natalia.correia@email.pt',     '17', 'Rua das Antas',           '4200-005', '445678901', '1985-03-31'),
+('Octávio Pereira',     '961000015', 'octavio.pereira@email.pt',     '29', 'Rua da Maia Velha',       '4470-001', '556789012', '1972-09-09'),
+('Patrícia Dias',       '961000016', 'patricia.dias@email.pt',       '11', 'Rua do Sardão',           '4480-001', '667890123', '1995-11-15'),
+('Quintino Macedo',     '961000017', 'quintino.macedo@email.pt',     '4',  'Av. dos Combatentes',     '4700-001', '778901234', '1963-06-20'),
+('Rosa Henriques',      '961000018', 'rosa.henriques@email.pt',      '26', 'Rua do Raio',             '4710-002', '889012345', '1987-01-04'),
+('Samuel Castro',       '961000019', 'samuel.castro@email.pt',       '19', 'Rua do Castelo',          '4900-001', '990123456', '1945-08-16'),
+('Tatiana Melo',        '961000020', 'tatiana.melo@email.pt',        '35', 'Rua de Trás',             '5000-001', '101234567', '2003-04-23');
+
+
+-- ============================================================
+-- tipo_consulta (20 entradas)
+-- ============================================================
+INSERT INTO tipo_consulta (descricao, preco_fixo, preco_hora, id_utilizador) VALUES
+('Consulta de Cardiologia',         80.00,  NULL,   1),
+('Consulta de Neurologia',          90.00,  NULL,   2),
+('Consulta de Ortopedia',           75.00,  NULL,   3),
+('Consulta de Dermatologia',        65.00,  NULL,   4),
+('Consulta de Pediatria',           55.00,  NULL,   5),
+('Consulta de Psiquiatria',         NULL,   100.00, 6),
+('Consulta de Geriatria',           60.00,  NULL,   7),
+('Consulta de Oftalmologia',        70.00,  NULL,   8),
+('Consulta de Endocrinologia',      80.00,  NULL,   9),
+('Consulta de Ginecologia',         75.00,  NULL,   10),
+('Consulta de Medicina Física',     NULL,   85.00,  11),
+('Consulta de Urologia',            70.00,  NULL,   12),
+('Consulta de Gastrenterologia',    80.00,  NULL,   13),
+('Consulta de Pneumologia',         75.00,  NULL,   14),
+('Consulta de Reumatologia',        80.00,  NULL,   15),
+('Consulta de Hematologia',         90.00,  NULL,   16),
+('Consulta de Nefrologia',          85.00,  NULL,   17),
+('Consulta de Oncologia',           120.00, NULL,   18),
+('Consulta de Imagiologia',         NULL,   95.00,  19),
+('Consulta de Medicina Geral',      40.00,  NULL,   20);
+
+
+-- ============================================================
+-- exame_medico (20 entradas)
+-- ============================================================
+INSERT INTO exame_medico (dh_exame, tipo, resultado, id_utilizador) VALUES
+('2024-01-10 09:00:00', 'Eletrocardiograma',      'Ritmo sinusal normal',                         1),
+('2024-01-15 10:30:00', 'Ressonância Magnética',  'Sem lesões estruturais',                       2),
+('2024-01-20 11:00:00', 'Raio-X Coluna',          'Ligeira escoliose lombar',                     3),
+('2024-02-05 08:30:00', 'Biópsia Cutânea',        'Sem células malignas detetadas',               4),
+('2024-02-10 14:00:00', 'Hemograma Completo',     'Valores dentro do normal',                     5),
+('2024-02-18 09:15:00', 'Avaliação Psicológica',  'Transtorno de ansiedade moderado',             6),
+('2024-03-01 16:00:00', 'Densitometria Óssea',    'Osteopenia ligeira',                           7),
+('2024-03-08 10:00:00', 'Campimetria',             'Campo visual normal',                          8),
+('2024-03-15 11:30:00', 'TSH e T4',               'Hipotiroidismo subclínico',                    9),
+('2024-03-22 09:00:00', 'Ecografia Pélvica',      'Útero e ovários sem alterações',               10),
+('2024-04-02 13:00:00', 'Electromiografia',        'Neuropatia periférica ligeira',                11),
+('2024-04-10 08:00:00', 'Ecografia Renal',        'Litíase renal bilateral',                      12),
+('2024-04-18 15:00:00', 'Colonoscopia',           'Pólipo adenomatoso removido',                  13),
+('2024-05-03 10:30:00', 'Espirometria',           'Síndrome obstrutivo ligeiro',                  14),
+('2024-05-12 09:30:00', 'Fator Reumatoide',       'FR positivo — 45 UI/mL',                       15),
+('2024-05-20 11:00:00', 'Mielograma',             'Medula óssea normocelular',                    16),
+('2024-06-01 14:30:00', 'Creatinina e Ureia',     'Função renal conservada',                      17),
+('2024-06-10 09:00:00', 'PET-CT Oncológico',      'Sem metastização à distância',                 18),
+('2024-06-18 16:00:00', 'Ecografia Abdominal',    'Esteatose hepática ligeira',                   19),
+('2024-07-01 08:30:00', 'Análises Gerais',        'Colesterol total elevado — 230 mg/dL',         20);
+
+
+-- ============================================================
+-- fatura (20 entradas)
+-- ============================================================
+INSERT INTO fatura (valor_pago, dh_pagamento, metodo) VALUES
+(80.00,  '2024-01-10 09:30:00', 'Multibanco'),
+(90.00,  '2024-01-15 11:00:00', 'Cartão Crédito'),
+(75.00,  '2024-01-20 11:45:00', 'MBWay'),
+(65.00,  '2024-02-05 09:00:00', 'Numerário'),
+(55.00,  '2024-02-10 14:30:00', 'Multibanco'),
+(200.00, '2024-02-18 10:00:00', 'Transferência Bancária'),
+(60.00,  '2024-03-01 16:30:00', 'Cartão Débito'),
+(70.00,  '2024-03-08 10:45:00', 'Multibanco'),
+(80.00,  '2024-03-15 12:00:00', 'MBWay'),
+(75.00,  '2024-03-22 09:30:00', 'Numerário'),
+(170.00, '2024-04-02 13:45:00', 'Cartão Crédito'),
+(70.00,  '2024-04-10 08:30:00', 'Multibanco'),
+(80.00,  '2024-04-18 15:30:00', 'Transferência Bancária'),
+(75.00,  '2024-05-03 11:00:00', 'MBWay'),
+(80.00,  '2024-05-12 10:00:00', 'Multibanco'),
+(90.00,  '2024-05-20 11:30:00', 'Cartão Débito'),
+(85.00,  '2024-06-01 15:00:00', 'Multibanco'),
+(120.00, '2024-06-10 09:30:00', 'Transferência Bancária'),
+(190.00, '2024-06-18 16:30:00', 'Cartão Crédito'),
+(40.00,  '2024-07-01 09:00:00', 'Numerário');
+
+
+-- ============================================================
+-- consulta (20 entradas)
+-- ============================================================
+INSERT INTO consulta (dh_inicio, dh_fim, valor_total, valor_hora, id_paciente, id_exame_medico, id_fatura, id_tipo_consulta) VALUES
+('2024-01-10 09:00:00', '2024-01-10 09:30:00',  80.00,  NULL,   1,  1,  1,  1),
+('2024-01-15 10:30:00', '2024-01-15 11:00:00',  90.00,  NULL,   2,  2,  2,  2),
+('2024-01-20 11:00:00', '2024-01-20 11:45:00',  75.00,  NULL,   3,  3,  3,  3),
+('2024-02-05 08:30:00', '2024-02-05 09:00:00',  65.00,  NULL,   4,  4,  4,  4),
+('2024-02-10 14:00:00', '2024-02-10 14:30:00',  55.00,  NULL,   5,  5,  5,  5),
+('2024-02-18 09:15:00', '2024-02-18 11:15:00',  200.00, 100.00, 6,  6,  6,  6),
+('2024-03-01 16:00:00', '2024-03-01 16:30:00',  60.00,  NULL,   7,  7,  7,  7),
+('2024-03-08 10:00:00', '2024-03-08 10:45:00',  70.00,  NULL,   8,  8,  8,  8),
+('2024-03-15 11:30:00', '2024-03-15 12:00:00',  80.00,  NULL,   9,  9,  9,  9),
+('2024-03-22 09:00:00', '2024-03-22 09:30:00',  75.00,  NULL,   10, 10, 10, 10),
+('2024-04-02 13:00:00', '2024-04-02 15:00:00',  170.00, 85.00,  11, 11, 11, 11),
+('2024-04-10 08:00:00', '2024-04-10 08:30:00',  70.00,  NULL,   12, 12, 12, 12),
+('2024-04-18 15:00:00', '2024-04-18 15:30:00',  80.00,  NULL,   13, 13, 13, 13),
+('2024-05-03 10:30:00', '2024-05-03 11:00:00',  75.00,  NULL,   14, 14, 14, 14),
+('2024-05-12 09:30:00', '2024-05-12 10:00:00',  80.00,  NULL,   15, 15, 15, 15),
+('2024-05-20 11:00:00', '2024-05-20 11:30:00',  90.00,  NULL,   16, 16, 16, 16),
+('2024-06-01 14:30:00', '2024-06-01 15:00:00',  85.00,  NULL,   17, 17, 17, 17),
+('2024-06-10 09:00:00', '2024-06-10 09:30:00',  120.00, NULL,   18, 18, 18, 18),
+('2024-06-18 16:00:00', '2024-06-18 18:00:00',  190.00, 95.00,  19, 19, 19, 19),
+('2024-07-01 08:30:00', '2024-07-01 09:00:00',  40.00,  NULL,   20, 20, 20, 20);
+
+
+-- ============================================================
+-- utilizador_consulta (20 entradas — 1 criador por consulta + extras)
+-- ============================================================
+INSERT INTO utilizador_consulta (id_utilizador, id_consulta, is_criador, convite_aceite) VALUES
+(1,  1,  TRUE,  TRUE),
+(2,  2,  TRUE,  TRUE),
+(3,  3,  TRUE,  TRUE),
+(4,  4,  TRUE,  TRUE),
+(5,  5,  TRUE,  TRUE),
+(6,  6,  TRUE,  TRUE),
+(7,  7,  TRUE,  TRUE),
+(8,  8,  TRUE,  TRUE),
+(9,  9,  TRUE,  TRUE),
+(10, 10, TRUE,  TRUE),
+(11, 11, TRUE,  TRUE),
+(12, 12, TRUE,  TRUE),
+(13, 13, TRUE,  TRUE),
+(14, 14, TRUE,  TRUE),
+(15, 15, TRUE,  TRUE),
+(16, 16, TRUE,  TRUE),
+(17, 17, TRUE,  TRUE),
+(18, 18, TRUE,  TRUE),
+(19, 19, TRUE,  TRUE),
+(20, 20, TRUE,  TRUE);
+
+
+-- ============================================================
+-- estado (20 entradas)
+-- ============================================================
+INSERT INTO estado (estado_to, dh_registo, comentario, id_consulta) VALUES
+('Agendada',    '2024-01-09 10:00:00', 'Consulta agendada pelo paciente.',             1),
+('Agendada',    '2024-01-14 10:00:00', 'Aguarda confirmação do médico.',               2),
+('Confirmada',  '2024-01-19 08:00:00', 'Médico confirmou presença.',                   3),
+('Realizada',   '2024-02-05 09:05:00', 'Consulta concluída com sucesso.',              4),
+('Realizada',   '2024-02-10 14:35:00', 'Paciente atendido e dispensado.',              5),
+('Cancelada',   '2024-02-17 17:00:00', 'Cancelada pelo paciente com 24h de aviso.',   6),
+('Agendada',    '2024-02-28 09:00:00', 'Nova marcação após reagendamento.',            7),
+('Realizada',   '2024-03-08 10:50:00', 'Exame realizado e relatório emitido.',        8),
+('Confirmada',  '2024-03-14 11:00:00', 'Consulta confirmada via telefone.',            9),
+('Realizada',   '2024-03-22 09:35:00', 'Consulta decorreu sem incidentes.',           10),
+('Em Curso',    '2024-04-02 13:05:00', 'Sessão de fisioterapia em andamento.',        11),
+('Realizada',   '2024-04-10 08:35:00', 'Resultado do exame entregue ao paciente.',    12),
+('Realizada',   '2024-04-18 15:35:00', 'Procedimento realizado com sucesso.',         13),
+('Confirmada',  '2024-05-02 09:00:00', 'Confirmação enviada por email.',              14),
+('Realizada',   '2024-05-12 10:05:00', 'Consulta concluída — análises pedidas.',      15),
+('Reagendada',  '2024-05-19 14:00:00', 'Médico indisponível — nova data marcada.',    16),
+('Agendada',    '2024-05-31 10:00:00', 'Marcação efectuada online.',                  17),
+('Realizada',   '2024-06-10 09:35:00', 'Relatório oncológico enviado.',               18),
+('Em Curso',    '2024-06-18 16:05:00', 'Ecografia em realização.',                    19),
+('Realizada',   '2024-07-01 09:05:00', 'Consulta de rotina sem alterações.',          20);
+
+
+-- ============================================================
+-- anotacao (20 entradas)
+-- ============================================================
+INSERT INTO anotacao (descricao, dh_criacao, dh_ultima_edicao, id_utilizador, id_consulta) VALUES
+('Paciente refere dores no peito há 2 semanas.',                    '2024-01-10 09:10:00', NULL,                    1,  1),
+('Queixas de cefaleias frequentes e visão turva.',                  '2024-01-15 10:35:00', NULL,                    2,  2),
+('Dor lombar crónica — Rx solicitado.',                             '2024-01-20 11:05:00', '2024-01-20 11:30:00',  3,  3),
+('Erupção cutânea no antebraço esquerdo — biópsia recomendada.',    '2024-02-05 08:35:00', NULL,                    4,  4),
+('Criança com febre persistente há 5 dias.',                        '2024-02-10 14:05:00', NULL,                    5,  5),
+('Episódios de pânico noturnos descritos pelo doente.',             '2024-02-18 09:20:00', '2024-02-18 10:00:00',  6,  6),
+('Paciente com dificuldade de locomoção — órtese considerada.',     '2024-03-01 16:05:00', NULL,                    7,  7),
+('Diminuição da acuidade visual no olho direito.',                  '2024-03-08 10:05:00', NULL,                    8,  8),
+('Cansaço e ganho de peso — TSH alterado.',                         '2024-03-15 11:35:00', '2024-03-15 11:55:00',  9,  9),
+('Irregularidade menstrual há 3 meses.',                            '2024-03-22 09:05:00', NULL,                    10, 10),
+('Dores musculares após exercício físico intenso.',                  '2024-04-02 13:05:00', NULL,                    11, 11),
+('Cólica renal recorrente — ecografia pedida.',                     '2024-04-10 08:05:00', '2024-04-10 08:25:00',  12, 12),
+('Alteração do trânsito intestinal há 1 mês.',                      '2024-04-18 15:05:00', NULL,                    13, 13),
+('Tosse produtiva crónica — espirometria solicitada.',              '2024-05-03 10:35:00', NULL,                    14, 14),
+('Articulações tumefactas e rigidez matinal.',                      '2024-05-12 09:35:00', '2024-05-12 09:55:00',  15, 15),
+('Hematomas espontâneos — hemograma pedido.',                       '2024-05-20 11:05:00', NULL,                    16, 16),
+('Edema maleolar bilateral — função renal avaliada.',               '2024-06-01 14:35:00', NULL,                    17, 17),
+('Nódulo pulmonar identificado em TAC prévia.',                     '2024-06-10 09:05:00', '2024-06-10 09:25:00',  18, 18),
+('Dor abdominal difusa há 1 semana.',                               '2024-06-18 16:05:00', NULL,                    19, 19),
+('Consulta de seguimento — resultados analíticos normais.',         '2024-07-01 08:35:00', NULL,                    20, 20);
+
+
+-- ============================================================
+-- FIM DO SCRIPT DE DADOS DE TESTE
+-- ============================================================a
