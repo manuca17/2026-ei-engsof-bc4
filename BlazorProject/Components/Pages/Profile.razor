@@ -1,0 +1,259 @@
+@page "/profile"
+@rendermode InteractiveServer
+@inject NavigationManager NavigationManager
+@inject IJSRuntime JSRuntime
+
+<PageTitle>Perfil</PageTitle>
+
+@if (IsLoading)
+{
+    <div class="text-center py-5">Carregando...</div>
+}
+else if (CurrentUser is null)
+{
+    <div class="text-center py-5 text-muted">Redirecionando...</div>
+}
+else
+{
+    <div class="max-w-2xl mx-auto space-y-6">
+        <div class="d-flex align-items-center justify-content-between">
+            <div>
+                <h1 class="h3 mb-2">Meu Perfil</h1>
+                <p class="text-muted mb-0">Gerir as suas informações pessoais</p>
+            </div>
+            @if (!IsEditing)
+            {
+                <button class="btn btn-primary" @onclick="() => IsEditing = true">
+                    <span class="me-2">✎</span>
+                    Editar
+                </button>
+            }
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Informações Pessoais</h5>
+            </div>
+            <div class="card-body">
+                @if (!IsEditing)
+                {
+                    <div class="space-y-4">
+                        <div class="d-flex align-items-center gap-3 p-3 bg-light rounded">
+                            <span class="fs-5 text-secondary">👤</span>
+                            <div class="flex-grow-1">
+                                <p class="text-muted small mb-0">Nome</p>
+                                <p class="fw-semibold mb-0">@CurrentUser.Nome</p>
+                            </div>
+                        </div>
+
+                        <div class="d-flex align-items-center gap-3 p-3 bg-light rounded">
+                            <span class="fs-5 text-secondary">✉️</span>
+                            <div class="flex-grow-1">
+                                <p class="text-muted small mb-0">Email</p>
+                                <p class="fw-semibold mb-0">@CurrentUser.Email</p>
+                            </div>
+                        </div>
+
+                        <div class="d-flex align-items-center gap-3 p-3 bg-light rounded">
+                            <span class="fs-5 text-secondary">💼</span>
+                            <div class="flex-grow-1">
+                                <p class="text-muted small mb-0">Especialidade</p>
+                                <p class="fw-semibold mb-0">@(!string.IsNullOrWhiteSpace(CurrentUser.Especialidade) ? CurrentUser.Especialidade : "Não definida")</p>
+                            </div>
+                        </div>
+
+                        <div class="d-flex align-items-center gap-3 p-3 bg-light rounded">
+                            <span class="fs-5 text-secondary">📞</span>
+                            <div class="flex-grow-1">
+                                <p class="text-muted small mb-0">Telefone</p>
+                                <p class="fw-semibold mb-0">@(!string.IsNullOrWhiteSpace(CurrentUser.Telefone) ? CurrentUser.Telefone : "Não definido")</p>
+                            </div>
+                        </div>
+                    </div>
+                }
+                else
+                {
+                    <form onsubmit="return false;">
+                        <div class="mb-3">
+                            <label class="form-label" for="nome">Nome Completo *</label>
+                            <input id="nome" class="form-control" @bind="FormData.Nome" required />
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label" for="email">Email *</label>
+                            <input id="email" type="email" class="form-control" @bind="FormData.Email" required />
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label" for="especialidade">Especialidade</label>
+                            <input id="especialidade" class="form-control" placeholder="Ex: Cardiologia" @bind="FormData.Especialidade" />
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label" for="telefone">Telefone</label>
+                            <input id="telefone" class="form-control" placeholder="+351 912 345 678" @bind="FormData.Telefone" />
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label" for="senha">Nova Senha (deixe em branco para não alterar)</label>
+                            <input id="senha" type="password" class="form-control" placeholder="••••••" @bind="FormData.Senha" />
+                        </div>
+
+                        <div class="d-flex gap-3 pt-2">
+                            <button class="btn btn-primary flex-grow-1" type="button" @onclick="SaveProfileAsync">Salvar Alterações</button>
+                            <button class="btn btn-outline-secondary flex-grow-1" type="button" @onclick="CancelEdit">Cancelar</button>
+                        </div>
+                    </form>
+                }
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Estatísticas da Conta</h5>
+            </div>
+            <div class="card-body">
+                <div class="d-flex flex-column gap-3">
+                    <div class="d-flex justify-content-between align-items-center p-3 bg-light rounded">
+                        <span class="text-muted">Membro desde</span>
+                        <span class="fw-semibold">@CurrentUser.CreatedAt.ToLocalTime().ToString("dd/MM/yyyy")</span>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center p-3 bg-light rounded">
+                        <span class="text-muted">ID do Utilizador</span>
+                        <span class="fw-monospace text-truncate" style="max-width: 240px;">@CurrentUser.Id</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private bool IsEditing;
+    private bool IsLoading = true;
+
+    private User? CurrentUser;
+    private ProfileForm FormData { get; set; } = new();
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender) return;
+        await LoadUserAsync();
+    }
+
+    private async Task LoadUserAsync()
+    {
+        var user = await JSRuntime.InvokeAsync<User?>("profileStorage.getCurrentUser");
+        if (user is null)
+        {
+            /*
+            / this is just for testing purposes
+            / we will have to fix the login so the user is properly stored
+            */
+            user = new User
+            {
+                Id = "1",
+                Nome = "Dr. João Silva",
+                Email = "joao@email.pt",
+                Especialidade = "Cardiologia",
+                Telefone = "+351 912 345 678",
+                CreatedAt = DateTime.Now.AddYears(-1)
+            };
+        }
+
+        CurrentUser = user;
+        ResetForm();
+        IsLoading = false;
+        StateHasChanged();
+    }
+
+    private void ResetForm()
+    {
+        if (CurrentUser is null) return;
+
+        FormData = new ProfileForm
+        {
+            Nome = CurrentUser.Nome,
+            Email = CurrentUser.Email,
+            Especialidade = CurrentUser.Especialidade ?? string.Empty,
+            Telefone = CurrentUser.Telefone ?? string.Empty,
+            Senha = string.Empty
+        };
+    }
+
+    private async Task SaveProfileAsync()
+    {
+        if (CurrentUser is null) return;
+
+        if (string.IsNullOrWhiteSpace(FormData.Nome) || string.IsNullOrWhiteSpace(FormData.Email))
+        {
+            await JSRuntime.InvokeVoidAsync("alert", "Por favor preencha o nome e o email.");
+            return;
+        }
+
+        var updates = new Dictionary<string, object?>
+        {
+            ["nome"] = FormData.Nome.Trim(),
+            ["email"] = FormData.Email.Trim(),
+            ["especialidade"] = string.IsNullOrWhiteSpace(FormData.Especialidade) ? null : FormData.Especialidade.Trim(),
+            ["telefone"] = string.IsNullOrWhiteSpace(FormData.Telefone) ? null : FormData.Telefone.Trim()
+        };
+
+        if (!string.IsNullOrWhiteSpace(FormData.Senha))
+        {
+            updates["senha"] = FormData.Senha;
+        }
+
+        var updated = await JSRuntime.InvokeAsync<User?>("profileStorage.updateUser", CurrentUser.Id, updates);
+        if (updated is not null)
+        {
+            CurrentUser = updated;
+            IsEditing = false;
+            ResetForm();
+            await JSRuntime.InvokeVoidAsync("alert", "Perfil atualizado com sucesso!");
+        }
+        else
+        {
+            await JSRuntime.InvokeVoidAsync("alert", "Não foi possível atualizar o perfil.");
+        }
+    }
+
+    private void CancelEdit()
+    {
+        IsEditing = false;
+        ResetForm();
+    }
+
+    private sealed class User
+    {
+        [System.Text.Json.Serialization.JsonPropertyName("id")]
+        public string Id { get; set; } = string.Empty;
+
+        [System.Text.Json.Serialization.JsonPropertyName("nome")]
+        public string Nome { get; set; } = string.Empty;
+
+        [System.Text.Json.Serialization.JsonPropertyName("email")]
+        public string Email { get; set; } = string.Empty;
+
+        [System.Text.Json.Serialization.JsonPropertyName("especialidade")]
+        public string? Especialidade { get; set; }
+
+        [System.Text.Json.Serialization.JsonPropertyName("telefone")]
+        public string? Telefone { get; set; }
+
+        [System.Text.Json.Serialization.JsonPropertyName("senha")]
+        public string? Senha { get; set; }
+
+        [System.Text.Json.Serialization.JsonPropertyName("createdAt")]
+        public DateTime CreatedAt { get; set; }
+    }
+
+    private sealed class ProfileForm
+    {
+        public string Nome { get; set; } = string.Empty;
+        public string Email { get; set; } = string.Empty;
+        public string Especialidade { get; set; } = string.Empty;
+        public string Telefone { get; set; } = string.Empty;
+        public string Senha { get; set; } = string.Empty;
+    }
+}
