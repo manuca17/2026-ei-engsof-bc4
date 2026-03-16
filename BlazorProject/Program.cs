@@ -1,11 +1,15 @@
 using BlazorProject.Components;
+using BlazorProject.Data;
+using BlazorProject.Data.Models;
+using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
-
+var connectionString = builder.Configuration.GetConnectionString("Default")
+    ?? throw new InvalidOperationException("No connection string found in config!!");
 // Add services to the container.
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
-
+builder.Services.AddDbContextFactory<EiEngsofContext>((DbContextOptionsBuilder options) => options.UseNpgsql(connectionString));
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
