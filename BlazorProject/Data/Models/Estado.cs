@@ -15,5 +15,5 @@ public partial class Estado
 
     public int IdConsulta { get; set; }
 
-    public virtual Consultum IdConsultaNavigation { get; set; } = null!;
+    public virtual Consulta IdConsultaNavigation { get; set; } = null!;
 }

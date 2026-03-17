@@ -13,5 +13,5 @@ public partial class Fatura
 
     public string? Metodo { get; set; }
 
-    public virtual ICollection<Consultum> Consulta { get; set; } = new List<Consultum>();
+    public virtual ICollection<Consulta> Consulta { get; set; } = new List<Consulta>();
 }

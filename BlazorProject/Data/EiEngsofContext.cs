@@ -20,7 +20,7 @@ public partial class EiEngsofContext : DbContext
 
     public virtual DbSet<CodigoPostal> CodigoPostals { get; set; }
 
-    public virtual DbSet<Consultum> Consulta { get; set; }
+    public virtual DbSet<Consulta> Consulta { get; set; }
 
     public virtual DbSet<Estado> Estados { get; set; }
 
@@ -30,11 +30,11 @@ public partial class EiEngsofContext : DbContext
 
     public virtual DbSet<Paciente> Pacientes { get; set; }
 
-    public virtual DbSet<TipoConsultum> TipoConsulta { get; set; }
+    public virtual DbSet<TipoConsulta> TipoConsulta { get; set; }
 
     public virtual DbSet<Utilizador> Utilizadors { get; set; }
 
-    public virtual DbSet<UtilizadorConsultum> UtilizadorConsulta { get; set; }
+    public virtual DbSet<UtilizadorConsulta> UtilizadorConsulta { get; set; }
     
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
 #warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see https://go.microsoft.com/fwlink/?LinkId=723263.
@@ -87,7 +87,7 @@ public partial class EiEngsofContext : DbContext
                 .HasColumnName("localidade");
         });
 
-        modelBuilder.Entity<Consultum>(entity =>
+        modelBuilder.Entity<Consulta>(entity =>
         {
             entity.HasKey(e => e.IdConsulta).HasName("pk_consulta");
 
@@ -239,7 +239,7 @@ public partial class EiEngsofContext : DbContext
                 .HasConstraintName("fk_pac_codpostal");
         });
 
-        modelBuilder.Entity<TipoConsultum>(entity =>
+        modelBuilder.Entity<TipoConsulta>(entity =>
         {
             entity.HasKey(e => e.IdTipoConsulta).HasName("pk_tipo_consulta");
 
@@ -313,7 +313,7 @@ public partial class EiEngsofContext : DbContext
                 .HasConstraintName("fk_util_codpostal");
         });
 
-        modelBuilder.Entity<UtilizadorConsultum>(entity =>
+        modelBuilder.Entity<UtilizadorConsulta>(entity =>
         {
             entity.HasKey(e => new { e.IdUtilizador, e.IdConsulta }).HasName("pk_utilizador_consulta");
 

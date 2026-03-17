@@ -37,7 +37,7 @@ public partial class Utilizador
 
     public virtual ICollection<ExameMedico> ExameMedicos { get; set; } = new List<ExameMedico>();
 
-    public virtual ICollection<TipoConsultum> TipoConsulta { get; set; } = new List<TipoConsultum>();
+    public virtual ICollection<TipoConsulta> TipoConsulta { get; set; } = new List<TipoConsulta>();
 
-    public virtual ICollection<UtilizadorConsultum> UtilizadorConsulta { get; set; } = new List<UtilizadorConsultum>();
+    public virtual ICollection<UtilizadorConsulta> UtilizadorConsulta { get; set; } = new List<UtilizadorConsulta>();
 }
