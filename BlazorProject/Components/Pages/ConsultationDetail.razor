@@ -271,12 +271,12 @@ else
 @if (EditDialogOpen && Consultation is not null)
 {
     <div class="modal-backdrop" @onclick="CloseEditDialog">
-        <div class="modal" @onclick:stopPropagation="true">
-            <div class="modal-header">
+        <div class="dialog-panel" @onclick:stopPropagation="true">
+            <div class="dialog-header">
                 <h3>Editar Consulta</h3>
             </div>
 
-            <div class="modal-body">
+            <div class="dialog-body">
                 <div class="field">
                     <label>Descrição</label>
                     <textarea rows="4" @bind="EditDescription"></textarea>
@@ -306,7 +306,7 @@ else
                 }
             </div>
 
-            <div class="modal-actions">
+            <div class="dialog-actions">
                 <button class="btn-primary" @onclick="SaveEdit">Salvar</button>
                 <button class="btn-outline" @onclick="CloseEditDialog">Cancelar</button>
             </div>
@@ -317,94 +317,140 @@ else
 @if (ExamDialogOpen && Consultation is not null)
 {
     <div class="modal-backdrop" @onclick="CloseExamDialog">
-        <div class="modal wide-modal" @onclick:stopPropagation="true">
-            <div class="modal-header">
+        <div class="dialog-panel dialog-wide" @onclick:stopPropagation="true">
+            <div class="dialog-header">
                 <h3>Adicionar Exame Médico</h3>
                 <p>Crie um novo exame ou associe um exame existente deste paciente.</p>
             </div>
 
-            <div class="modal-body">
-                <div class="toggle-row">
-                    <button class="@(ExamMode == "new" ? "toggle-btn active" : "toggle-btn")" @onclick='() => ExamMode = "new"'>Criar Novo</button>
+            <div class="dialog-body">
+                <div class="toggle-row exam-mode-row">
+                    <button type="button"
+                            class="@(ExamMode == "new" ? "toggle-btn active" : "toggle-btn")"
+                            @onclick="SetExamModeNew">
+                        Criar Novo
+                    </button>
                     <button class="@(ExamMode == "existing" ? "toggle-btn active" : "toggle-btn")"
-                            @onclick='() => ExamMode = "existing"'
-                            disabled="@(AvailableExams.Count == 0)">
-                        Associar Existente @(AvailableExams.Count > 0 ? $"({AvailableExams.Count})" : string.Empty)
+                            type="button"
+                            @onclick="SetExamModeExisting">
+                        Associar Existente (@AvailableExams.Count)
                     </button>
                 </div>
 
                 @if (ExamMode == "new")
                 {
-                    <div class="field-grid">
-                        <div class="field">
-                            <label>Nome do Exame</label>
-                            <input type="text" @bind="ExamName" />
+                    <form class="exam-form" @onsubmit="HandleAddExam">
+                        <div class="field-grid">
+                            <div class="field">
+                                <label>Nome do Exame</label>
+                                <input type="text" @bind="ExamName" required />
+                            </div>
+                            <div class="field">
+                                <label>Tipo</label>
+                                <input type="text" @bind="ExamType" placeholder="Ex: Sangue, Raio-X, etc." required />
+                            </div>
+                            <div class="field">
+                                <label>Data</label>
+                                <input type="date" @bind-value="ExamDate" @bind-value:format="yyyy-MM-dd" required />
+                            </div>
+                            <div class="field field-span-2">
+                                <label>Descrição</label>
+                                <textarea rows="3" @bind="ExamDescription"></textarea>
+                            </div>
+                            <div class="field field-span-2">
+                                <label>Resultados</label>
+                                <textarea rows="4" @bind="ExamResults"></textarea>
+                            </div>
                         </div>
-                        <div class="field">
-                            <label>Tipo</label>
-                            <input type="text" @bind="ExamType" placeholder="Ex: Sangue, Imagem" />
+
+                        <div class="dialog-actions exam-actions">
+                            <button type="submit" class="btn-primary">Criar e Adicionar</button>
+                            <button type="button" class="btn-outline" @onclick="CloseExamDialog">Cancelar</button>
                         </div>
-                        <div class="field">
-                            <label>Data</label>
-                            <input type="date" @bind-value="ExamDate" @bind-value:format="yyyy-MM-dd" />
-                        </div>
-                        <div class="field field-span-2">
-                            <label>Descrição</label>
-                            <textarea rows="3" @bind="ExamDescription"></textarea>
-                        </div>
-                        <div class="field field-span-2">
-                            <label>Resultados</label>
-                            <textarea rows="4" @bind="ExamResults"></textarea>
-                        </div>
-                    </div>
+                    </form>
                 }
                 else
                 {
-                    @if (AvailableExams.Count == 0)
-                    {
-                        <div class="detail-empty">Não há exames disponíveis para associar.</div>
-                    }
-                    else
-                    {
-                        <div class="field">
-                            <label>Selecione um Exame</label>
-                            <select @bind="SelectedExistingExamId">
-                                <option value="">Escolha um exame...</option>
-                                @foreach (var exam in AvailableExams)
-                                {
-                                    <option value="@exam.Id">@exam.Name - @exam.Type (@exam.Date.ToString("dd/MM/yyyy"))</option>
-                                }
-                            </select>
-                        </div>
-
-                        @if (SelectedExistingExam is not null)
+                    <form class="exam-form" @onsubmit="HandleAddExam">
+                        @if (AvailableExams.Count == 0)
                         {
-                            <div class="preview-card">
-                                <h4>Pré-visualização do Exame</h4>
-                                <div class="preview-grid">
-                                    <div><span>Nome</span><strong>@SelectedExistingExam.Name</strong></div>
-                                    <div><span>Tipo</span><strong>@SelectedExistingExam.Type</strong></div>
-                                    <div><span>Data</span><strong>@SelectedExistingExam.Date.ToString("dd/MM/yyyy")</strong></div>
-                                    @if (!string.IsNullOrWhiteSpace(SelectedExistingExam.Description))
-                                    {
-                                        <div class="preview-full"><span>Descrição</span><strong>@SelectedExistingExam.Description</strong></div>
-                                    }
-                                    @if (!string.IsNullOrWhiteSpace(SelectedExistingExam.Results))
-                                    {
-                                        <div class="preview-full"><span>Resultados</span><strong>@SelectedExistingExam.Results</strong></div>
-                                    }
+                            <div class="existing-empty-state">
+                                <div class="existing-empty-icon" aria-hidden="true">+</div>
+                                <div>
+                                    <h4>Sem exames para associar</h4>
+                                    <p>
+                                        Não há exames disponíveis para associar.
+                                        Todos os exames deste paciente já estão nesta consulta.
+                                    </p>
                                 </div>
                             </div>
                         }
-                    }
-                }
-            </div>
+                        else
+                        {
+                            <div class="existing-mode-layout">
+                                <div class="existing-selection-card">
+                                    <div class="existing-selection-header">
+                                        <div>
+                                            <h4>Selecionar Exame Existente</h4>
+                                            <p>Escolha um exame já registado para este paciente.</p>
+                                        </div>
+                                        <span class="existing-count-badge">@AvailableExams.Count disponível@(AvailableExams.Count == 1 ? string.Empty : "eis")</span>
+                                    </div>
 
-            <div class="modal-actions">
-                <button class="btn-primary" @onclick="SaveExam">
-                    @(ExamMode == "new" ? "Criar e Adicionar" : "Associar Exame")
-                </button>
-                <button class="btn-outline" @onclick="CloseExamDialog">Cancelar</button>
+                                    <div class="field">
+                                        <label>Selecione um Exame</label>
+                                        <select @bind="SelectedExistingExamId" required>
+                                            <option value="">Escolha um exame...</option>
+                                            @foreach (var exam in AvailableExams)
+                                            {
+                                                <option value="@exam.Id">@exam.Name - @exam.Type (@exam.Date.ToString("dd/MM/yyyy"))</option>
+                                            }
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+
+                            @if (SelectedExistingExam is not null)
+                            {
+                                <div class="preview-card existing-preview-card">
+                                    <div class="existing-preview-header">
+                                        <div>
+                                            <h4>Pré-visualização do Exame</h4>
+                                            <p>Confirme os dados antes de associar o exame à consulta.</p>
+                                        </div>
+                                        <span class="preview-status">Selecionado</span>
+                                    </div>
+
+                                    <div class="preview-grid">
+                                        <div class="preview-item"><span>Nome</span><strong>@SelectedExistingExam.Name</strong></div>
+                                        <div class="preview-item"><span>Tipo</span><strong>@SelectedExistingExam.Type</strong></div>
+                                        <div class="preview-item"><span>Data</span><strong>@SelectedExistingExam.Date.ToString("dd/MM/yyyy")</strong></div>
+                                        @if (!string.IsNullOrWhiteSpace(SelectedExistingExam.Description))
+                                        {
+                                            <div class="preview-item preview-full"><span>Descrição</span><strong>@SelectedExistingExam.Description</strong></div>
+                                        }
+                                        @if (!string.IsNullOrWhiteSpace(SelectedExistingExam.Results))
+                                        {
+                                            <div class="preview-item preview-full"><span>Resultados</span><strong>@SelectedExistingExam.Results</strong></div>
+                                        }
+                                    </div>
+                                </div>
+                            }
+                            else
+                            {
+                                <div class="existing-preview-placeholder">
+                                    <h4>Pré-visualização do Exame</h4>
+                                    <p>Selecione um exame da lista para ver aqui os detalhes.</p>
+                                </div>
+                            }
+                        }
+
+                        <div class="dialog-actions exam-actions">
+                            <button type="submit" class="btn-primary" disabled="@(AvailableExams.Count == 0)">Associar Exame</button>
+                            <button type="button" class="btn-outline" @onclick="CloseExamDialog">Cancelar</button>
+                        </div>
+                    </form>
+                }
             </div>
         </div>
     </div>
@@ -413,19 +459,19 @@ else
 @if (AnnotationDialogOpen)
 {
     <div class="modal-backdrop" @onclick="CloseAnnotationDialog">
-        <div class="modal" @onclick:stopPropagation="true">
-            <div class="modal-header">
+        <div class="dialog-panel" @onclick:stopPropagation="true">
+            <div class="dialog-header">
                 <h3>Adicionar Anotação</h3>
             </div>
 
-            <div class="modal-body">
+            <div class="dialog-body">
                 <div class="field">
                     <label>Anotação</label>
                     <textarea rows="5" @bind="AnnotationText" placeholder="Escreva a sua anotação..."></textarea>
                 </div>
             </div>
 
-            <div class="modal-actions">
+            <div class="dialog-actions">
                 <button class="btn-primary" @onclick="SaveAnnotation">Adicionar</button>
                 <button class="btn-outline" @onclick="CloseAnnotationDialog">Cancelar</button>
             </div>
@@ -436,13 +482,13 @@ else
 @if (InviteDialogOpen)
 {
     <div class="modal-backdrop" @onclick="CloseInviteDialog">
-        <div class="modal" @onclick:stopPropagation="true">
-            <div class="modal-header">
+        <div class="dialog-panel" @onclick:stopPropagation="true">
+            <div class="dialog-header">
                 <h3>Convidar Utilizador</h3>
                 <p>O utilizador convidado terá o seu próprio espaço para comentários.</p>
             </div>
 
-            <div class="modal-body">
+            <div class="dialog-body">
                 <div class="field">
                     <label>Email do Utilizador</label>
                     <input type="email" @bind="InviteEmail" placeholder="maria@example.com" />
@@ -454,7 +500,7 @@ else
                 </div>
             </div>
 
-            <div class="modal-actions">
+            <div class="dialog-actions">
                 <button class="btn-primary" @onclick="SendInvite">Enviar Convite</button>
                 <button class="btn-outline" @onclick="CloseInviteDialog">Cancelar</button>
             </div>
@@ -465,10 +511,10 @@ else
 @if (!string.IsNullOrWhiteSpace(ExamToRemoveId))
 {
     <div class="modal-backdrop" @onclick="CloseExamRemovalDialog">
-        <div class="confirm-modal" @onclick:stopPropagation="true">
+        <div class="confirm-dialog" @onclick:stopPropagation="true">
             <h3>Remover Exame</h3>
             <p>Tem a certeza que deseja remover este exame da consulta?</p>
-            <div class="modal-actions">
+            <div class="dialog-actions">
                 <button class="btn-danger" @onclick="ConfirmRemoveExam">Remover</button>
                 <button class="btn-outline" @onclick="CloseExamRemovalDialog">Cancelar</button>
             </div>
@@ -479,10 +525,10 @@ else
 @if (!string.IsNullOrWhiteSpace(InviteToRemoveId))
 {
     <div class="modal-backdrop" @onclick="CloseInviteRemovalDialog">
-        <div class="confirm-modal" @onclick:stopPropagation="true">
+        <div class="confirm-dialog" @onclick:stopPropagation="true">
             <h3>Remover Convite</h3>
             <p>Tem a certeza que deseja remover este convite?</p>
-            <div class="modal-actions">
+            <div class="dialog-actions">
                 <button class="btn-danger" @onclick="ConfirmRemoveInvite">Remover</button>
                 <button class="btn-outline" @onclick="CloseInviteRemovalDialog">Cancelar</button>
             </div>
@@ -693,6 +739,30 @@ else
     private void OpenExamDialog()
     {
         ExamDialogOpen = true;
+        ResetExamForm();
+        ExamMode = "new";
+        RefreshAvailableExams();
+    }
+
+    private void CloseExamDialog()
+    {
+        ExamDialogOpen = false;
+        ResetExamForm();
+    }
+
+    private void SetExamModeNew()
+    {
+        ExamMode = "new";
+        SelectedExistingExamId = string.Empty;
+    }
+
+    private void SetExamModeExisting()
+    {
+        ExamMode = "existing";
+    }
+
+    private void ResetExamForm()
+    {
         ExamMode = "new";
         ExamName = string.Empty;
         ExamType = string.Empty;
@@ -700,14 +770,11 @@ else
         ExamResults = string.Empty;
         ExamDate = DateTime.Today;
         SelectedExistingExamId = string.Empty;
-        RefreshAvailableExams();
     }
 
-    private void CloseExamDialog()
+    private void HandleAddExam()
     {
-        ExamDialogOpen = false;
-        ExamMode = "new";
-        SelectedExistingExamId = string.Empty;
+        SaveExam();
     }
 
     private void SaveExam()

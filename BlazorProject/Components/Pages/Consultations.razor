@@ -104,13 +104,13 @@
 @if (DialogOpen)
 {
     <div class="modal-backdrop" @onclick="CloseDialog">
-        <div class="modal" @onclick:stopPropagation="true">
-            <div class="modal-header">
+        <div class="dialog-panel" @onclick:stopPropagation="true">
+            <div class="dialog-header">
                 <h3>Criar Nova Consulta</h3>
                 <p>Preencha os dados da consulta abaixo</p>
             </div>
 
-            <div class="modal-body">
+            <div class="dialog-body">
                 <div class="field">
                     <label>Paciente</label>
                     <select @bind="FormPatientId">
@@ -151,7 +151,7 @@
                 }
             </div>
 
-            <div class="modal-actions">
+            <div class="dialog-actions">
                 <button class="btn-primary" @onclick="CreateConsultationAsync">Criar Consulta</button>
                 <button class="btn-outline" @onclick="CloseDialog">Cancelar</button>
             </div>

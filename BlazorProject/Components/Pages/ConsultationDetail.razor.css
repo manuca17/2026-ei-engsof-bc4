@@ -79,8 +79,8 @@
 }
 
 .detail-card,
-.confirm-modal,
-.modal {
+.confirm-dialog,
+.dialog-panel {
     background: #fff;
     border: 1px solid rgba(17, 24, 39, 0.08);
     border-radius: .9rem;
@@ -207,7 +207,7 @@
 
 .list-card-top h3,
 .preview-card h4,
-.confirm-modal h3 {
+.confirm-dialog h3 {
     margin: 0;
     color: #111827;
     font-size: 1rem;
@@ -218,7 +218,7 @@
 .comment-box span,
 .comment-box p,
 .content-text,
-.confirm-modal p {
+.confirm-dialog p {
     margin: 0;
     color: #4b5563;
 }
@@ -264,6 +264,15 @@
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
     gap: .8rem;
+}
+
+.preview-item {
+    display: grid;
+    gap: .3rem;
+    padding: .85rem;
+    border: 1px solid #dbe4f0;
+    border-radius: .75rem;
+    background: #fff;
 }
 
 .preview-grid strong {
@@ -420,6 +429,120 @@
     flex-wrap: wrap;
 }
 
+.exam-mode-row {
+    padding-bottom: .9rem;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.exam-form {
+    display: grid;
+    gap: 1rem;
+}
+
+.existing-mode-layout {
+    display: grid;
+    gap: 1rem;
+}
+
+.existing-selection-card,
+.existing-preview-placeholder,
+.existing-empty-state {
+    border: 1px solid #dbe4f0;
+    border-radius: .9rem;
+    background: linear-gradient(180deg, #f8fbff 0%, #f8fafc 100%);
+    padding: 1rem;
+}
+
+.existing-selection-header,
+.existing-preview-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: .75rem;
+    margin-bottom: 1rem;
+    flex-wrap: wrap;
+}
+
+.existing-selection-header h4,
+.existing-preview-header h4,
+.existing-preview-placeholder h4,
+.existing-empty-state h4 {
+    margin: 0;
+    color: #111827;
+    font-size: 1rem;
+}
+
+.existing-selection-header p,
+.existing-preview-header p,
+.existing-preview-placeholder p,
+.existing-empty-state p {
+    margin: .3rem 0 0;
+    color: #6b7280;
+}
+
+.existing-count-badge,
+.preview-status {
+    display: inline-flex;
+    align-items: center;
+    border-radius: 999px;
+    padding: .35rem .7rem;
+    font-size: .8rem;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+.existing-count-badge {
+    background: #e0ecff;
+    color: #1d4ed8;
+    border: 1px solid #bfdbfe;
+}
+
+.preview-status {
+    background: #dcfce7;
+    color: #166534;
+    border: 1px solid #86efac;
+}
+
+.existing-preview-card {
+    border-color: #bfdbfe;
+}
+
+.existing-preview-placeholder {
+    text-align: center;
+    padding: 1.5rem 1rem;
+}
+
+.existing-empty-state {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.existing-empty-icon {
+    width: 3rem;
+    height: 3rem;
+    flex-shrink: 0;
+    border-radius: 999px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: #dbeafe;
+    color: #1d4ed8;
+    font-size: 1.4rem;
+    font-weight: 700;
+}
+
+.exam-actions {
+    padding: 0;
+    border-top: 0;
+    justify-content: stretch;
+}
+
+.exam-actions .btn-primary,
+.exam-actions .btn-outline {
+    flex: 1 1 0;
+}
+
 .modal-backdrop {
     position: fixed;
     inset: 0;
@@ -431,48 +554,49 @@
     z-index: 1000;
 }
 
-.modal,
-.confirm-modal {
+.dialog-panel,
+.confirm-dialog {
+    display: block;
     width: min(100%, 760px);
     overflow: hidden;
 }
 
-.wide-modal {
+.dialog-wide {
     width: min(100%, 900px);
 }
 
-.confirm-modal {
+.confirm-dialog {
     padding: 1.25rem;
 }
 
-.modal-header,
-.modal-body,
-.modal-actions {
+.dialog-header,
+.dialog-body,
+.dialog-actions {
     padding: 1rem 1.2rem;
 }
 
-.modal-header {
+.dialog-header {
     border-bottom: 1px solid rgba(17, 24, 39, 0.08);
 }
 
-.modal-header h3 {
+.dialog-header h3 {
     margin: 0;
     color: #111827;
 }
 
-.modal-header p {
+.dialog-header p {
     margin: .35rem 0 0;
     color: #6b7280;
 }
 
-.modal-body {
+.dialog-body {
     display: grid;
     gap: 1rem;
     max-height: 70vh;
     overflow-y: auto;
 }
 
-.modal-actions {
+.dialog-actions {
     border-top: 1px solid rgba(17, 24, 39, 0.08);
     display: flex;
     gap: .75rem;

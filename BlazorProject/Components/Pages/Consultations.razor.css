@@ -290,7 +290,8 @@
     z-index: 1000;
 }
 
-.modal {
+.dialog-panel {
+    display: block;
     width: 100%;
     max-width: 720px;
     background: #fff;
@@ -300,28 +301,28 @@
     overflow: hidden;
 }
 
-.modal-header {
+.dialog-header {
     padding: 1rem 1.25rem;
     border-bottom: 1px solid rgba(17, 24, 39, 0.08);
 }
 
-.modal-header h3 {
+.dialog-header h3 {
     margin: 0;
     color: #111827;
 }
 
-.modal-header p {
+.dialog-header p {
     margin: .25rem 0 0;
     color: #6b7280;
 }
 
-.modal-body {
+.dialog-body {
     padding: 1rem 1.25rem;
     display: grid;
     gap: 1rem;
 }
 
-.modal-actions {
+.dialog-actions {
     padding: 1rem 1.25rem;
     border-top: 1px solid rgba(17, 24, 39, 0.08);
     display: flex;
