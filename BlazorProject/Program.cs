@@ -4,6 +4,7 @@ using BlazorProject.Data.Models;
 using Microsoft.EntityFrameworkCore;
 using BlazorProject.Services;
 
+
 var builder = WebApplication.CreateBuilder(args);
 var connectionString = builder.Configuration.GetConnectionString("Default")
     ?? throw new InvalidOperationException("No connection string found in config!!");
@@ -13,6 +14,7 @@ builder.Services.AddRazorComponents()
 builder.Services.AddSingleton<ConsultationStore>();
 
 builder.Services.AddDbContextFactory<EiEngsofContext>((DbContextOptionsBuilder options) => options.UseNpgsql(connectionString));
+builder.Services.AddScoped<ExameMedico>();
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
