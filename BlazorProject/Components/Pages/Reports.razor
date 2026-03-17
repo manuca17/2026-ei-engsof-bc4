@@ -1,32 +1,49 @@
+@page "/reports"
 @page "/relatorios"
-@* Removemos os @inject por agora para não dar erro de compilação. Depois podes injetar os teus serviços reais! *@
+@using System.Text.Json.Serialization
+@using BlazorProject.Services
+@using ConsultationData = BlazorProject.Services.ConsultationStore
+@rendermode InteractiveServer
+@inject IJSRuntime JSRuntime
+@inject ConsultationStore Store
 
 <PageTitle>Relatórios</PageTitle>
 
-<div class="container-fluid py-4">
-    <div class="mb-4">
-        <h1 class="h2 mb-1">Relatórios</h1>
-        <p class="text-muted">Consulte relatórios mensais detalhados</p>
+@if (IsLoading)
+{
+    <div class="reports-page">
+        <section class="reports-card reports-empty">A carregar relatórios...</section>
     </div>
-
-    <div class="card shadow-sm mb-4">
-        <div class="card-header bg-white fw-bold py-3">
-            Período do Relatório
+}
+else
+{
+    <div class="reports-page">
+        <div class="reports-header">
+            <div>
+                <h1>Relatórios</h1>
+                <p>Consulte relatórios mensais detalhados</p>
+            </div>
         </div>
-        <div class="card-body">
-            <div class="row g-3">
-                <div class="col-12 col-md-6">
-                    <label class="form-label fw-semibold">Mês</label>
-                    <select class="form-select" @bind="SelectedMonth" @bind:after="LoadAllReports">
+
+        <section class="reports-card filters-card">
+            <div class="section-heading">
+                <h2>Período do Relatório</h2>
+            </div>
+
+            <div class="filters-grid">
+                <div class="field">
+                    <label>Mês</label>
+                    <select @bind="SelectedMonth" @bind:after="OnPeriodChanged">
                         @foreach (var month in Months)
                         {
-                            <option value="@month.Key">@month.Value</option>
+                            <option value="@month.Value">@month.Label</option>
                         }
                     </select>
                 </div>
-                <div class="col-12 col-md-6">
-                    <label class="form-label fw-semibold">Ano</label>
-                    <select class="form-select" @bind="SelectedYear" @bind:after="LoadAllReports">
+
+                <div class="field">
+                    <label>Ano</label>
+                    <select @bind="SelectedYear" @bind:after="OnPeriodChanged">
                         @foreach (var year in Years)
                         {
                             <option value="@year">@year</option>
@@ -34,239 +51,399 @@
                     </select>
                 </div>
             </div>
-        </div>
-    </div>
+        </section>
 
-    <ul class="nav nav-tabs mb-4">
-        <li class="nav-item">
-            <button class="nav-link @(ActiveTab == "user" ? "active fw-bold" : "text-secondary")" 
-                    @onclick="@(() => SetActiveTab("user"))">
+        <div class="reports-tabs">
+            <button type="button"
+                    class="@(ActiveTab == ReportsTab.User ? "tab-button active" : "tab-button")"
+                    @onclick='() => ActiveTab = ReportsTab.User'>
                 Meu Relatório
             </button>
-        </li>
-        <li class="nav-item">
-            <button class="nav-link @(ActiveTab == "patient" ? "active fw-bold" : "text-secondary")" 
-                    @onclick="@(() => SetActiveTab("patient"))">
+            <button type="button"
+                    class="@(ActiveTab == ReportsTab.Patient ? "tab-button active" : "tab-button")"
+                    @onclick='() => ActiveTab = ReportsTab.Patient'>
                 Relatório por Paciente
             </button>
-        </li>
-    </ul>
-
-    @if (ActiveTab == "user" && UserReport != null)
-    {
-        <div class="row g-3 mb-4">
-            <div class="col-12 col-md-4">
-                <div class="card shadow-sm h-100 border-start border-primary border-4">
-                    <div class="card-body">
-                        <h6 class="text-muted mb-2"><span class="text-primary me-2">⏱</span>Total de Horas</h6>
-                        <h3 class="mb-0">@UserReport.TotalHoras.ToString("F2")h</h3>
-                    </div>
-                </div>
-            </div>
-            <div class="col-12 col-md-4">
-                <div class="card shadow-sm h-100 border-start border-success border-4">
-                    <div class="card-body">
-                        <h6 class="text-muted mb-2"><span class="text-success me-2">📈</span>Receita Total</h6>
-                        <h3 class="mb-0">€@UserReport.TotalPreco.ToString("F2")</h3>
-                    </div>
-                </div>
-            </div>
-            <div class="col-12 col-md-4">
-                <div class="card shadow-sm h-100 border-start border-info border-4">
-                    <div class="card-body">
-                        <h6 class="text-muted mb-2"><span class="text-info me-2">📄</span>Consultas Encerradas</h6>
-                        <h3 class="mb-0">@UserReport.Dias.Sum(d => d.Consultas.Count)</h3>
-                    </div>
-                </div>
-            </div>
         </div>
 
-        <div class="card shadow-sm mb-4">
-            <div class="card-header bg-white fw-bold py-3">Detalhes por Dia</div>
-            <div class="card-body">
-                @if (!UserReport.Dias.Any())
-                {
-                    <div class="text-center text-muted py-5">
-                        <p>Nenhuma consulta encerrada neste período.</p>
+        @if (ActiveTab == ReportsTab.User)
+        {
+            <div class="reports-section">
+                <div class="stats-grid">
+                    <article class="stats-card stats-blue">
+                        <div class="stats-label">Total de Horas</div>
+                        <div class="stats-value">@UserReport.TotalHoras.ToString("F2")h</div>
+                    </article>
+                    <article class="stats-card stats-green">
+                        <div class="stats-label">Receita Total</div>
+                        <div class="stats-value">€@UserReport.TotalPreco.ToString("F2")</div>
+                    </article>
+                    <article class="stats-card stats-purple">
+                        <div class="stats-label">Consultas Encerradas</div>
+                        <div class="stats-value">@UserReport.TotalConsultas</div>
+                    </article>
+                </div>
+
+                <section class="reports-card">
+                    <div class="section-heading">
+                        <h2>Detalhes por Dia</h2>
                     </div>
+
+                    @if (UserReport.Dias.Count == 0)
+                    {
+                        <div class="reports-empty">Nenhuma consulta encerrada neste período.</div>
+                    }
+                    else
+                    {
+                        <div class="days-list">
+                            @foreach (var day in UserReport.Dias)
+                            {
+                                <article class="day-card">
+                                    <div class="day-header">
+                                        <h3>Dia @day.Dia - @SelectedMonthLabel</h3>
+                                        @if (day.Overtime)
+                                        {
+                                            <span class="status-pill status-danger">Overtime</span>
+                                        }
+                                    </div>
+
+                                    <div class="table-wrap">
+                                        <table class="reports-table">
+                                            <thead>
+                                                <tr>
+                                                    <th>Paciente</th>
+                                                    <th>Descrição</th>
+                                                    <th class="text-right">Horas</th>
+                                                    <th class="text-right">Preço</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                @foreach (var consultation in day.Consultas)
+                                                {
+                                                    <tr>
+                                                        <td>@consultation.PacienteNome</td>
+                                                        <td class="truncate-cell">@consultation.Descricao</td>
+                                                        <td class="text-right">@consultation.Horas.ToString("F2")h</td>
+                                                        <td class="text-right">€@consultation.Preco.ToString("F2")</td>
+                                                    </tr>
+                                                }
+                                                <tr class="summary-row">
+                                                    <td colspan="2">Total do Dia</td>
+                                                    <td class="text-right">@day.TotalHoras.ToString("F2")h</td>
+                                                    <td class="text-right">€@day.TotalPreco.ToString("F2")</td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </article>
+                            }
+                        </div>
+
+                        <div class="month-summary">
+                            <span>Total do Mês</span>
+                            <div class="month-summary-values">
+                                <strong>@UserReport.TotalHoras.ToString("F2")h</strong>
+                                <strong>€@UserReport.TotalPreco.ToString("F2")</strong>
+                            </div>
+                        </div>
+                    }
+                </section>
+            </div>
+        }
+        else
+        {
+            <div class="reports-section">
+                <section class="reports-card">
+                    <div class="section-heading">
+                        <h2>Selecione um Paciente</h2>
+                    </div>
+
+                    <div class="field">
+                        <label>Paciente</label>
+                        <select @bind="SelectedPatientId" @bind:after="LoadPatientReport">
+                            <option value="">Escolha um paciente</option>
+                            @foreach (var patient in AvailablePatients)
+                            {
+                                <option value="@patient.Id">@patient.Name</option>
+                            }
+                        </select>
+                    </div>
+                </section>
+
+                @if (string.IsNullOrWhiteSpace(SelectedPatientId))
+                {
+                    <section class="reports-card reports-empty">
+                        Selecione um paciente para consultar o relatório mensal.
+                    </section>
                 }
                 else
                 {
-                    @foreach (var day in UserReport.Dias)
-                    {
-                        <div class="border rounded p-3 mb-4 bg-light">
-                            <div class="d-flex justify-content-between align-items-center mb-3">
-                                <h5 class="mb-0 text-dark">Dia @day.Dia - @Months[SelectedMonth]</h5>
-                                @if (day.Overtime)
+                    <div class="stats-grid">
+                        <article class="stats-card stats-blue">
+                            <div class="stats-label">Total de Horas</div>
+                            <div class="stats-value">@PatientReport.TotalHoras.ToString("F2")h</div>
+                        </article>
+                        <article class="stats-card stats-green">
+                            <div class="stats-label">Preço Total</div>
+                            <div class="stats-value">€@PatientReport.TotalPreco.ToString("F2")</div>
+                        </article>
+                        <article class="stats-card stats-purple">
+                            <div class="stats-label">Consultas</div>
+                            <div class="stats-value">@PatientReport.TotalConsultas</div>
+                        </article>
+                    </div>
+
+                    <section class="reports-card">
+                        <div class="section-heading">
+                            <h2>Detalhes por Dia</h2>
+                        </div>
+
+                        @if (PatientReport.Dias.Count == 0)
+                        {
+                            <div class="reports-empty">Nenhuma consulta encerrada neste período para este paciente.</div>
+                        }
+                        else
+                        {
+                            <div class="days-list">
+                                @foreach (var day in PatientReport.Dias)
                                 {
-                                    <span class="badge bg-danger">⚠️ Overtime</span>
+                                    <article class="day-card">
+                                        <div class="day-header">
+                                            <h3>Dia @day.Dia - @SelectedMonthLabel</h3>
+                                            @if (day.Overtime)
+                                            {
+                                                <span class="status-pill status-danger">Overtime</span>
+                                            }
+                                        </div>
+
+                                        <div class="table-wrap">
+                                            <table class="reports-table">
+                                                <thead>
+                                                    <tr>
+                                                        <th>Descrição</th>
+                                                        <th class="text-right">Horas</th>
+                                                        <th class="text-right">Preço</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    @foreach (var consultation in day.Consultas)
+                                                    {
+                                                        <tr>
+                                                            <td class="truncate-cell">@consultation.Descricao</td>
+                                                            <td class="text-right">@consultation.Horas.ToString("F2")h</td>
+                                                            <td class="text-right">€@consultation.Preco.ToString("F2")</td>
+                                                        </tr>
+                                                    }
+                                                    <tr class="summary-row">
+                                                        <td>Total do Dia</td>
+                                                        <td class="text-right">@day.TotalHoras.ToString("F2")h</td>
+                                                        <td class="text-right">€@day.TotalPreco.ToString("F2")</td>
+                                                    </tr>
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </article>
                                 }
                             </div>
 
-                            <div class="table-responsive">
-                                <table class="table table-hover table-bordered mb-0 bg-white">
-                                    <thead class="table-light">
-                                        <tr>
-                                            <th>Paciente</th>
-                                            <th>Descrição</th>
-                                            <th class="text-end">Horas</th>
-                                            <th class="text-end">Preço</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        @foreach (var consulta in day.Consultas)
-                                        {
-                                            <tr>
-                                                <td class="align-middle">@consulta.PacienteNome</td>
-                                                <td class="align-middle text-truncate" style="max-width: 200px;">@consulta.Descricao</td>
-                                                <td class="align-middle text-end">@consulta.Horas.ToString("F2")h</td>
-                                                <td class="align-middle text-end">€@consulta.Preco.ToString("F2")</td>
-                                            </tr>
-                                        }
-                                        <tr class="table-secondary fw-bold">
-                                            <td colspan="2" class="align-middle">Total do Dia</td>
-                                            <td class="align-middle text-end">@day.TotalHoras.ToString("F2")h</td>
-                                            <td class="align-middle text-end">€@day.TotalPreco.ToString("F2")</td>
-                                        </tr>
-                                    </tbody>
-                                </table>
+                            <div class="month-summary">
+                                <span>Total do Mês</span>
+                                <div class="month-summary-values">
+                                    <strong>@PatientReport.TotalHoras.ToString("F2")h</strong>
+                                    <strong>€@PatientReport.TotalPreco.ToString("F2")</strong>
+                                </div>
                             </div>
-                        </div>
-                    }
-
-                    <div class="d-flex justify-content-between align-items-center border-top pt-3 mt-4">
-                        <h4 class="mb-0">Total do Mês</h4>
-                        <div class="d-flex gap-4">
-                            <h4 class="mb-0 text-primary">@UserReport.TotalHoras.ToString("F2")h</h4>
-                            <h4 class="mb-0 text-success">€@UserReport.TotalPreco.ToString("F2")</h4>
-                        </div>
-                    </div>
+                        }
+                    </section>
                 }
             </div>
-        </div>
-    }
-
-    @if (ActiveTab == "patient")
-    {
-        <div class="card shadow-sm mb-4">
-            <div class="card-header bg-white fw-bold py-3">Selecione um Paciente</div>
-            <div class="card-body">
-                <select class="form-select" @bind="SelectedPatientId" @bind:after="LoadPatientReport">
-                    <option value="" disabled selected>Escolha um paciente...</option>
-                    @foreach (var patient in Patients)
-                    {
-                        <option value="@patient.Id">@patient.Nome</option>
-                    }
-                </select>
-            </div>
-        </div>
-
-        @if (PatientReport != null && !string.IsNullOrEmpty(SelectedPatientId))
-        {
-            <div class="alert alert-info">
-                Dados carregados para o paciente selecionado (a estrutura visual seria igual à de cima).
-            </div>
         }
-    }
-</div>
+    </div>
+}
 
 @code {
-    // -------------------------------------------------------------
-    // ESTADO DA PÁGINA
-    // -------------------------------------------------------------
+    private readonly int[] Years = [2024, 2025, 2026];
+    private readonly MonthOption[] Months =
+    [
+        new(0, "Janeiro"),
+        new(1, "Fevereiro"),
+        new(2, "Março"),
+        new(3, "Abril"),
+        new(4, "Maio"),
+        new(5, "Junho"),
+        new(6, "Julho"),
+        new(7, "Agosto"),
+        new(8, "Setembro"),
+        new(9, "Outubro"),
+        new(10, "Novembro"),
+        new(11, "Dezembro")
+    ];
+
+    private bool IsLoading = true;
+    private ReportsTab ActiveTab = ReportsTab.User;
     private int SelectedMonth = DateTime.Now.Month - 1;
     private int SelectedYear = DateTime.Now.Year;
     private string SelectedPatientId = string.Empty;
-    private string ActiveTab = "user";
+    private ConsultationData.UserItem? CurrentUser;
+    private List<ConsultationData.PatientItem> AvailablePatients = [];
+    private MonthlyReport UserReport { get; set; } = MonthlyReport.Empty();
+    private MonthlyReport PatientReport { get; set; } = MonthlyReport.Empty();
 
-    private MonthlyReport? UserReport;
-    private MonthlyReport? PatientReport;
-    private List<Patient> Patients = new();
+    private string SelectedMonthLabel => Months.First(month => month.Value == SelectedMonth).Label;
 
-    private readonly int[] Years = { 2024, 2025, 2026 };
-    private readonly Dictionary<int, string> Months = new()
+    protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        { 0, "Janeiro" }, { 1, "Fevereiro" }, { 2, "Março" }, { 3, "Abril" },
-        { 4, "Maio" }, { 5, "Junho" }, { 6, "Julho" }, { 7, "Agosto" },
-        { 8, "Setembro" }, { 9, "Outubro" }, { 10, "Novembro" }, { 11, "Dezembro" }
-    };
-
-    // -------------------------------------------------------------
-    // CICLO DE VIDA (Substitui o useEffect)
-    // -------------------------------------------------------------
-    protected override void OnInitialized()
-    {
-        // Aqui irias carregar os pacientes da BD. Estamos a usar Mock Data.
-        Patients = new List<Patient>
+        if (!firstRender)
         {
-            new Patient { Id = "1", Nome = "João Silva" },
-            new Patient { Id = "2", Nome = "Maria Santos" }
-        };
+            return;
+        }
 
-        LoadAllReports();
+        var storedUser = await JSRuntime.InvokeAsync<StoredUser?>("profileStorage.getCurrentUser");
+        CurrentUser = Store.FindUser(storedUser?.Email, storedUser?.Nome)
+                      ?? Store.Users.FirstOrDefault(user => user.Id == "u1");
+
+        LoadReportsPage();
+        IsLoading = false;
+        StateHasChanged();
     }
 
-    private void SetActiveTab(string tab)
+    private void LoadReportsPage()
     {
-        ActiveTab = tab;
+        if (CurrentUser is null)
+        {
+            AvailablePatients = [];
+            UserReport = MonthlyReport.Empty();
+            PatientReport = MonthlyReport.Empty();
+            return;
+        }
+
+        AvailablePatients = Store.Consultations
+            .Where(consultation => consultation.OwnerUserId == CurrentUser.Id)
+            .Select(consultation => consultation.PatientId)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .Join(Store.Patients, patientId => patientId, patient => patient.Id, (_, patient) => patient)
+            .OrderBy(patient => patient.Name)
+            .ToList();
+
+        LoadUserReport();
+        LoadPatientReport();
     }
 
-    private void LoadAllReports()
+    private void OnPeriodChanged()
     {
         LoadUserReport();
-        if (!string.IsNullOrEmpty(SelectedPatientId))
-        {
-            LoadPatientReport();
-        }
+        LoadPatientReport();
     }
 
     private void LoadUserReport()
     {
-        // Mock Data: A simular uma resposta da Base de Dados
-        UserReport = new MonthlyReport
+        if (CurrentUser is null)
         {
-            TotalHoras = 12.5,
-            TotalPreco = 450.00,
-            Dias = new List<DailyReport>
-            {
-                new DailyReport 
-                { 
-                    Dia = 15, 
-                    TotalHoras = 4.5, 
-                    TotalPreco = 150.00, 
-                    Overtime = false,
-                    Consultas = new List<Consulta>
-                    {
-                        new Consulta { PacienteNome = "João Silva", Descricao = "Consulta de Rotina", Horas = 2.0, Preco = 80.00 },
-                        new Consulta { PacienteNome = "Maria Santos", Descricao = "Avaliação", Horas = 2.5, Preco = 70.00 }
-                    }
-                },
-                new DailyReport 
-                { 
-                    Dia = 18, 
-                    TotalHoras = 8.0, 
-                    TotalPreco = 300.00, 
-                    Overtime = true, // Exemplo de overtime a ligar o badge
-                    Consultas = new List<Consulta>
-                    {
-                        new Consulta { PacienteNome = "João Silva", Descricao = "Tratamento Intensivo", Horas = 8.0, Preco = 300.00 }
-                    }
-                }
-            }
-        };
+            UserReport = MonthlyReport.Empty();
+            return;
+        }
+
+        UserReport = BuildMonthlyReport(Store.Consultations.Where(consultation => consultation.OwnerUserId == CurrentUser.Id));
     }
 
     private void LoadPatientReport()
     {
-        // Simular carregamento por paciente
-        PatientReport = new MonthlyReport { TotalHoras = 5, TotalPreco = 150, Dias = new() };
+        if (string.IsNullOrWhiteSpace(SelectedPatientId))
+        {
+            PatientReport = MonthlyReport.Empty();
+            return;
+        }
+
+        PatientReport = BuildMonthlyReport(Store.Consultations.Where(consultation => consultation.PatientId == SelectedPatientId));
     }
 
-    // -------------------------------------------------------------
-    // CLASSES DE MODELO (Temporárias para não dar erro)
-    // -------------------------------------------------------------
-    public class Patient { public string Id { get; set; } = ""; public string Nome { get; set; } = ""; }
-    public class MonthlyReport { public double TotalHoras { get; set; } public double TotalPreco { get; set; } public List<DailyReport> Dias { get; set; } = new(); }
-    public class DailyReport { public int Dia { get; set; } public double TotalHoras { get; set; } public double TotalPreco { get; set; } public bool Overtime { get; set; } public List<Consulta> Consultas { get; set; } = new(); }
-    public class Consulta { public string PacienteNome { get; set; } = ""; public string Descricao { get; set; } = ""; public double Horas { get; set; } public double Preco { get; set; } }
+    private MonthlyReport BuildMonthlyReport(IEnumerable<ConsultationData.ConsultationItem> consultations)
+    {
+        var filtered = consultations
+            .Where(consultation => consultation.Status == ConsultationData.ConsultationStatus.Encerrada)
+            .Where(consultation => consultation.EndAt.HasValue)
+            .Where(consultation => consultation.EndAt!.Value.Month - 1 == SelectedMonth && consultation.EndAt.Value.Year == SelectedYear)
+            .Select(consultation => new ConsultationSummary(
+                consultation.Id,
+                consultation.PatientName,
+                consultation.Description,
+                CalculateHours(consultation),
+                CalculatePrice(consultation)))
+            .OrderBy(summary => summary.Id)
+            .ToList();
+
+        var sourceConsultations = consultations
+            .Where(consultation => consultation.Status == ConsultationData.ConsultationStatus.Encerrada)
+            .Where(consultation => consultation.EndAt.HasValue)
+            .Where(consultation => consultation.EndAt!.Value.Month - 1 == SelectedMonth && consultation.EndAt.Value.Year == SelectedYear)
+            .OrderBy(consultation => consultation.EndAt)
+            .ToList();
+
+        var days = sourceConsultations
+            .GroupBy(consultation => consultation.EndAt!.Value.Day)
+            .OrderBy(group => group.Key)
+            .Select(group =>
+            {
+                var dayConsultations = group.Select(consultation => new ConsultationSummary(
+                    consultation.Id,
+                    consultation.PatientName,
+                    consultation.Description,
+                    CalculateHours(consultation),
+                    CalculatePrice(consultation)))
+                    .ToList();
+
+                var totalHours = dayConsultations.Sum(consultation => consultation.Horas);
+                var totalPrice = dayConsultations.Sum(consultation => consultation.Preco);
+
+                return new DailyReport(group.Key, totalHours, totalPrice, totalHours > 8d, dayConsultations);
+            })
+            .ToList();
+
+        return new MonthlyReport(days.Sum(day => day.TotalHoras), days.Sum(day => day.TotalPreco), days.Sum(day => day.Consultas.Count), days);
+    }
+
+    private static double CalculateHours(ConsultationData.ConsultationItem consultation)
+    {
+        if (consultation.StartAt is null || consultation.EndAt is null)
+        {
+            return 0d;
+        }
+
+        var totalHours = (consultation.EndAt.Value - consultation.StartAt.Value).TotalHours;
+        return totalHours > 0 ? totalHours : 0d;
+    }
+
+    private static decimal CalculatePrice(ConsultationData.ConsultationItem consultation)
+    {
+        if (consultation.ChargingType == ConsultationData.ChargingType.Fixo)
+        {
+            return consultation.FixedPrice ?? 0m;
+        }
+
+        var hours = CalculateHours(consultation);
+        return Math.Round((decimal)hours * (consultation.HourlyPrice ?? 0m), 2);
+    }
+
+    private enum ReportsTab
+    {
+        User,
+        Patient
+    }
+
+    private sealed record MonthOption(int Value, string Label);
+    private sealed record ConsultationSummary(string Id, string PacienteNome, string Descricao, double Horas, decimal Preco);
+    private sealed record DailyReport(int Dia, double TotalHoras, decimal TotalPreco, bool Overtime, List<ConsultationSummary> Consultas);
+    private sealed record MonthlyReport(double TotalHoras, decimal TotalPreco, int TotalConsultas, List<DailyReport> Dias)
+    {
+        public static MonthlyReport Empty() => new(0d, 0m, 0, []);
+    }
+
+    private sealed class StoredUser
+    {
+        [JsonPropertyName("nome")]
+        public string? Nome { get; set; }
+
+        [JsonPropertyName("email")]
+        public string? Email { get; set; }
+    }
 }

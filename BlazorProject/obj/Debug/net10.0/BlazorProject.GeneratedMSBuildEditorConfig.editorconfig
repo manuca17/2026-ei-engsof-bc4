@@ -50,10 +50,6 @@ build_metadata.AdditionalFiles.CssScope =
 build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50cy9QYWdlcy9Qcm9maWxlLnJhem9y
 build_metadata.AdditionalFiles.CssScope = 
 
-[/home/manuca17/RiderProjects/2026-ei-engsof-bc4/BlazorProject/Components/Pages/Reports.razor]
-build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50cy9QYWdlcy9SZXBvcnRzLnJhem9y
-build_metadata.AdditionalFiles.CssScope = 
-
 [/home/manuca17/RiderProjects/2026-ei-engsof-bc4/BlazorProject/Components/Pages/Weather.razor]
 build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50cy9QYWdlcy9XZWF0aGVyLnJhem9y
 build_metadata.AdditionalFiles.CssScope = 
@@ -93,3 +89,7 @@ build_metadata.AdditionalFiles.CssScope = b-gk09saob1s
 [/home/manuca17/RiderProjects/2026-ei-engsof-bc4/BlazorProject/Components/Pages/Home.razor]
 build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50cy9QYWdlcy9Ib21lLnJhem9y
 build_metadata.AdditionalFiles.CssScope = b-sey7dt6v7f
+
+[/home/manuca17/RiderProjects/2026-ei-engsof-bc4/BlazorProject/Components/Pages/Reports.razor]
+build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50cy9QYWdlcy9SZXBvcnRzLnJhem9y
+build_metadata.AdditionalFiles.CssScope = b-ns3kk2ao4u
