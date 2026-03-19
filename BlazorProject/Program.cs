@@ -1,6 +1,7 @@
 using BlazorProject.Components;
 using BlazorProject.Data;
 using BlazorProject.Data.Models;
+using BlazorProject.Data.Services;
 using Microsoft.EntityFrameworkCore;
 using BlazorProject.Services;
 
@@ -11,6 +12,7 @@ var connectionString = builder.Configuration.GetConnectionString("Default")
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 builder.Services.AddSingleton<ConsultationStore>();
+builder.Services.AddSingleton<PacienteService>();
 
 builder.Services.AddDbContextFactory<EiEngsofContext>((DbContextOptionsBuilder options) => options.UseNpgsql(connectionString));
 var app = builder.Build();
