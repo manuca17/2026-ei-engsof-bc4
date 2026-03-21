@@ -124,6 +124,7 @@
             var utilizador = await UtilizadorService.LoginAsync(_email, _password);
             if (utilizador is not null)
             {
+                LoggedInUserContext.SetCurrentUser(utilizador);
                 Console.ForegroundColor = ConsoleColor.Green;
                 Console.WriteLine($"[LOGIN] ✔ Login bem sucedido para: {_email}");
                 Console.ResetColor();

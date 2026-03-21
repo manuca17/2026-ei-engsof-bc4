@@ -5,6 +5,7 @@
 @inject NavigationManager NavigationManager
 @inject IJSRuntime JSRuntime
 @inject ConsultationStore Store
+@inject ConsultasService ConsultasService
 
 <PageTitle>Consulta</PageTitle>
 
@@ -572,16 +573,22 @@ else
     private string InviteAnnotation = string.Empty;
     private readonly Dictionary<string, string> InviteComments = [];
 
-    private string CurrentUserId => CurrentUser?.Id ?? "u1";
+    private string CurrentUserId => CurrentUser?.Id ?? LoggedInUserContext.CurrentUser?.IdUtilizador.ToString() ?? "u1";
     private string CurrentUserName => CurrentUser?.Name ?? "Dr. João Silva";
     private bool IsOwner => Consultation is not null && Consultation.OwnerUserId == CurrentUserId;
+
+    private bool TryGetDbConsultationId(out int idConsulta)
+    {
+        idConsulta = 0;
+        return Consultation is not null && int.TryParse(Consultation.Id, out idConsulta);
+    }
 
     private ConsultationData.MedicalExamItem? SelectedExistingExam =>
         AvailableExams.FirstOrDefault(exam => exam.Id == SelectedExistingExamId);
 
-    protected override void OnParametersSet()
+    protected override async Task OnParametersSetAsync()
     {
-        LoadConsultation();
+        await LoadConsultationFromRouteAsync();
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -598,9 +605,29 @@ else
     {
         var storedUser = await JSRuntime.InvokeAsync<StoredUser?>("profileStorage.getCurrentUser");
         CurrentUser = Store.FindUser(storedUser?.Email, storedUser?.Nome)
+                      ?? BuildCurrentUserFromLoggedContext()
                       ?? Store.Users.FirstOrDefault(user => user.Id == "u1");
         IsLoading = false;
         StateHasChanged();
+    }
+
+    private ConsultationData.UserItem? BuildCurrentUserFromLoggedContext()
+    {
+        var logged = LoggedInUserContext.CurrentUser;
+        if (logged is null)
+        {
+            return null;
+        }
+
+        return new ConsultationData.UserItem
+        {
+            Id = logged.IdUtilizador.ToString(),
+            Name = logged.Nome,
+            Email = logged.Email ?? string.Empty,
+            Role = logged.IsAdmin ? "admin" : "medico",
+            Specialty = logged.Especialidade,
+            Phone = logged.Telefone
+        };
     }
 
     private void LoadConsultation()
@@ -614,6 +641,95 @@ else
 
         SyncEditForm();
         RefreshAvailableExams();
+    }
+
+    private async Task LoadConsultationFromRouteAsync()
+    {
+        LoadConsultation();
+
+        if (Consultation is not null)
+        {
+            return;
+        }
+
+        if (!int.TryParse(Id, out var idConsulta))
+        {
+            return;
+        }
+
+        var loggedUser = LoggedInUserContext.CurrentUser;
+        if (loggedUser is null)
+        {
+            return;
+        }
+
+        var dbConsultation = await ConsultasService.GetDetailForDoctorAsync(loggedUser.IdUtilizador, idConsulta);
+        if (dbConsultation is null)
+        {
+            return;
+        }
+
+        Consultation = new ConsultationData.ConsultationItem
+        {
+            Id = dbConsultation.Id.ToString(),
+            PatientId = dbConsultation.PatientId?.ToString() ?? string.Empty,
+            PatientName = dbConsultation.PatientName,
+            Description = dbConsultation.Description,
+            Status = dbConsultation.Status switch
+            {
+                ConsultasService.ConsultationStatus.Agendada => ConsultationData.ConsultationStatus.Agendada,
+                ConsultasService.ConsultationStatus.EmAndamento => ConsultationData.ConsultationStatus.EmAndamento,
+                ConsultasService.ConsultationStatus.Encerrada => ConsultationData.ConsultationStatus.Encerrada,
+                _ => ConsultationData.ConsultationStatus.Agendada
+            },
+            ChargingType = dbConsultation.ChargingType == ConsultasService.ChargingType.PorHora
+                ? ConsultationData.ChargingType.PorHora
+                : ConsultationData.ChargingType.Fixo,
+            FixedPrice = dbConsultation.FixedPrice,
+            HourlyPrice = dbConsultation.HourlyPrice,
+            StartAt = dbConsultation.StartAt,
+            EndAt = dbConsultation.EndAt,
+            OwnerUserId = loggedUser.IdUtilizador.ToString(),
+            OwnerUserName = loggedUser.Nome,
+            Exams = dbConsultation.Exams.Select(exam => new ConsultationData.MedicalExamItem
+            {
+                Id = exam.Id.ToString(),
+                PatientId = dbConsultation.PatientId?.ToString() ?? string.Empty,
+                Name = exam.Name,
+                Type = exam.Type,
+                Date = exam.Date,
+                Description = exam.Description,
+                Results = exam.Results,
+                CreatedAt = exam.Date
+            }).ToList(),
+            Annotations = dbConsultation.Annotations.Select(annotation => new ConsultationData.AnnotationItem
+            {
+                Id = annotation.Id.ToString(),
+                Text = annotation.Text,
+                CreatedAt = annotation.CreatedAt,
+                UserId = annotation.UserId?.ToString() ?? string.Empty,
+                UserName = annotation.UserName
+            }).ToList(),
+            Invites = []
+        };
+
+        AvailableExams = dbConsultation.AvailableExams.Select(exam => new ConsultationData.MedicalExamItem
+        {
+            Id = exam.Id.ToString(),
+            PatientId = dbConsultation.PatientId?.ToString() ?? string.Empty,
+            Name = exam.Name,
+            Type = exam.Type,
+            Date = exam.Date,
+            Description = exam.Description,
+            Results = exam.Results,
+            CreatedAt = exam.Date
+        }).ToList();
+
+        SyncEditForm();
+        if (!TryGetDbConsultationId(out _))
+        {
+            RefreshAvailableExams();
+        }
     }
 
     private void RefreshAvailableExams()
@@ -649,10 +765,31 @@ else
         StatusIsError = isError;
     }
 
-    private void StartConsultation()
+    private async Task StartConsultation()
     {
         if (Consultation is null)
         {
+            return;
+        }
+
+        if (TryGetDbConsultationId(out var idConsulta))
+        {
+            var loggedUser = LoggedInUserContext.CurrentUser;
+            if (loggedUser is null)
+            {
+                SetStatus("Sessão inválida. Faça login novamente.", true);
+                return;
+            }
+
+            var ok = await ConsultasService.StartConsultationAsync(loggedUser.IdUtilizador, idConsulta);
+            if (!ok)
+            {
+                SetStatus("Não foi possível iniciar a consulta.", true);
+                return;
+            }
+
+            await LoadConsultationFromRouteAsync();
+            SetStatus("Consulta iniciada com sucesso.");
             return;
         }
 
@@ -666,10 +803,31 @@ else
         SetStatus("Consulta iniciada com sucesso.");
     }
 
-    private void EndConsultation()
+    private async Task EndConsultation()
     {
         if (Consultation is null)
         {
+            return;
+        }
+
+        if (TryGetDbConsultationId(out var idConsulta))
+        {
+            var loggedUser = LoggedInUserContext.CurrentUser;
+            if (loggedUser is null)
+            {
+                SetStatus("Sessão inválida. Faça login novamente.", true);
+                return;
+            }
+
+            var ok = await ConsultasService.EndConsultationAsync(loggedUser.IdUtilizador, idConsulta);
+            if (!ok)
+            {
+                SetStatus("Não foi possível encerrar a consulta.", true);
+                return;
+            }
+
+            await LoadConsultationFromRouteAsync();
+            SetStatus("Consulta encerrada com sucesso.");
             return;
         }
 
@@ -772,15 +930,70 @@ else
         SelectedExistingExamId = string.Empty;
     }
 
-    private void HandleAddExam()
+    private async Task HandleAddExam()
     {
-        SaveExam();
+        await SaveExam();
     }
 
-    private void SaveExam()
+    private async Task SaveExam()
     {
         if (Consultation is null)
         {
+            return;
+        }
+
+        if (TryGetDbConsultationId(out var idConsulta))
+        {
+            var loggedUser = LoggedInUserContext.CurrentUser;
+            if (loggedUser is null)
+            {
+                SetStatus("Sessão inválida. Faça login novamente.", true);
+                return;
+            }
+
+            if (ExamMode == "new")
+            {
+                if (string.IsNullOrWhiteSpace(ExamName) || string.IsNullOrWhiteSpace(ExamType))
+                {
+                    SetStatus("Nome e tipo do exame são obrigatórios.", true);
+                    return;
+                }
+
+                var addResult = await ConsultasService.AddNewExamAsync(
+                    loggedUser.IdUtilizador,
+                    idConsulta,
+                    ExamDate.Date,
+                    ExamType.Trim(),
+                    string.IsNullOrWhiteSpace(ExamResults) ? null : ExamResults.Trim());
+
+                if (!addResult.Ok)
+                {
+                    SetStatus(addResult.Message, true);
+                    return;
+                }
+
+                CloseExamDialog();
+                await LoadConsultationFromRouteAsync();
+                SetStatus(addResult.Message);
+                return;
+            }
+
+            if (string.IsNullOrWhiteSpace(SelectedExistingExamId) || !int.TryParse(SelectedExistingExamId, out var idExame))
+            {
+                SetStatus("Selecione um exame para associar.", true);
+                return;
+            }
+
+            var associationResult = await ConsultasService.AssociateExamAsync(loggedUser.IdUtilizador, idConsulta, idExame);
+            if (!associationResult.Ok)
+            {
+                SetStatus(associationResult.Message, true);
+                return;
+            }
+
+            CloseExamDialog();
+            await LoadConsultationFromRouteAsync();
+            SetStatus(associationResult.Message);
             return;
         }
 
@@ -851,7 +1064,7 @@ else
 
     private void CloseAnnotationDialog() => AnnotationDialogOpen = false;
 
-    private void SaveAnnotation()
+    private async Task SaveAnnotation()
     {
         if (Consultation is null)
         {
@@ -861,6 +1074,29 @@ else
         if (string.IsNullOrWhiteSpace(AnnotationText))
         {
             SetStatus("Escreva uma anotação antes de guardar.", true);
+            return;
+        }
+
+        if (TryGetDbConsultationId(out var idConsulta))
+        {
+            var loggedUser = LoggedInUserContext.CurrentUser;
+            if (loggedUser is null)
+            {
+                SetStatus("Sessão inválida. Faça login novamente.", true);
+                return;
+            }
+
+            var result = await ConsultasService.AddAnnotationAsync(loggedUser.IdUtilizador, idConsulta, AnnotationText.Trim());
+            if (!result.Ok)
+            {
+                SetStatus(result.Message, true);
+                return;
+            }
+
+            AnnotationDialogOpen = false;
+            AnnotationText = string.Empty;
+            await LoadConsultationFromRouteAsync();
+            SetStatus(result.Message);
             return;
         }
 

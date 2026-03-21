@@ -1,6 +1,8 @@
 ﻿@page "/dashboard"
 @rendermode InteractiveServer
+@using BlazorProject.Services
 @inject NavigationManager NavigationManager
+@inject PacienteService PacienteService
 
 <PageTitle>Dashboard</PageTitle>
 
@@ -9,7 +11,7 @@
     <!-- Header -->
     <div class="dash-header">
         <h1>Dashboard</h1>
-        <p class="dash-subtitle">Bem-vindo de volta, Dr. João Silva</p>
+        <p class="dash-subtitle">Bem-vindo de volta, @DoctorName</p>
     </div>
 
     <!-- Stat Cards -->
@@ -27,7 +29,7 @@
                     </svg>
                 </div>
             </div>
-            <div class="stat-value">12</div>
+            <div class="stat-value">@(IsLoading ? "..." : TotalPatients.ToString())</div>
         </div>
 
         <div class="stat-card">
@@ -116,3 +118,31 @@
         </div>
     </div>
 </div>
+
+@code {
+    private string DoctorName { get; set; } = "Utilizador";
+    private int TotalPatients { get; set; }
+    private bool IsLoading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var loggedUser = LoggedInUserContext.CurrentUser;
+        if (loggedUser is null)
+        {
+            NavigationManager.NavigateTo("/");
+            return;
+        }
+
+        DoctorName = string.IsNullOrWhiteSpace(loggedUser.Nome) ? "Utilizador" : loggedUser.Nome;
+
+        try
+        {
+            var patients = await PacienteService.GetByDoctorAsync(loggedUser.IdUtilizador);
+            TotalPatients = patients.Count;
+        }
+        finally
+        {
+            IsLoading = false;
+        }
+    }
+}

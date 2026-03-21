@@ -1,7 +1,9 @@
 @page "/patients"
 @rendermode InteractiveServer
+@using BlazorProject.Services
 @inject NavigationManager NavigationManager
 @inject IJSRuntime JSRuntime
+@inject PacienteService PacienteService
 
 <PageTitle>Pacientes</PageTitle>
 
@@ -28,11 +30,23 @@
         />
     </div>
 
-    @if (FilteredPatients.Count == 0)
+    @if (IsLoading)
     {
         <div class="card">
             <div class="card-body text-center text-muted py-5">
-                @if (string.IsNullOrWhiteSpace(SearchTerm))
+                <div>A carregar pacientes...</div>
+            </div>
+        </div>
+    }
+    else if (FilteredPatients.Count == 0)
+    {
+        <div class="card">
+            <div class="card-body text-center text-muted py-5">
+                @if (!string.IsNullOrWhiteSpace(LoadError))
+                {
+                    <div>@LoadError</div>
+                }
+                else if (string.IsNullOrWhiteSpace(SearchTerm))
                 {
                     <div>Nenhum paciente registado ainda</div>
                 }
@@ -57,8 +71,14 @@
                             </h5>
 
                             <div class="text-muted small mb-2">
-                                @CalculateAge(patient.BirthDate) anos (
-                                @patient.BirthDate.ToString("dd/MM/yyyy"))
+                                @if (patient.BirthDate.HasValue)
+                                {
+                                    <span>@CalculateAge(patient.BirthDate.Value) anos (@patient.BirthDate.Value.ToString("dd/MM/yyyy"))</span>
+                                }
+                                else
+                                {
+                                    <span>Data de nascimento não definida</span>
+                                }
                             </div>
 
                             <div class="mb-2">
@@ -139,7 +159,9 @@
                     </form>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-primary" @onclick="SavePatient">Registar Paciente</button>
+                    <button type="button" class="btn btn-primary" @onclick="SavePatient" disabled="@IsSaving">
+                        @(IsSaving ? "A guardar..." : "Registar Paciente")
+                    </button>
                     <button type="button" class="btn btn-outline-secondary" @onclick="CloseDialog">Cancelar</button>
                 </div>
             </div>
@@ -149,41 +171,25 @@
 
 @code {
     private bool DialogOpen;
+    private bool IsLoading = true;
+    private bool IsSaving;
+    private string? LoadError;
     private string SearchTerm { get; set; } = string.Empty;
 
     private PatientForm NewPatient { get; set; } = new();
 
-    private List<Patient> PatientList { get; set; } = new()
+    private List<Patient> PatientList { get; set; } = [];
+
+    protected override async Task OnInitializedAsync()
     {
-        new Patient
-        {
-            Id = "p1",
-            Name = "João Mendes",
-            BirthDate = new DateTime(1985, 5, 10),
-            Phone = "+351 912 345 678",
-            Email = "joao.mendes@example.com",
-            Address = "Rua do Sol, 12, Lisboa",
-            Notes = "Hipertensão",
-            CreatedAt = DateTime.Now
-        },
-        new Patient
-        {
-            Id = "p2",
-            Name = "Ana Costa",
-            BirthDate = new DateTime(1990, 8, 23),
-            Phone = "+351 965 432 100",
-            Email = "ana.costa@example.com",
-            Address = "Av. da República, 45, Porto",
-            Notes = "Diabetes tipo 2",
-            CreatedAt = DateTime.Now
-        }
-    };
+        await LoadPatientsAsync();
+    }
 
     private IReadOnlyList<Patient> FilteredPatients => PatientList
         .Where(p => string.IsNullOrWhiteSpace(SearchTerm) || p.Name.Contains(SearchTerm, StringComparison.InvariantCultureIgnoreCase))
         .ToList();
 
-    private void NavigateToPatientConsultations(string patientId)
+    private void NavigateToPatientConsultations(int patientId)
     {
         NavigationManager.NavigateTo($"/consultations?patient={patientId}");
     }
@@ -204,22 +210,43 @@
             return;
         }
 
-        var patient = new Patient
+        var loggedUser = LoggedInUserContext.CurrentUser;
+        if (loggedUser is null)
         {
-            Id = Guid.NewGuid().ToString("N"),
-            Name = NewPatient.Name.Trim(),
-            BirthDate = NewPatient.BirthDate.Value,
-            Phone = NewPatient.Phone.Trim(),
-            Email = NewPatient.Email?.Trim() ?? string.Empty,
-            Address = NewPatient.Address?.Trim() ?? string.Empty,
-            Notes = NewPatient.Notes?.Trim() ?? string.Empty,
-            CreatedAt = DateTime.Now
-        };
-        PatientList.Insert(0, patient);
-        ClearForm();
-        DialogOpen = false;
+            NavigationManager.NavigateTo("/");
+            return;
+        }
 
-        await JSRuntime.InvokeVoidAsync("alert", "Paciente registado com sucesso!");
+        try
+        {
+            IsSaving = true;
+
+            var result = await PacienteService.CreateForDoctorAsync(new PacienteService.CreatePacienteRequest
+            {
+                IdUtilizador = loggedUser.IdUtilizador,
+                Nome = NewPatient.Name.Trim(),
+                DtNasc = DateOnly.FromDateTime(NewPatient.BirthDate.Value),
+                Telefone = NewPatient.Phone.Trim(),
+                Email = string.IsNullOrWhiteSpace(NewPatient.Email) ? null : NewPatient.Email.Trim(),
+                Rua = string.IsNullOrWhiteSpace(NewPatient.Address) ? null : NewPatient.Address.Trim()
+            });
+
+            if (!result.Ok)
+            {
+                await JSRuntime.InvokeVoidAsync("alert", $"Não foi possível registar o paciente: {result.ErrorMessage}");
+                return;
+            }
+
+            await LoadPatientsAsync();
+            ClearForm();
+            DialogOpen = false;
+
+            await JSRuntime.InvokeVoidAsync("alert", "Paciente registado com sucesso!");
+        }
+        finally
+        {
+            IsSaving = false;
+        }
     }
 
     private void ClearForm()
@@ -232,11 +259,58 @@
         DialogOpen = false;
     }
 
+    private async Task LoadPatientsAsync()
+    {
+        try
+        {
+            IsLoading = true;
+            LoadError = null;
+
+            var loggedUser = LoggedInUserContext.CurrentUser;
+            if (loggedUser is null)
+            {
+                NavigationManager.NavigateTo("/");
+                return;
+            }
+
+            var associatedPatients = await PacienteService.GetByDoctorAsync(loggedUser.IdUtilizador);
+            PatientList = associatedPatients.Select(MapPatient).ToList();
+        }
+        catch (Exception ex)
+        {
+            LoadError = $"Erro ao carregar pacientes: {ex.Message}";
+            PatientList = [];
+        }
+        finally
+        {
+            IsLoading = false;
+        }
+    }
+
+    private static Patient MapPatient(BlazorProject.Data.Models.Paciente paciente)
+    {
+        var addressParts = new[] { paciente.Rua, paciente.NumPorta, paciente.CodPostal }
+            .Where(value => !string.IsNullOrWhiteSpace(value))
+            .Select(value => value!.Trim());
+
+        return new Patient
+        {
+            Id = paciente.IdPaciente,
+            Name = paciente.Nome,
+            BirthDate = paciente.DtNasc?.ToDateTime(TimeOnly.MinValue),
+            Phone = string.IsNullOrWhiteSpace(paciente.Telefone) ? "Não definido" : paciente.Telefone,
+            Email = paciente.Email ?? string.Empty,
+            Address = string.Join(", ", addressParts),
+            Notes = string.Empty,
+            CreatedAt = DateTime.Now
+        };
+    }
+
     private sealed class Patient
     {
-        public string Id { get; init; } = string.Empty;
+        public int Id { get; init; }
         public string Name { get; init; } = string.Empty;
-        public DateTime BirthDate { get; init; }
+        public DateTime? BirthDate { get; init; }
         public string Phone { get; init; } = string.Empty;
         public string Email { get; init; } = string.Empty;
         public string Address { get; init; } = string.Empty;

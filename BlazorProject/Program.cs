@@ -15,6 +15,8 @@ builder.Services.AddSingleton<ConsultationStore>();
 
 builder.Services.AddDbContextFactory<EiEngsofContext>((DbContextOptionsBuilder options) => options.UseNpgsql(connectionString));
 builder.Services.AddScoped<UtilizadorService>();
+builder.Services.AddScoped<PacienteService>();
+builder.Services.AddScoped<ConsultasService>();
 builder.Services.AddScoped<ExameMedico>();
 var app = builder.Build();
 

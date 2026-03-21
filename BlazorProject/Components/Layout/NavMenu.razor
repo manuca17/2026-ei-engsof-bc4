@@ -1,12 +1,14 @@
 ﻿@rendermode InteractiveServer
+@using BlazorProject.Data.Models
+@using BlazorProject.Services
 @inject NavigationManager NavigationManager
 
 <div class="sb-wrapper">
 
     <!-- Header com user info -->
     <div class="sb-header">
-        <h2 class="sb-name">Dr. João Silva</h2>
-        <p class="sb-role">Cardiologia</p>
+        <h2 class="sb-name">@GetDisplayName()</h2>
+        <p class="sb-role">@GetSpecialty()</p>
     </div>
 
     <!-- Navegação principal -->
@@ -86,7 +88,7 @@
 
     <!-- Footer com botão Sair -->
     <div class="sb-footer">
-        <button class="sb-logout" @onclick='() => NavigationManager.NavigateTo("/")'>
+        <button class="sb-logout" @onclick="HandleLogout">
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
                  stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
@@ -98,3 +100,19 @@
     </div>
 
 </div>
+
+@code {
+    private Utilizador? CurrentUser => LoggedInUserContext.CurrentUser;
+
+    private void HandleLogout()
+    {
+        LoggedInUserContext.Clear();
+        NavigationManager.NavigateTo("/");
+    }
+
+    private string GetDisplayName() =>
+        string.IsNullOrWhiteSpace(CurrentUser?.Nome) ? "Utilizador" : CurrentUser.Nome;
+
+    private string GetSpecialty() =>
+        string.IsNullOrWhiteSpace(CurrentUser?.Especialidade) ? "Sem especialidade" : CurrentUser.Especialidade!;
+}
