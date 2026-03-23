@@ -17,7 +17,7 @@ public partial class Anotacao
 
     public int? IdConsulta { get; set; }
 
-    public virtual Consultum? IdConsultaNavigation { get; set; }
+    public virtual Consulta? IdConsultaNavigation { get; set; }
 
     public virtual Utilizador? IdUtilizadorNavigation { get; set; }
 }

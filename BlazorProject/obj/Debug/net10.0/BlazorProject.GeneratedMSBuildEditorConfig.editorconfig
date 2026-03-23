@@ -30,10 +30,6 @@ build_metadata.AdditionalFiles.CssScope =
 build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50cy9MYXlvdXQvTG9naW5MYXlvdXQucmF6b3I=
 build_metadata.AdditionalFiles.CssScope = 
 
-[/home/manuca17/RiderProjects/2026-ei-engsof-bc4/BlazorProject/Components/Pages/ConsultationDetail.razor]
-build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50cy9QYWdlcy9Db25zdWx0YXRpb25EZXRhaWwucmF6b3I=
-build_metadata.AdditionalFiles.CssScope = 
-
 [/home/manuca17/RiderProjects/2026-ei-engsof-bc4/BlazorProject/Components/Pages/Counter.razor]
 build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50cy9QYWdlcy9Db3VudGVyLnJhem9y
 build_metadata.AdditionalFiles.CssScope = 
@@ -78,6 +74,10 @@ build_metadata.AdditionalFiles.CssScope = b-gdfmmsmt92
 build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50cy9MYXlvdXQvUmVjb25uZWN0TW9kYWwucmF6b3I=
 build_metadata.AdditionalFiles.CssScope = b-r9qr1dxv1m
 
+[/home/manuca17/RiderProjects/2026-ei-engsof-bc4/BlazorProject/Components/Pages/ConsultationDetail.razor]
+build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50cy9QYWdlcy9Db25zdWx0YXRpb25EZXRhaWwucmF6b3I=
+build_metadata.AdditionalFiles.CssScope = b-rx1wsnmm7r
+
 [/home/manuca17/RiderProjects/2026-ei-engsof-bc4/BlazorProject/Components/Pages/Consultations.razor]
 build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50cy9QYWdlcy9Db25zdWx0YXRpb25zLnJhem9y
 build_metadata.AdditionalFiles.CssScope = b-9wri7b4nm5
@@ -89,3 +89,7 @@ build_metadata.AdditionalFiles.CssScope = b-gk09saob1s
 [/home/manuca17/RiderProjects/2026-ei-engsof-bc4/BlazorProject/Components/Pages/Home.razor]
 build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50cy9QYWdlcy9Ib21lLnJhem9y
 build_metadata.AdditionalFiles.CssScope = b-sey7dt6v7f
+
+[/home/manuca17/RiderProjects/2026-ei-engsof-bc4/BlazorProject/Components/Pages/Reports.razor]
+build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50cy9QYWdlcy9SZXBvcnRzLnJhem9y
+build_metadata.AdditionalFiles.CssScope = b-ns3kk2ao4u

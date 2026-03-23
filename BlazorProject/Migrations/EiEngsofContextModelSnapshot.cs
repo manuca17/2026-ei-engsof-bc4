@@ -82,7 +82,7 @@ namespace BlazorProject.Migrations
                     b.ToTable("codigo_postal", (string)null);
                 });
 
-            modelBuilder.Entity("BlazorProject.Data.Models.Consultum", b =>
+            modelBuilder.Entity("BlazorProject.Data.Models.Consulta", b =>
                 {
                     b.Property<int>("IdConsulta")
                         .ValueGeneratedOnAdd()
@@ -296,7 +296,7 @@ namespace BlazorProject.Migrations
                     b.ToTable("paciente", (string)null);
                 });
 
-            modelBuilder.Entity("BlazorProject.Data.Models.TipoConsultum", b =>
+            modelBuilder.Entity("BlazorProject.Data.Models.TipoConsulta", b =>
                 {
                     b.Property<int>("IdTipoConsulta")
                         .ValueGeneratedOnAdd()
@@ -414,7 +414,7 @@ namespace BlazorProject.Migrations
                     b.ToTable("utilizador", (string)null);
                 });
 
-            modelBuilder.Entity("BlazorProject.Data.Models.UtilizadorConsultum", b =>
+            modelBuilder.Entity("BlazorProject.Data.Models.UtilizadorConsulta", b =>
                 {
                     b.Property<int>("IdUtilizador")
                         .HasColumnType("integer")
@@ -442,7 +442,7 @@ namespace BlazorProject.Migrations
 
             modelBuilder.Entity("BlazorProject.Data.Models.Anotacao", b =>
                 {
-                    b.HasOne("BlazorProject.Data.Models.Consultum", "IdConsultaNavigation")
+                    b.HasOne("BlazorProject.Data.Models.Consulta", "IdConsultaNavigation")
                         .WithMany("Anotacaos")
                         .HasForeignKey("IdConsulta")
                         .HasConstraintName("fk_anot_consulta");
@@ -457,7 +457,7 @@ namespace BlazorProject.Migrations
                     b.Navigation("IdUtilizadorNavigation");
                 });
 
-            modelBuilder.Entity("BlazorProject.Data.Models.Consultum", b =>
+            modelBuilder.Entity("BlazorProject.Data.Models.Consulta", b =>
                 {
                     b.HasOne("BlazorProject.Data.Models.ExameMedico", "IdExameMedicoNavigation")
                         .WithMany("Consulta")
@@ -474,7 +474,7 @@ namespace BlazorProject.Migrations
                         .HasForeignKey("IdPaciente")
                         .HasConstraintName("fk_con_paciente");
 
-                    b.HasOne("BlazorProject.Data.Models.TipoConsultum", "IdTipoConsultaNavigation")
+                    b.HasOne("BlazorProject.Data.Models.TipoConsulta", "IdTipoConsultaNavigation")
                         .WithMany("Consulta")
                         .HasForeignKey("IdTipoConsulta")
                         .HasConstraintName("fk_con_tipo");
@@ -490,7 +490,7 @@ namespace BlazorProject.Migrations
 
             modelBuilder.Entity("BlazorProject.Data.Models.Estado", b =>
                 {
-                    b.HasOne("BlazorProject.Data.Models.Consultum", "IdConsultaNavigation")
+                    b.HasOne("BlazorProject.Data.Models.Consulta", "IdConsultaNavigation")
                         .WithMany("Estados")
                         .HasForeignKey("IdConsulta")
                         .IsRequired()
@@ -519,7 +519,7 @@ namespace BlazorProject.Migrations
                     b.Navigation("CodPostalNavigation");
                 });
 
-            modelBuilder.Entity("BlazorProject.Data.Models.TipoConsultum", b =>
+            modelBuilder.Entity("BlazorProject.Data.Models.TipoConsulta", b =>
                 {
                     b.HasOne("BlazorProject.Data.Models.Utilizador", "IdUtilizadorNavigation")
                         .WithMany("TipoConsulta")
@@ -539,9 +539,9 @@ namespace BlazorProject.Migrations
                     b.Navigation("CodPostalNavigation");
                 });
 
-            modelBuilder.Entity("BlazorProject.Data.Models.UtilizadorConsultum", b =>
+            modelBuilder.Entity("BlazorProject.Data.Models.UtilizadorConsulta", b =>
                 {
-                    b.HasOne("BlazorProject.Data.Models.Consultum", "IdConsultaNavigation")
+                    b.HasOne("BlazorProject.Data.Models.Consulta", "IdConsultaNavigation")
                         .WithMany("UtilizadorConsulta")
                         .HasForeignKey("IdConsulta")
                         .IsRequired()
@@ -565,7 +565,7 @@ namespace BlazorProject.Migrations
                     b.Navigation("Utilizadors");
                 });
 
-            modelBuilder.Entity("BlazorProject.Data.Models.Consultum", b =>
+            modelBuilder.Entity("BlazorProject.Data.Models.Consulta", b =>
                 {
                     b.Navigation("Anotacaos");
 
@@ -589,7 +589,7 @@ namespace BlazorProject.Migrations
                     b.Navigation("Consulta");
                 });
 
-            modelBuilder.Entity("BlazorProject.Data.Models.TipoConsultum", b =>
+            modelBuilder.Entity("BlazorProject.Data.Models.TipoConsulta", b =>
                 {
                     b.Navigation("Consulta");
                 });

@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace BlazorProject.Data.Models;
 
-public partial class UtilizadorConsultum
+public partial class UtilizadorConsulta
 {
     public int IdUtilizador { get; set; }
 
@@ -13,7 +13,7 @@ public partial class UtilizadorConsultum
 
     public bool ConviteAceite { get; set; }
 
-    public virtual Consultum IdConsultaNavigation { get; set; } = null!;
+    public virtual Consulta IdConsultaNavigation { get; set; } = null!;
 
     public virtual Utilizador IdUtilizadorNavigation { get; set; } = null!;
 }

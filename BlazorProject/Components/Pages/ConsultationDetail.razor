@@ -1,16 +1,1272 @@
-﻿@page "/consultations/{Id}"
-@using Microsoft.AspNetCore.Components
+@page "/consultations/{Id}"
+@using BlazorProject.Services
+@using ConsultationData = BlazorProject.Services.ConsultationStore
 @rendermode InteractiveServer
 @inject NavigationManager NavigationManager
+@inject IJSRuntime JSRuntime
+@inject ConsultationStore Store
+@inject ConsultasService ConsultasService
 
 <PageTitle>Consulta</PageTitle>
 
-<div class="consult-detail">
-    <h1>Consulta</h1>
-    <p>Detalhe da consulta <strong>@Id</strong> (placeholder visual).</p>
-    <button class="back-btn" @onclick='() => NavigationManager.NavigateTo("/consultations")'>Voltar</button>
-</div>
+@if (IsLoading)
+{
+    <div class="consult-detail-page">
+        <section class="detail-card detail-empty">A carregar consulta...</section>
+    </div>
+}
+else if (Consultation is null)
+{
+    <div class="consult-detail-page">
+        <section class="detail-card detail-empty">
+            <h1>Consulta não encontrada</h1>
+            <p>Não foi possível localizar a consulta pedida.</p>
+            <button class="btn-outline" @onclick='() => NavigationManager.NavigateTo("/consultations")'>Voltar às consultas</button>
+        </section>
+    </div>
+}
+else
+{
+    <div class="consult-detail-page">
+        <div class="detail-header">
+            <div class="detail-header-main">
+                <button class="btn-outline back-btn" @onclick='() => NavigationManager.NavigateTo("/consultations")'>
+                    <span aria-hidden="true">←</span>
+                    Voltar
+                </button>
+                <div>
+                    <h1>@Consultation.PatientName</h1>
+                    <p>@Consultation.Description</p>
+                </div>
+            </div>
+
+            <div class="detail-header-actions">
+                @if (IsOwner && Consultation.Status == ConsultationData.ConsultationStatus.Agendada)
+                {
+                    <button class="btn-primary" @onclick="StartConsultation">
+                        <span aria-hidden="true">▶</span>
+                        Iniciar
+                    </button>
+                }
+
+                @if (IsOwner && Consultation.Status == ConsultationData.ConsultationStatus.EmAndamento)
+                {
+                    <button class="btn-secondary" @onclick="EndConsultation">
+                        <span aria-hidden="true">■</span>
+                        Encerrar
+                    </button>
+                }
+            </div>
+        </div>
+
+        @if (!string.IsNullOrWhiteSpace(StatusMessage))
+        {
+            <div class="feedback-banner @(StatusIsError ? "feedback-error" : "feedback-success")">
+                @StatusMessage
+            </div>
+        }
+
+        <div class="detail-grid">
+            <div class="detail-main">
+                <section class="detail-card">
+                    <div class="section-header">
+                        <div>
+                            <h2>Detalhes da Consulta</h2>
+                        </div>
+                        @if (IsOwner && Consultation.Status != ConsultationData.ConsultationStatus.Encerrada)
+                        {
+                            <button class="btn-outline" @onclick="OpenEditDialog">Editar</button>
+                        }
+                    </div>
+
+                    <div class="info-grid">
+                        <div class="info-item">
+                            <span class="info-label">Estado</span>
+                            <span class="status-badge @StatusClass(Consultation.Status)">@StatusLabel(Consultation.Status)</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Médico Responsável</span>
+                            <strong>@Consultation.OwnerUserName</strong>
+                        </div>
+                        @if (Consultation.StartAt is not null)
+                        {
+                            <div class="info-item">
+                                <span class="info-label">Data/Hora Início</span>
+                                <strong>@Consultation.StartAt.Value.ToString("dd/MM/yyyy HH:mm")</strong>
+                            </div>
+                        }
+                        @if (Consultation.EndAt is not null)
+                        {
+                            <div class="info-item">
+                                <span class="info-label">Data/Hora Fim</span>
+                                <strong>@Consultation.EndAt.Value.ToString("dd/MM/yyyy HH:mm")</strong>
+                            </div>
+                        }
+                        <div class="info-item">
+                            <span class="info-label">Tipo de Cobrança</span>
+                            <strong>@ChargingText(Consultation)</strong>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="detail-card">
+                    <div class="section-header">
+                        <h2>Exames Médicos (@Consultation.ExamsCount)</h2>
+                        @if (IsOwner)
+                        {
+                            <button class="btn-primary" @onclick="OpenExamDialog">Adicionar</button>
+                        }
+                    </div>
+
+                    @if (Consultation.ExamsCount == 0)
+                    {
+                        <div class="detail-empty">Nenhum exame registado.</div>
+                    }
+                    else
+                    {
+                        <div class="stack-list">
+                            @foreach (var exam in Consultation.Exams.OrderByDescending(item => item.Date))
+                            {
+                                <article class="list-card">
+                                    <div class="list-card-top">
+                                        <div>
+                                            <h3>@exam.Name</h3>
+                                            <p>@exam.Type - @exam.Date.ToString("dd/MM/yyyy")</p>
+                                        </div>
+
+                                        @if (IsOwner)
+                                        {
+                                            <button class="icon-btn danger" title="Remover exame" @onclick='() => ExamToRemoveId = exam.Id'>
+                                                ✕
+                                            </button>
+                                        }
+                                    </div>
+
+                                    @if (!string.IsNullOrWhiteSpace(exam.Description))
+                                    {
+                                        <p class="content-text">@exam.Description</p>
+                                    }
+
+                                    @if (!string.IsNullOrWhiteSpace(exam.Results))
+                                    {
+                                        <div class="subsection-block">
+                                            <span class="subsection-title">Resultados</span>
+                                            <p class="content-text">@exam.Results</p>
+                                        </div>
+                                    }
+                                </article>
+                            }
+                        </div>
+                    }
+                </section>
+
+                <section class="detail-card">
+                    <div class="section-header">
+                        <h2>Anotações (@Consultation.NotesCount)</h2>
+                        <button class="btn-primary" @onclick="OpenAnnotationDialog">Adicionar</button>
+                    </div>
+
+                    @if (Consultation.NotesCount == 0)
+                    {
+                        <div class="detail-empty">Nenhuma anotação registada.</div>
+                    }
+                    else
+                    {
+                        <div class="timeline-list">
+                            @foreach (var annotation in Consultation.Annotations.OrderByDescending(item => item.CreatedAt))
+                            {
+                                <article class="timeline-item">
+                                    <div class="timeline-head">
+                                        <strong>@annotation.UserName</strong>
+                                        <span>@annotation.CreatedAt.ToString("dd/MM/yyyy HH:mm")</span>
+                                    </div>
+                                    <p>@annotation.Text</p>
+                                </article>
+                            }
+                        </div>
+                    }
+                </section>
+            </div>
+
+            <aside class="detail-side">
+                <section class="detail-card">
+                    <div class="section-header">
+                        <h2>Convites (@Consultation.InvitesCount)</h2>
+                        @if (IsOwner)
+                        {
+                            <button class="btn-primary" @onclick="OpenInviteDialog">Convidar</button>
+                        }
+                    </div>
+
+                    @if (Consultation.InvitesCount == 0)
+                    {
+                        <div class="detail-empty">Nenhum convite enviado.</div>
+                    }
+                    else
+                    {
+                        <div class="stack-list">
+                            @foreach (var invite in Consultation.Invites.OrderBy(item => item.UserName))
+                            {
+                                var isMyInvite = invite.UserId == CurrentUserId;
+                                <article class="list-card invite-card">
+                                    <div class="list-card-top">
+                                        <div>
+                                            <h3>@invite.UserName</h3>
+                                            <p>@invite.UserEmail</p>
+                                        </div>
+
+                                        <div class="invite-top-actions">
+                                            <span class="invite-badge @InviteStatusClass(invite.Status)">@InviteStatusLabel(invite.Status)</span>
+                                            @if (IsOwner)
+                                            {
+                                                <button class="icon-btn danger" title="Remover convite" @onclick='() => InviteToRemoveId = invite.Id'>
+                                                    ✕
+                                                </button>
+                                            }
+                                        </div>
+                                    </div>
+
+                                    @if (isMyInvite && invite.Status == ConsultationData.InviteStatus.Pending)
+                                    {
+                                        <button class="btn-primary full-width" @onclick='() => AcceptInvite(invite.Id)'>Aceitar Convite</button>
+                                    }
+
+                                    @if (invite.Annotations.Count > 0)
+                                    {
+                                        <div class="subsection-block">
+                                            <span class="subsection-title">Comentários</span>
+                                            <div class="invite-comments">
+                                                @foreach (var comment in invite.Annotations.OrderBy(item => item.CreatedAt))
+                                                {
+                                                    <div class="comment-box">
+                                                        <strong>@comment.UserName</strong>
+                                                        <p>@comment.Text</p>
+                                                        <span>@comment.CreatedAt.ToString("dd/MM/yyyy HH:mm")</span>
+                                                    </div>
+                                                }
+                                            </div>
+                                        </div>
+                                    }
+
+                                    @if (isMyInvite && invite.Status == ConsultationData.InviteStatus.Accepted)
+                                    {
+                                        <div class="invite-form-block">
+                                            <label class="form-label" for="comment-@invite.Id">Adicionar comentário</label>
+                                            <textarea id="comment-@invite.Id"
+                                                      rows="3"
+                                                      value="@GetInviteComment(invite.Id)"
+                                                      @oninput='e => SetInviteComment(invite.Id, e.Value?.ToString())'></textarea>
+                                            <button class="btn-outline full-width" @onclick='() => AddInviteComment(invite.Id)'>Guardar comentário</button>
+                                        </div>
+                                    }
+                                </article>
+                            }
+                        </div>
+                    }
+                </section>
+            </aside>
+        </div>
+    </div>
+}
+
+@if (EditDialogOpen && Consultation is not null)
+{
+    <div class="modal-backdrop" @onclick="CloseEditDialog">
+        <div class="dialog-panel" @onclick:stopPropagation="true">
+            <div class="dialog-header">
+                <h3>Editar Consulta</h3>
+            </div>
+
+            <div class="dialog-body">
+                <div class="field">
+                    <label>Descrição</label>
+                    <textarea rows="4" @bind="EditDescription"></textarea>
+                </div>
+
+                <div class="field">
+                    <label>Tipo de Cobrança</label>
+                    <select @bind="EditChargingType">
+                        <option value="fixo">Preço Fixo</option>
+                        <option value="por_hora">Preço por Hora</option>
+                    </select>
+                </div>
+
+                @if (EditChargingType == "fixo")
+                {
+                    <div class="field">
+                        <label>Preço Fixo (EUR)</label>
+                        <input type="number" step="0.01" @bind="EditFixedPrice" />
+                    </div>
+                }
+                else
+                {
+                    <div class="field">
+                        <label>Preço por Hora (EUR)</label>
+                        <input type="number" step="0.01" @bind="EditHourlyPrice" />
+                    </div>
+                }
+            </div>
+
+            <div class="dialog-actions">
+                <button class="btn-primary" @onclick="SaveEdit">Salvar</button>
+                <button class="btn-outline" @onclick="CloseEditDialog">Cancelar</button>
+            </div>
+        </div>
+    </div>
+}
+
+@if (ExamDialogOpen && Consultation is not null)
+{
+    <div class="modal-backdrop" @onclick="CloseExamDialog">
+        <div class="dialog-panel dialog-wide" @onclick:stopPropagation="true">
+            <div class="dialog-header">
+                <h3>Adicionar Exame Médico</h3>
+                <p>Crie um novo exame ou associe um exame existente deste paciente.</p>
+            </div>
+
+            <div class="dialog-body">
+                <div class="toggle-row exam-mode-row">
+                    <button type="button"
+                            class="@(ExamMode == "new" ? "toggle-btn active" : "toggle-btn")"
+                            @onclick="SetExamModeNew">
+                        Criar Novo
+                    </button>
+                    <button class="@(ExamMode == "existing" ? "toggle-btn active" : "toggle-btn")"
+                            type="button"
+                            @onclick="SetExamModeExisting">
+                        Associar Existente (@AvailableExams.Count)
+                    </button>
+                </div>
+
+                @if (ExamMode == "new")
+                {
+                    <form class="exam-form" @onsubmit="HandleAddExam">
+                        <div class="field-grid">
+                            <div class="field">
+                                <label>Nome do Exame</label>
+                                <input type="text" @bind="ExamName" required />
+                            </div>
+                            <div class="field">
+                                <label>Tipo</label>
+                                <input type="text" @bind="ExamType" placeholder="Ex: Sangue, Raio-X, etc." required />
+                            </div>
+                            <div class="field">
+                                <label>Data</label>
+                                <input type="date" @bind-value="ExamDate" @bind-value:format="yyyy-MM-dd" required />
+                            </div>
+                            <div class="field field-span-2">
+                                <label>Descrição</label>
+                                <textarea rows="3" @bind="ExamDescription"></textarea>
+                            </div>
+                            <div class="field field-span-2">
+                                <label>Resultados</label>
+                                <textarea rows="4" @bind="ExamResults"></textarea>
+                            </div>
+                        </div>
+
+                        <div class="dialog-actions exam-actions">
+                            <button type="submit" class="btn-primary">Criar e Adicionar</button>
+                            <button type="button" class="btn-outline" @onclick="CloseExamDialog">Cancelar</button>
+                        </div>
+                    </form>
+                }
+                else
+                {
+                    <form class="exam-form" @onsubmit="HandleAddExam">
+                        @if (AvailableExams.Count == 0)
+                        {
+                            <div class="existing-empty-state">
+                                <div class="existing-empty-icon" aria-hidden="true">+</div>
+                                <div>
+                                    <h4>Sem exames para associar</h4>
+                                    <p>
+                                        Não há exames disponíveis para associar.
+                                        Todos os exames deste paciente já estão nesta consulta.
+                                    </p>
+                                </div>
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="existing-mode-layout">
+                                <div class="existing-selection-card">
+                                    <div class="existing-selection-header">
+                                        <div>
+                                            <h4>Selecionar Exame Existente</h4>
+                                            <p>Escolha um exame já registado para este paciente.</p>
+                                        </div>
+                                        <span class="existing-count-badge">@AvailableExams.Count disponível@(AvailableExams.Count == 1 ? string.Empty : "eis")</span>
+                                    </div>
+
+                                    <div class="field">
+                                        <label>Selecione um Exame</label>
+                                        <select @bind="SelectedExistingExamId" required>
+                                            <option value="">Escolha um exame...</option>
+                                            @foreach (var exam in AvailableExams)
+                                            {
+                                                <option value="@exam.Id">@exam.Name - @exam.Type (@exam.Date.ToString("dd/MM/yyyy"))</option>
+                                            }
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+
+                            @if (SelectedExistingExam is not null)
+                            {
+                                <div class="preview-card existing-preview-card">
+                                    <div class="existing-preview-header">
+                                        <div>
+                                            <h4>Pré-visualização do Exame</h4>
+                                            <p>Confirme os dados antes de associar o exame à consulta.</p>
+                                        </div>
+                                        <span class="preview-status">Selecionado</span>
+                                    </div>
+
+                                    <div class="preview-grid">
+                                        <div class="preview-item"><span>Nome</span><strong>@SelectedExistingExam.Name</strong></div>
+                                        <div class="preview-item"><span>Tipo</span><strong>@SelectedExistingExam.Type</strong></div>
+                                        <div class="preview-item"><span>Data</span><strong>@SelectedExistingExam.Date.ToString("dd/MM/yyyy")</strong></div>
+                                        @if (!string.IsNullOrWhiteSpace(SelectedExistingExam.Description))
+                                        {
+                                            <div class="preview-item preview-full"><span>Descrição</span><strong>@SelectedExistingExam.Description</strong></div>
+                                        }
+                                        @if (!string.IsNullOrWhiteSpace(SelectedExistingExam.Results))
+                                        {
+                                            <div class="preview-item preview-full"><span>Resultados</span><strong>@SelectedExistingExam.Results</strong></div>
+                                        }
+                                    </div>
+                                </div>
+                            }
+                            else
+                            {
+                                <div class="existing-preview-placeholder">
+                                    <h4>Pré-visualização do Exame</h4>
+                                    <p>Selecione um exame da lista para ver aqui os detalhes.</p>
+                                </div>
+                            }
+                        }
+
+                        <div class="dialog-actions exam-actions">
+                            <button type="submit" class="btn-primary" disabled="@(AvailableExams.Count == 0)">Associar Exame</button>
+                            <button type="button" class="btn-outline" @onclick="CloseExamDialog">Cancelar</button>
+                        </div>
+                    </form>
+                }
+            </div>
+        </div>
+    </div>
+}
+
+@if (AnnotationDialogOpen)
+{
+    <div class="modal-backdrop" @onclick="CloseAnnotationDialog">
+        <div class="dialog-panel" @onclick:stopPropagation="true">
+            <div class="dialog-header">
+                <h3>Adicionar Anotação</h3>
+            </div>
+
+            <div class="dialog-body">
+                <div class="field">
+                    <label>Anotação</label>
+                    <textarea rows="5" @bind="AnnotationText" placeholder="Escreva a sua anotação..."></textarea>
+                </div>
+            </div>
+
+            <div class="dialog-actions">
+                <button class="btn-primary" @onclick="SaveAnnotation">Adicionar</button>
+                <button class="btn-outline" @onclick="CloseAnnotationDialog">Cancelar</button>
+            </div>
+        </div>
+    </div>
+}
+
+@if (InviteDialogOpen)
+{
+    <div class="modal-backdrop" @onclick="CloseInviteDialog">
+        <div class="dialog-panel" @onclick:stopPropagation="true">
+            <div class="dialog-header">
+                <h3>Convidar Utilizador</h3>
+                <p>O utilizador convidado terá o seu próprio espaço para comentários.</p>
+            </div>
+
+            <div class="dialog-body">
+                <div class="field">
+                    <label>Email do Utilizador</label>
+                    <input type="email" @bind="InviteEmail" placeholder="maria@example.com" />
+                </div>
+
+                <div class="field">
+                    <label>Mensagem Inicial (Opcional)</label>
+                    <textarea rows="4" @bind="InviteAnnotation" placeholder="Adicione uma mensagem para o convidado..."></textarea>
+                </div>
+            </div>
+
+            <div class="dialog-actions">
+                <button class="btn-primary" @onclick="SendInvite">Enviar Convite</button>
+                <button class="btn-outline" @onclick="CloseInviteDialog">Cancelar</button>
+            </div>
+        </div>
+    </div>
+}
+
+@if (!string.IsNullOrWhiteSpace(ExamToRemoveId))
+{
+    <div class="modal-backdrop" @onclick="CloseExamRemovalDialog">
+        <div class="confirm-dialog" @onclick:stopPropagation="true">
+            <h3>Remover Exame</h3>
+            <p>Tem a certeza que deseja remover este exame da consulta?</p>
+            <div class="dialog-actions">
+                <button class="btn-danger" @onclick="ConfirmRemoveExam">Remover</button>
+                <button class="btn-outline" @onclick="CloseExamRemovalDialog">Cancelar</button>
+            </div>
+        </div>
+    </div>
+}
+
+@if (!string.IsNullOrWhiteSpace(InviteToRemoveId))
+{
+    <div class="modal-backdrop" @onclick="CloseInviteRemovalDialog">
+        <div class="confirm-dialog" @onclick:stopPropagation="true">
+            <h3>Remover Convite</h3>
+            <p>Tem a certeza que deseja remover este convite?</p>
+            <div class="dialog-actions">
+                <button class="btn-danger" @onclick="ConfirmRemoveInvite">Remover</button>
+                <button class="btn-outline" @onclick="CloseInviteRemovalDialog">Cancelar</button>
+            </div>
+        </div>
+    </div>
+}
 
 @code {
     [Parameter] public string Id { get; set; } = string.Empty;
+
+    private ConsultationData.ConsultationItem? Consultation;
+    private ConsultationData.UserItem? CurrentUser;
+    private bool IsLoading = true;
+
+    private string? StatusMessage;
+    private bool StatusIsError;
+
+    private bool EditDialogOpen;
+    private bool ExamDialogOpen;
+    private bool AnnotationDialogOpen;
+    private bool InviteDialogOpen;
+    private string? ExamToRemoveId;
+    private string? InviteToRemoveId;
+
+    private string EditDescription = string.Empty;
+    private string EditChargingType = "fixo";
+    private decimal? EditFixedPrice;
+    private decimal? EditHourlyPrice;
+
+    private string ExamMode = "new";
+    private string ExamName = string.Empty;
+    private string ExamType = string.Empty;
+    private string ExamDescription = string.Empty;
+    private DateTime ExamDate = DateTime.Today;
+    private string ExamResults = string.Empty;
+    private string SelectedExistingExamId = string.Empty;
+    private List<ConsultationData.MedicalExamItem> AvailableExams = [];
+
+    private string AnnotationText = string.Empty;
+    private string InviteEmail = string.Empty;
+    private string InviteAnnotation = string.Empty;
+    private readonly Dictionary<string, string> InviteComments = [];
+
+    private string CurrentUserId => CurrentUser?.Id ?? LoggedInUserContext.CurrentUser?.IdUtilizador.ToString() ?? "u1";
+    private string CurrentUserName => CurrentUser?.Name ?? "Dr. João Silva";
+    private bool IsOwner => Consultation is not null && Consultation.OwnerUserId == CurrentUserId;
+
+    private bool TryGetDbConsultationId(out int idConsulta)
+    {
+        idConsulta = 0;
+        return Consultation is not null && int.TryParse(Consultation.Id, out idConsulta);
+    }
+
+    private ConsultationData.MedicalExamItem? SelectedExistingExam =>
+        AvailableExams.FirstOrDefault(exam => exam.Id == SelectedExistingExamId);
+
+    protected override async Task OnParametersSetAsync()
+    {
+        await LoadConsultationFromRouteAsync();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender)
+        {
+            return;
+        }
+
+        await LoadCurrentUserAsync();
+    }
+
+    private async Task LoadCurrentUserAsync()
+    {
+        var storedUser = await JSRuntime.InvokeAsync<StoredUser?>("profileStorage.getCurrentUser");
+        CurrentUser = Store.FindUser(storedUser?.Email, storedUser?.Nome)
+                      ?? BuildCurrentUserFromLoggedContext()
+                      ?? Store.Users.FirstOrDefault(user => user.Id == "u1");
+        IsLoading = false;
+        StateHasChanged();
+    }
+
+    private ConsultationData.UserItem? BuildCurrentUserFromLoggedContext()
+    {
+        var logged = LoggedInUserContext.CurrentUser;
+        if (logged is null)
+        {
+            return null;
+        }
+
+        return new ConsultationData.UserItem
+        {
+            Id = logged.IdUtilizador.ToString(),
+            Name = logged.Nome,
+            Email = logged.Email ?? string.Empty,
+            Role = logged.IsAdmin ? "admin" : "medico",
+            Specialty = logged.Especialidade,
+            Phone = logged.Telefone
+        };
+    }
+
+    private void LoadConsultation()
+    {
+        Consultation = string.IsNullOrWhiteSpace(Id) ? null : Store.GetById(Id);
+        if (Consultation is null)
+        {
+            AvailableExams = [];
+            return;
+        }
+
+        SyncEditForm();
+        RefreshAvailableExams();
+    }
+
+    private async Task LoadConsultationFromRouteAsync()
+    {
+        LoadConsultation();
+
+        if (Consultation is not null)
+        {
+            return;
+        }
+
+        if (!int.TryParse(Id, out var idConsulta))
+        {
+            return;
+        }
+
+        var loggedUser = LoggedInUserContext.CurrentUser;
+        if (loggedUser is null)
+        {
+            return;
+        }
+
+        var dbConsultation = await ConsultasService.GetDetailForDoctorAsync(loggedUser.IdUtilizador, idConsulta);
+        if (dbConsultation is null)
+        {
+            return;
+        }
+
+        Consultation = new ConsultationData.ConsultationItem
+        {
+            Id = dbConsultation.Id.ToString(),
+            PatientId = dbConsultation.PatientId?.ToString() ?? string.Empty,
+            PatientName = dbConsultation.PatientName,
+            Description = dbConsultation.Description,
+            Status = dbConsultation.Status switch
+            {
+                ConsultasService.ConsultationStatus.Agendada => ConsultationData.ConsultationStatus.Agendada,
+                ConsultasService.ConsultationStatus.EmAndamento => ConsultationData.ConsultationStatus.EmAndamento,
+                ConsultasService.ConsultationStatus.Encerrada => ConsultationData.ConsultationStatus.Encerrada,
+                _ => ConsultationData.ConsultationStatus.Agendada
+            },
+            ChargingType = dbConsultation.ChargingType == ConsultasService.ChargingType.PorHora
+                ? ConsultationData.ChargingType.PorHora
+                : ConsultationData.ChargingType.Fixo,
+            FixedPrice = dbConsultation.FixedPrice,
+            HourlyPrice = dbConsultation.HourlyPrice,
+            StartAt = dbConsultation.StartAt,
+            EndAt = dbConsultation.EndAt,
+            OwnerUserId = loggedUser.IdUtilizador.ToString(),
+            OwnerUserName = loggedUser.Nome,
+            Exams = dbConsultation.Exams.Select(exam => new ConsultationData.MedicalExamItem
+            {
+                Id = exam.Id.ToString(),
+                PatientId = dbConsultation.PatientId?.ToString() ?? string.Empty,
+                Name = exam.Name,
+                Type = exam.Type,
+                Date = exam.Date,
+                Description = exam.Description,
+                Results = exam.Results,
+                CreatedAt = exam.Date
+            }).ToList(),
+            Annotations = dbConsultation.Annotations.Select(annotation => new ConsultationData.AnnotationItem
+            {
+                Id = annotation.Id.ToString(),
+                Text = annotation.Text,
+                CreatedAt = annotation.CreatedAt,
+                UserId = annotation.UserId?.ToString() ?? string.Empty,
+                UserName = annotation.UserName
+            }).ToList(),
+            Invites = []
+        };
+
+        AvailableExams = dbConsultation.AvailableExams.Select(exam => new ConsultationData.MedicalExamItem
+        {
+            Id = exam.Id.ToString(),
+            PatientId = dbConsultation.PatientId?.ToString() ?? string.Empty,
+            Name = exam.Name,
+            Type = exam.Type,
+            Date = exam.Date,
+            Description = exam.Description,
+            Results = exam.Results,
+            CreatedAt = exam.Date
+        }).ToList();
+
+        SyncEditForm();
+        if (!TryGetDbConsultationId(out _))
+        {
+            RefreshAvailableExams();
+        }
+    }
+
+    private void RefreshAvailableExams()
+    {
+        if (Consultation is null)
+        {
+            AvailableExams = [];
+            return;
+        }
+
+        AvailableExams = Store.GetExamsByPatient(Consultation.PatientId)
+            .Where(exam => Consultation.Exams.All(existing => existing.Id != exam.Id))
+            .OrderByDescending(exam => exam.Date)
+            .ToList();
+    }
+
+    private void SyncEditForm()
+    {
+        if (Consultation is null)
+        {
+            return;
+        }
+
+        EditDescription = Consultation.Description;
+        EditChargingType = Consultation.ChargingType == ConsultationData.ChargingType.PorHora ? "por_hora" : "fixo";
+        EditFixedPrice = Consultation.FixedPrice;
+        EditHourlyPrice = Consultation.HourlyPrice;
+    }
+
+    private void SetStatus(string message, bool isError = false)
+    {
+        StatusMessage = message;
+        StatusIsError = isError;
+    }
+
+    private async Task StartConsultation()
+    {
+        if (Consultation is null)
+        {
+            return;
+        }
+
+        if (TryGetDbConsultationId(out var idConsulta))
+        {
+            var loggedUser = LoggedInUserContext.CurrentUser;
+            if (loggedUser is null)
+            {
+                SetStatus("Sessão inválida. Faça login novamente.", true);
+                return;
+            }
+
+            var ok = await ConsultasService.StartConsultationAsync(loggedUser.IdUtilizador, idConsulta);
+            if (!ok)
+            {
+                SetStatus("Não foi possível iniciar a consulta.", true);
+                return;
+            }
+
+            await LoadConsultationFromRouteAsync();
+            SetStatus("Consulta iniciada com sucesso.");
+            return;
+        }
+
+        if (!Store.StartConsultation(Consultation.Id))
+        {
+            SetStatus("Não foi possível iniciar a consulta.", true);
+            return;
+        }
+
+        LoadConsultation();
+        SetStatus("Consulta iniciada com sucesso.");
+    }
+
+    private async Task EndConsultation()
+    {
+        if (Consultation is null)
+        {
+            return;
+        }
+
+        if (TryGetDbConsultationId(out var idConsulta))
+        {
+            var loggedUser = LoggedInUserContext.CurrentUser;
+            if (loggedUser is null)
+            {
+                SetStatus("Sessão inválida. Faça login novamente.", true);
+                return;
+            }
+
+            var ok = await ConsultasService.EndConsultationAsync(loggedUser.IdUtilizador, idConsulta);
+            if (!ok)
+            {
+                SetStatus("Não foi possível encerrar a consulta.", true);
+                return;
+            }
+
+            await LoadConsultationFromRouteAsync();
+            SetStatus("Consulta encerrada com sucesso.");
+            return;
+        }
+
+        if (!Store.EndConsultation(Consultation.Id))
+        {
+            SetStatus("Não foi possível encerrar a consulta.", true);
+            return;
+        }
+
+        LoadConsultation();
+        SetStatus("Consulta encerrada com sucesso.");
+    }
+
+    private void OpenEditDialog()
+    {
+        SyncEditForm();
+        EditDialogOpen = true;
+    }
+
+    private void CloseEditDialog() => EditDialogOpen = false;
+
+    private void SaveEdit()
+    {
+        if (Consultation is null)
+        {
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(EditDescription))
+        {
+            SetStatus("A descrição é obrigatória.", true);
+            return;
+        }
+
+        if (EditChargingType == "fixo" && (!EditFixedPrice.HasValue || EditFixedPrice <= 0))
+        {
+            SetStatus("Introduza um preço fixo válido.", true);
+            return;
+        }
+
+        if (EditChargingType == "por_hora" && (!EditHourlyPrice.HasValue || EditHourlyPrice <= 0))
+        {
+            SetStatus("Introduza um preço por hora válido.", true);
+            return;
+        }
+
+        var chargingType = EditChargingType == "por_hora"
+            ? ConsultationData.ChargingType.PorHora
+            : ConsultationData.ChargingType.Fixo;
+
+        if (!Store.UpdateConsultation(
+                Consultation.Id,
+                EditDescription,
+                chargingType,
+                chargingType == ConsultationData.ChargingType.Fixo ? EditFixedPrice : null,
+                chargingType == ConsultationData.ChargingType.PorHora ? EditHourlyPrice : null))
+        {
+            SetStatus("Não foi possível atualizar a consulta.", true);
+            return;
+        }
+
+        EditDialogOpen = false;
+        LoadConsultation();
+        SetStatus("Consulta atualizada com sucesso.");
+    }
+
+    private void OpenExamDialog()
+    {
+        ExamDialogOpen = true;
+        ResetExamForm();
+        ExamMode = "new";
+        RefreshAvailableExams();
+    }
+
+    private void CloseExamDialog()
+    {
+        ExamDialogOpen = false;
+        ResetExamForm();
+    }
+
+    private void SetExamModeNew()
+    {
+        ExamMode = "new";
+        SelectedExistingExamId = string.Empty;
+    }
+
+    private void SetExamModeExisting()
+    {
+        ExamMode = "existing";
+    }
+
+    private void ResetExamForm()
+    {
+        ExamMode = "new";
+        ExamName = string.Empty;
+        ExamType = string.Empty;
+        ExamDescription = string.Empty;
+        ExamResults = string.Empty;
+        ExamDate = DateTime.Today;
+        SelectedExistingExamId = string.Empty;
+    }
+
+    private async Task HandleAddExam()
+    {
+        await SaveExam();
+    }
+
+    private async Task SaveExam()
+    {
+        if (Consultation is null)
+        {
+            return;
+        }
+
+        if (TryGetDbConsultationId(out var idConsulta))
+        {
+            var loggedUser = LoggedInUserContext.CurrentUser;
+            if (loggedUser is null)
+            {
+                SetStatus("Sessão inválida. Faça login novamente.", true);
+                return;
+            }
+
+            if (ExamMode == "new")
+            {
+                if (string.IsNullOrWhiteSpace(ExamName) || string.IsNullOrWhiteSpace(ExamType))
+                {
+                    SetStatus("Nome e tipo do exame são obrigatórios.", true);
+                    return;
+                }
+
+                var addResult = await ConsultasService.AddNewExamAsync(
+                    loggedUser.IdUtilizador,
+                    idConsulta,
+                    ExamDate.Date,
+                    ExamType.Trim(),
+                    string.IsNullOrWhiteSpace(ExamResults) ? null : ExamResults.Trim());
+
+                if (!addResult.Ok)
+                {
+                    SetStatus(addResult.Message, true);
+                    return;
+                }
+
+                CloseExamDialog();
+                await LoadConsultationFromRouteAsync();
+                SetStatus(addResult.Message);
+                return;
+            }
+
+            if (string.IsNullOrWhiteSpace(SelectedExistingExamId) || !int.TryParse(SelectedExistingExamId, out var idExame))
+            {
+                SetStatus("Selecione um exame para associar.", true);
+                return;
+            }
+
+            var associationResult = await ConsultasService.AssociateExamAsync(loggedUser.IdUtilizador, idConsulta, idExame);
+            if (!associationResult.Ok)
+            {
+                SetStatus(associationResult.Message, true);
+                return;
+            }
+
+            CloseExamDialog();
+            await LoadConsultationFromRouteAsync();
+            SetStatus(associationResult.Message);
+            return;
+        }
+
+        if (ExamMode == "new")
+        {
+            if (string.IsNullOrWhiteSpace(ExamName) || string.IsNullOrWhiteSpace(ExamType))
+            {
+                SetStatus("Nome e tipo do exame são obrigatórios.", true);
+                return;
+            }
+
+            var result = Store.CreateExam(Consultation.Id, ExamName, ExamType, ExamDate.Date, ExamDescription, ExamResults);
+            if (!result.ok)
+            {
+                SetStatus(result.message, true);
+                return;
+            }
+
+            CloseExamDialog();
+            LoadConsultation();
+            SetStatus(result.message);
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(SelectedExistingExamId))
+        {
+            SetStatus("Selecione um exame para associar.", true);
+            return;
+        }
+
+        var association = Store.AssociateExistingExam(Consultation.Id, SelectedExistingExamId);
+        if (!association.ok)
+        {
+            SetStatus(association.message, true);
+            return;
+        }
+
+        CloseExamDialog();
+        LoadConsultation();
+        SetStatus(association.message);
+    }
+
+    private void CloseExamRemovalDialog() => ExamToRemoveId = null;
+
+    private void ConfirmRemoveExam()
+    {
+        if (Consultation is null || string.IsNullOrWhiteSpace(ExamToRemoveId))
+        {
+            return;
+        }
+
+        if (!Store.RemoveExam(Consultation.Id, ExamToRemoveId))
+        {
+            SetStatus("Não foi possível remover o exame.", true);
+            return;
+        }
+
+        ExamToRemoveId = null;
+        LoadConsultation();
+        SetStatus("Exame removido com sucesso.");
+    }
+
+    private void OpenAnnotationDialog()
+    {
+        AnnotationDialogOpen = true;
+        AnnotationText = string.Empty;
+    }
+
+    private void CloseAnnotationDialog() => AnnotationDialogOpen = false;
+
+    private async Task SaveAnnotation()
+    {
+        if (Consultation is null)
+        {
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(AnnotationText))
+        {
+            SetStatus("Escreva uma anotação antes de guardar.", true);
+            return;
+        }
+
+        if (TryGetDbConsultationId(out var idConsulta))
+        {
+            var loggedUser = LoggedInUserContext.CurrentUser;
+            if (loggedUser is null)
+            {
+                SetStatus("Sessão inválida. Faça login novamente.", true);
+                return;
+            }
+
+            var result = await ConsultasService.AddAnnotationAsync(loggedUser.IdUtilizador, idConsulta, AnnotationText.Trim());
+            if (!result.Ok)
+            {
+                SetStatus(result.Message, true);
+                return;
+            }
+
+            AnnotationDialogOpen = false;
+            AnnotationText = string.Empty;
+            await LoadConsultationFromRouteAsync();
+            SetStatus(result.Message);
+            return;
+        }
+
+        Store.AddAnnotation(Consultation.Id, new ConsultationData.AnnotationItem
+        {
+            Id = Guid.NewGuid().ToString("N"),
+            Text = AnnotationText.Trim(),
+            CreatedAt = DateTime.Now,
+            UserId = CurrentUserId,
+            UserName = CurrentUserName
+        });
+
+        AnnotationDialogOpen = false;
+        AnnotationText = string.Empty;
+        LoadConsultation();
+        SetStatus("Anotação adicionada com sucesso.");
+    }
+
+    private void OpenInviteDialog()
+    {
+        InviteDialogOpen = true;
+        InviteEmail = string.Empty;
+        InviteAnnotation = string.Empty;
+    }
+
+    private void CloseInviteDialog() => InviteDialogOpen = false;
+
+    private void SendInvite()
+    {
+        if (Consultation is null)
+        {
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(InviteEmail))
+        {
+            SetStatus("Introduza o email do utilizador a convidar.", true);
+            return;
+        }
+
+        var result = Store.SendInvite(Consultation.Id, InviteEmail, InviteAnnotation);
+        if (!result.ok)
+        {
+            SetStatus(result.message, true);
+            return;
+        }
+
+        InviteDialogOpen = false;
+        InviteEmail = string.Empty;
+        InviteAnnotation = string.Empty;
+        LoadConsultation();
+        SetStatus(result.message);
+    }
+
+    private void AcceptInvite(string inviteId)
+    {
+        if (Consultation is null)
+        {
+            return;
+        }
+
+        if (!Store.AcceptInvite(Consultation.Id, inviteId, CurrentUserId))
+        {
+            SetStatus("Não foi possível aceitar o convite.", true);
+            return;
+        }
+
+        LoadConsultation();
+        SetStatus("Convite aceite com sucesso.");
+    }
+
+    private void CloseInviteRemovalDialog() => InviteToRemoveId = null;
+
+    private void ConfirmRemoveInvite()
+    {
+        if (Consultation is null || string.IsNullOrWhiteSpace(InviteToRemoveId))
+        {
+            return;
+        }
+
+        if (!Store.RemoveInvite(Consultation.Id, InviteToRemoveId))
+        {
+            SetStatus("Não foi possível remover o convite.", true);
+            return;
+        }
+
+        InviteToRemoveId = null;
+        LoadConsultation();
+        SetStatus("Convite removido com sucesso.");
+    }
+
+    private string GetInviteComment(string inviteId) =>
+        InviteComments.TryGetValue(inviteId, out var value) ? value : string.Empty;
+
+    private void SetInviteComment(string inviteId, string? value) =>
+        InviteComments[inviteId] = value ?? string.Empty;
+
+    private void AddInviteComment(string inviteId)
+    {
+        if (Consultation is null)
+        {
+            return;
+        }
+
+        var text = GetInviteComment(inviteId);
+        if (string.IsNullOrWhiteSpace(text))
+        {
+            SetStatus("Escreva um comentário antes de guardar.", true);
+            return;
+        }
+
+        if (!Store.AddInviteAnnotation(Consultation.Id, inviteId, CurrentUserId, text))
+        {
+            SetStatus("Não foi possível guardar o comentário.", true);
+            return;
+        }
+
+        InviteComments[inviteId] = string.Empty;
+        LoadConsultation();
+        SetStatus("Comentário adicionado com sucesso.");
+    }
+
+    private static string StatusClass(ConsultationData.ConsultationStatus status) => status switch
+    {
+        ConsultationData.ConsultationStatus.Agendada => "status-gray",
+        ConsultationData.ConsultationStatus.EmAndamento => "status-blue",
+        ConsultationData.ConsultationStatus.Encerrada => "status-green",
+        _ => "status-gray"
+    };
+
+    private static string StatusLabel(ConsultationData.ConsultationStatus status) => status switch
+    {
+        ConsultationData.ConsultationStatus.Agendada => "Agendada",
+        ConsultationData.ConsultationStatus.EmAndamento => "Em andamento",
+        ConsultationData.ConsultationStatus.Encerrada => "Encerrada",
+        _ => "Desconhecido"
+    };
+
+    private static string InviteStatusClass(ConsultationData.InviteStatus status) => status switch
+    {
+        ConsultationData.InviteStatus.Pending => "invite-pending",
+        ConsultationData.InviteStatus.Accepted => "invite-accepted",
+        ConsultationData.InviteStatus.Rejected => "invite-rejected",
+        _ => "invite-pending"
+    };
+
+    private static string InviteStatusLabel(ConsultationData.InviteStatus status) => status switch
+    {
+        ConsultationData.InviteStatus.Pending => "Pendente",
+        ConsultationData.InviteStatus.Accepted => "Aceite",
+        ConsultationData.InviteStatus.Rejected => "Rejeitado",
+        _ => "Desconhecido"
+    };
+
+    private static string ChargingText(ConsultationData.ConsultationItem consultation)
+    {
+        if (consultation.ChargingType == ConsultationData.ChargingType.Fixo)
+        {
+            return $"EUR {(consultation.FixedPrice ?? 0m):0.00} (fixo)";
+        }
+
+        return $"EUR {(consultation.HourlyPrice ?? 0m):0.00}/hora";
+    }
+
+    private sealed class StoredUser
+    {
+        [System.Text.Json.Serialization.JsonPropertyName("nome")]
+        public string? Nome { get; set; }
+
+        [System.Text.Json.Serialization.JsonPropertyName("email")]
+        public string? Email { get; set; }
+    }
 }

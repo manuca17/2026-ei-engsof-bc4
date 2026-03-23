@@ -1,6 +1,10 @@
-﻿@page "/consultations"
+@page "/consultations"
+@using BlazorProject.Services
+@using ConsultationData = BlazorProject.Services.ConsultasService
 @rendermode InteractiveServer
 @inject NavigationManager NavigationManager
+@inject IJSRuntime JSRuntime
+@inject ConsultasService ConsultasService
 
 <PageTitle>Consultations</PageTitle>
 
@@ -8,7 +12,7 @@
     <div class="consult-header">
         <div>
             <h1>Gestao de Consultas</h1>
-            <p>Total de @_consultationItems.Count consulta@(_consultationItems.Count == 1 ? "" : "s")</p>
+            <p>Total de @ConsultationItems.Count consulta@(ConsultationItems.Count == 1 ? "" : "s")</p>
         </div>
         <button class="btn-primary" @onclick="OpenDialog">
             <span>+</span>
@@ -36,7 +40,7 @@
                 <label>Paciente</label>
                 <select @bind="FilterPatient">
                     <option value="all">Todos</option>
-                    @foreach (var patient in Patients)
+                    @foreach (var patient in PatientOptions)
                     {
                         <option value="@patient.Id">@patient.Name</option>
                     }
@@ -60,7 +64,19 @@
         </div>
     </section>
 
-    @if (FilteredConsultations.Count == 0)
+    @if (IsLoading)
+    {
+        <section class="panel empty">
+            A carregar consultas...
+        </section>
+    }
+    else if (!string.IsNullOrWhiteSpace(LoadError))
+    {
+        <section class="panel empty">
+            @LoadError
+        </section>
+    }
+    else if (FilteredConsultations.Count == 0)
     {
         <section class="panel empty">
             Nenhuma consulta encontrada
@@ -87,9 +103,9 @@
                     <p class="meta"><strong>Cobranca:</strong> @ChargingText(consultation)</p>
 
                     <div class="details">
-                        <div><span>Exames:</span><strong>@consultation.Exams</strong></div>
-                        <div><span>Anotacoes:</span><strong>@consultation.Notes</strong></div>
-                        <div><span>Convites:</span><strong>@consultation.Invites</strong></div>
+                        <div><span>Exames:</span><strong>@consultation.ExamsCount</strong></div>
+                        <div><span>Anotacoes:</span><strong>@consultation.NotesCount</strong></div>
+                        <div><span>Convites:</span><strong>@consultation.InvitesCount</strong></div>
                     </div>
                 </article>
             }
@@ -100,18 +116,18 @@
 @if (DialogOpen)
 {
     <div class="modal-backdrop" @onclick="CloseDialog">
-        <div class="modal" @onclick:stopPropagation="true">
-            <div class="modal-header">
+        <div class="dialog-panel" @onclick:stopPropagation="true">
+            <div class="dialog-header">
                 <h3>Criar Nova Consulta</h3>
                 <p>Preencha os dados da consulta abaixo</p>
             </div>
 
-            <div class="modal-body">
+            <div class="dialog-body">
                 <div class="field">
                     <label>Paciente</label>
                     <select @bind="FormPatientId">
                         <option value="">Selecione um paciente</option>
-                        @foreach (var patient in Patients)
+                        @foreach (var patient in PatientOptions)
                         {
                             <option value="@patient.Id">@patient.Name</option>
                         }
@@ -147,8 +163,10 @@
                 }
             </div>
 
-            <div class="modal-actions">
-                <button class="btn-primary" @onclick="CreateConsultation">Criar Consulta</button>
+            <div class="dialog-actions">
+                <button class="btn-primary" @onclick="CreateConsultationAsync" disabled="@IsCreating">
+                    @(IsCreating ? "A criar..." : "Criar Consulta")
+                </button>
                 <button class="btn-outline" @onclick="CloseDialog">Cancelar</button>
             </div>
         </div>
@@ -156,7 +174,18 @@
 }
 
 @code {
+    [Parameter]
+    [SupplyParameterFromQuery(Name = "patient")]
+    public string? PatientIdFromQuery { get; set; }
+
     private bool DialogOpen;
+    private bool IsLoading = true;
+    private bool IsCreating;
+    private string? LoadError;
+    private int? LoggedDoctorId;
+
+    private List<ConsultationData.ConsultationListItem> ConsultationItems { get; set; } = [];
+    private List<ConsultationData.PatientOptionItem> PatientOptions { get; set; } = [];
 
     private string FilterStatus = "all";
     private string FilterPatient = "all";
@@ -171,52 +200,55 @@
     private decimal? FormFixedPrice = 80m;
     private decimal? FormHourlyPrice = 60m;
 
-    private readonly List<PatientItem> Patients = new()
+    protected override async Task OnInitializedAsync()
     {
-        new() { Id = "p1", Name = "Joao Mendes" },
-        new() { Id = "p2", Name = "Ana Costa" },
-        new() { Id = "p3", Name = "Rui Alves" }
-    };
-
-    private readonly List<ConsultationItem> _consultationItems = new()
-    {
-        new()
+        var loggedUser = LoggedInUserContext.CurrentUser;
+        if (loggedUser is null)
         {
-            Id = "c1", PatientId = "p1", PatientName = "Joao Mendes", Description = "Avaliacao de rotina",
-            Status = "agendada", ChargingType = "fixo", FixedPrice = 80m, StartAt = DateTime.Now.AddDays(1),
-            Exams = 1, Notes = 2, Invites = 0
-        },
-        new()
-        {
-            Id = "c2", PatientId = "p2", PatientName = "Ana Costa", Description = "Revisao cardiologia",
-            Status = "encerrada", ChargingType = "por_hora", HourlyPrice = 60m, StartAt = DateTime.Now.AddDays(-3),
-            Exams = 3, Notes = 4, Invites = 1
-        },
-        new()
-        {
-            Id = "c3", PatientId = "p3", PatientName = "Rui Alves", Description = "Consulta de seguimento",
-            Status = "em_andamento", ChargingType = "fixo", FixedPrice = 95m, StartAt = DateTime.Now,
-            Exams = 2, Notes = 1, Invites = 0
+            NavigationManager.NavigateTo("/");
+            return;
         }
-    };
 
-    private List<ConsultationItem> FilteredConsultations => _consultationItems.Where(c =>
+        LoggedDoctorId = loggedUser.IdUtilizador;
+
+        if (!string.IsNullOrWhiteSpace(PatientIdFromQuery))
+        {
+            FilterPatient = PatientIdFromQuery;
+        }
+
+        await LoadPageDataAsync();
+    }
+
+    private List<ConsultationData.ConsultationListItem> FilteredConsultations => ConsultationItems.Where(consultation =>
     {
-        if (FilterStatus != "all" && c.Status != FilterStatus) return false;
-        if (FilterPatient != "all" && c.PatientId != FilterPatient) return false;
+        if (FilterStatus != "all" && StatusValue(consultation.Status) != FilterStatus)
+        {
+            return false;
+        }
+
+        if (FilterPatient != "all" && consultation.PatientId?.ToString() != FilterPatient)
+        {
+            return false;
+        }
 
         if (DateFromApplied is not null)
         {
-            if (c.StartAt is null || c.StartAt.Value.Date < DateFromApplied.Value.Date) return false;
+            if (consultation.StartAt is null || consultation.StartAt.Value.Date < DateFromApplied.Value.Date)
+            {
+                return false;
+            }
         }
 
         if (DateToApplied is not null)
         {
-            if (c.StartAt is null || c.StartAt.Value.Date > DateToApplied.Value.Date) return false;
+            if (consultation.StartAt is null || consultation.StartAt.Value.Date > DateToApplied.Value.Date)
+            {
+                return false;
+            }
         }
 
         return true;
-    }).ToList();
+    }).OrderByDescending(consultation => consultation.StartAt ?? DateTime.MinValue).ToList();
 
     private void OpenDialog() => DialogOpen = true;
 
@@ -236,55 +268,153 @@
         DateToApplied = null;
     }
 
-    private void CreateConsultation()
+    private async Task CreateConsultationAsync()
     {
-        var selectedPatient = Patients.FirstOrDefault(p => p.Id == FormPatientId);
-        var patientName = selectedPatient?.Name ?? "Paciente";
-
-        _consultationItems.Insert(0, new ConsultationItem
+        if (LoggedDoctorId is null)
         {
-            Id = Guid.NewGuid().ToString("N"),
-            PatientId = string.IsNullOrWhiteSpace(FormPatientId) ? "p0" : FormPatientId,
-            PatientName = patientName,
-            Description = string.IsNullOrWhiteSpace(FormDescription) ? "Sem descricao" : FormDescription,
-            Status = "agendada",
-            ChargingType = FormChargingType,
-            FixedPrice = FormChargingType == "fixo" ? FormFixedPrice : null,
-            HourlyPrice = FormChargingType == "por_hora" ? FormHourlyPrice : null,
-            StartAt = DateTime.Now,
-            Exams = 0,
-            Notes = 0,
-            Invites = 0
-        });
+            NavigationManager.NavigateTo("/");
+            return;
+        }
 
-        FormPatientId = string.Empty;
-        FormDescription = string.Empty;
-        FormChargingType = "fixo";
-        FormFixedPrice = 80m;
-        FormHourlyPrice = 60m;
+        if (string.IsNullOrWhiteSpace(FormPatientId))
+        {
+            await JSRuntime.InvokeVoidAsync("alert", "Selecione um paciente para criar a consulta.");
+            return;
+        }
 
-        DialogOpen = false;
+        if (string.IsNullOrWhiteSpace(FormDescription))
+        {
+            await JSRuntime.InvokeVoidAsync("alert", "Adicione uma descrição para a consulta.");
+            return;
+        }
+
+        if (FormChargingType == "fixo" && (!FormFixedPrice.HasValue || FormFixedPrice <= 0))
+        {
+            await JSRuntime.InvokeVoidAsync("alert", "Introduza um preço fixo válido.");
+            return;
+        }
+
+        if (FormChargingType == "por_hora" && (!FormHourlyPrice.HasValue || FormHourlyPrice <= 0))
+        {
+            await JSRuntime.InvokeVoidAsync("alert", "Introduza um preço por hora válido.");
+            return;
+        }
+
+        if (!int.TryParse(FormPatientId, out var parsedPatientId))
+        {
+            await JSRuntime.InvokeVoidAsync("alert", "Paciente inválido.");
+            return;
+        }
+
+        var chargingType = FormChargingType == "por_hora" ? ConsultationData.ChargingType.PorHora : ConsultationData.ChargingType.Fixo;
+
+        try
+        {
+            IsCreating = true;
+
+            var result = await ConsultasService.CreateForDoctorAsync(new ConsultationData.CreateConsultaRequest
+            {
+                IdUtilizador = LoggedDoctorId.Value,
+                IdPaciente = parsedPatientId,
+                Description = FormDescription.Trim(),
+                ChargingType = chargingType,
+                FixedPrice = chargingType == ConsultationData.ChargingType.Fixo ? FormFixedPrice : null,
+                HourlyPrice = chargingType == ConsultationData.ChargingType.PorHora ? FormHourlyPrice : null
+            });
+
+            if (!result.Ok)
+            {
+                await JSRuntime.InvokeVoidAsync("alert", $"Erro ao criar consulta: {result.ErrorMessage}");
+                return;
+            }
+
+            FormPatientId = string.Empty;
+            FormDescription = string.Empty;
+            FormChargingType = "fixo";
+            FormFixedPrice = 80m;
+            FormHourlyPrice = 60m;
+            DialogOpen = false;
+
+            await LoadConsultationsAsync();
+            await JSRuntime.InvokeVoidAsync("alert", "Consulta criada com sucesso!");
+        }
+        finally
+        {
+            IsCreating = false;
+        }
     }
 
-    private static string StatusClass(string status) => status switch
+    private async Task LoadPageDataAsync()
     {
-        "agendada" => "status-gray",
-        "em_andamento" => "status-blue",
-        "encerrada" => "status-green",
+        try
+        {
+            IsLoading = true;
+            LoadError = null;
+
+            await LoadPatientsAsync();
+            await LoadConsultationsAsync();
+        }
+        catch (Exception ex)
+        {
+            LoadError = $"Erro ao carregar consultas: {ex.Message}";
+            ConsultationItems = [];
+            PatientOptions = [];
+        }
+        finally
+        {
+            IsLoading = false;
+        }
+    }
+
+    private async Task LoadPatientsAsync()
+    {
+        if (LoggedDoctorId is null)
+        {
+            PatientOptions = [];
+            return;
+        }
+
+        PatientOptions = await ConsultasService.GetPatientsForDoctorAsync(LoggedDoctorId.Value);
+    }
+
+    private async Task LoadConsultationsAsync()
+    {
+        if (LoggedDoctorId is null)
+        {
+            ConsultationItems = [];
+            return;
+        }
+
+        ConsultationItems = await ConsultasService.GetForDoctorAsync(LoggedDoctorId.Value);
+    }
+
+    private static string StatusClass(ConsultationData.ConsultationStatus status) => status switch
+    {
+        ConsultationData.ConsultationStatus.Agendada => "status-gray",
+        ConsultationData.ConsultationStatus.EmAndamento => "status-blue",
+        ConsultationData.ConsultationStatus.Encerrada => "status-green",
         _ => "status-gray"
     };
 
-    private static string StatusLabel(string status) => status switch
+    private static string StatusLabel(ConsultationData.ConsultationStatus status) => status switch
     {
-        "agendada" => "Agendada",
-        "em_andamento" => "Em andamento",
-        "encerrada" => "Encerrada",
+        ConsultationData.ConsultationStatus.Agendada => "Agendada",
+        ConsultationData.ConsultationStatus.EmAndamento => "Em andamento",
+        ConsultationData.ConsultationStatus.Encerrada => "Encerrada",
         _ => "Desconhecido"
     };
 
-    private static string ChargingText(ConsultationItem consultation)
+    private static string StatusValue(ConsultationData.ConsultationStatus status) => status switch
     {
-        if (consultation.ChargingType == "fixo")
+        ConsultationData.ConsultationStatus.Agendada => "agendada",
+        ConsultationData.ConsultationStatus.EmAndamento => "em_andamento",
+        ConsultationData.ConsultationStatus.Encerrada => "encerrada",
+        _ => "all"
+    };
+
+    private static string ChargingText(ConsultationData.ConsultationListItem consultation)
+    {
+        if (consultation.ChargingType == ConsultationData.ChargingType.Fixo)
         {
             var value = consultation.FixedPrice ?? 0m;
             return $"EUR {value:0.00} (fixo)";
@@ -292,27 +422,5 @@
 
         var hourly = consultation.HourlyPrice ?? 0m;
         return $"EUR {hourly:0.00}/hora";
-    }
-
-    private sealed class PatientItem
-    {
-        public string Id { get; init; } = string.Empty;
-        public string Name { get; init; } = string.Empty;
-    }
-
-    private sealed class ConsultationItem
-    {
-        public string Id { get; init; } = string.Empty;
-        public string PatientId { get; init; } = string.Empty;
-        public string PatientName { get; init; } = string.Empty;
-        public string Description { get; init; } = string.Empty;
-        public string Status { get; init; } = "agendada";
-        public string ChargingType { get; init; } = "fixo";
-        public decimal? FixedPrice { get; init; }
-        public decimal? HourlyPrice { get; init; }
-        public DateTime? StartAt { get; init; }
-        public int Exams { get; init; }
-        public int Notes { get; init; }
-        public int Invites { get; init; }
     }
 }

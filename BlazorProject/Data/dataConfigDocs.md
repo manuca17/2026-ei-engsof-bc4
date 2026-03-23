@@ -10,7 +10,7 @@ dotnet run
 # Criação dos modelos
 Os modelos que representam cada entidade foram gerados automaticamente utilzando o seguinte comando:
 ````shell
-dotnet ef dbcontext scaffold "Host=localhost;Port=5433;Database=ei-engsof;Username=admin;Password=admin123" Npgsql.EntityFrameworkCore.PostgreSQL -o Data/Models             
+dotnet ef dbcontext scaffold "Host=localhost;Port=5432;Database=ei-engsof;Username=admin;Password=admin123" Npgsql.EntityFrameworkCore.PostgreSQL -o Data/Models             
 ````
 Que faz algo chamado de "reverse scaffolding" para gerar os modelos de acordo com o que está presente na base de dados pgsql.
 # Detalhes da ligação
