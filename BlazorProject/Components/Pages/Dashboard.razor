@@ -1,5 +1,6 @@
 ﻿@page "/dashboard"
 @rendermode InteractiveServer
+@using BlazorProject.Data.Services
 @using BlazorProject.Services
 @inject NavigationManager NavigationManager
 @inject PacienteService PacienteService
@@ -137,7 +138,7 @@
 
         try
         {
-            var patients = await PacienteService.GetByDoctorAsync(loggedUser.IdUtilizador);
+                var patients = await PacienteService.GetByDoctorAsync(loggedUser.IdUtilizador);
             TotalPatients = patients.Count;
         }
         finally
