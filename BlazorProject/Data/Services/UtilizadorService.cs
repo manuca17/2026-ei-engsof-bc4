@@ -32,22 +32,42 @@ public class UtilizadorService
 
         return null;
     }
-
     
-    public async Task<Utilizador> RegisterAsync(Utilizador utilizador)
+    public async Task<Utilizador?> RegisterAsync(Utilizador utilizador)
+    {
+        if (string.IsNullOrWhiteSpace(utilizador.Password) || utilizador.Password.Length <= 8)
+        {
+            return null; 
+        }
+
+        await using var context = await _factory.CreateDbContextAsync();
+        
+        string hash = BCrypt.Net.BCrypt.HashPassword(utilizador.Password, workFactor: 12);
+        utilizador.Password = hash;
+
+        context.Utilizadores.Add(utilizador);
+
+        await context.SaveChangesAsync();
+
+        return utilizador;
+    }
+
+    public async Task<Utilizador> UpdateAsync(Utilizador utilizador)
     {
         await using var context = await _factory.CreateDbContextAsync();
-        if (utilizador.Password.Length > 8) // checks for pass quality, only size for now
-        {
-            string hash = BCrypt.Net.BCrypt.HashPassword(utilizador.Password, workFactor: 12);
 
-            utilizador.Password = hash;
-            context.Utilizadores.Add(utilizador);
-            context.SaveChangesAsync();
-            return context.Utilizadores.FirstOrDefault(u => u.Username == utilizador.Username);
-        }else
+
+        var exists = await context.Utilizadores.AnyAsync(u => u.IdUtilizador == utilizador.IdUtilizador);
+    
+        if (!exists) 
         {
-            return null;
+            throw new Exception("User not found");
         }
+
+        utilizador.DataHoraAtualizacao = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
+        context.Utilizadores.Update(utilizador);
+
+        await context.SaveChangesAsync();
+        return null;
     }
 }
