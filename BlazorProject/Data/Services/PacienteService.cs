@@ -1,4 +1,4 @@
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using BlazorProject.Data.Models; // Ensure this matches your context namespace
 
 namespace BlazorProject.Data.Services;
@@ -33,6 +33,25 @@ public class PacienteService
             .Include(p => p.CodPostalNavigation)
             .FirstOrDefaultAsync(p => p.IdPaciente == id);
     }
+    
+    public async Task<List<Paciente>> GetByDoctorAsync(int idUtilizador)
+    {
+        await using var context = await _contextFactory.CreateDbContextAsync();
+
+        var patientIds = context.UtilizadorConsulta
+            .Where(link => link.IdUtilizador == idUtilizador && (link.IsCriador || link.ConviteAceite))
+            .Select(link => link.IdConsultaNavigation.IdPaciente)
+            .Where(idPaciente => idPaciente.HasValue)
+            .Select(idPaciente => idPaciente!.Value)
+            .Distinct();
+
+        return await context.Pacientes
+            .AsNoTracking()
+            .Where(p => patientIds.Contains(p.IdPaciente))
+            .OrderBy(p => p.Nome)
+            .ToListAsync();
+    }
+
 
     /// <summary>
     /// Adds a new patient or updates an existing one.
