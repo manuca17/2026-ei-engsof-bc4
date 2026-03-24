@@ -4,6 +4,7 @@
 @using BlazorProject.Services
 @inject NavigationManager NavigationManager
 @inject PacienteService PacienteService
+@inject ConsultasService ConsultasService
 
 <PageTitle>Dashboard</PageTitle>
 
@@ -46,7 +47,7 @@
                     </svg>
                 </div>
             </div>
-            <div class="stat-value">48</div>
+            <div class="stat-value">@(IsLoading ?  "..." : TotalConsultas.ToString())</div>
         </div>
 
         <div class="stat-card">
@@ -123,6 +124,7 @@
 @code {
     private string DoctorName { get; set; } = "Utilizador";
     private int TotalPatients { get; set; }
+    private int TotalConsultas { get; set; }
     private bool IsLoading = true;
 
     protected override async Task OnInitializedAsync()
@@ -138,8 +140,11 @@
 
         try
         {
-                var patients = await PacienteService.GetByDoctorAsync(loggedUser.IdUtilizador);
+            var patients = await PacienteService.GetByDoctorAsync(loggedUser.IdUtilizador);
             TotalPatients = patients.Count;
+
+            var consultas = await ConsultasService.GetByDoctorAsync(loggedUser.IdUtilizador);
+            TotalConsultas = consultas.Count;
         }
         finally
         {

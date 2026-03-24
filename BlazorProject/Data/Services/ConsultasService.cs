@@ -196,6 +196,20 @@ public class ConsultasService
         };
     }
 
+    public async Task<List<Consulta>> GetByDoctorAsync(int idUtilizador)
+    {
+        await using var context = await _factory.CreateDbContextAsync();
+
+        return await context.UtilizadorConsulta
+            .Where(link => link.IdUtilizador == idUtilizador
+                           && (link.IsCriador || link.ConviteAceite))
+            .Select(link => link.IdConsultaNavigation)
+            .Where(c => c != null)
+            .Distinct()
+            .AsNoTracking()
+            .ToListAsync();
+    }
+
     public async Task<bool> StartConsultationAsync(int idUtilizador, int idConsulta)
     {
         await using var context = await _factory.CreateDbContextAsync();
