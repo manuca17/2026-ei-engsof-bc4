@@ -31,7 +31,7 @@ try
     bool canConnect = await dbCtx.Database.CanConnectAsync();
     if (canConnect)
     {
-        int utilizadores = await dbCtx.Utilizadors.CountAsync();
+        int utilizadores = await dbCtx.Utilizadores.CountAsync();
         int pacientes    = await dbCtx.Pacientes.CountAsync();
         int consultas    = await dbCtx.Consulta.CountAsync();
         Console.ForegroundColor = ConsoleColor.Green;
