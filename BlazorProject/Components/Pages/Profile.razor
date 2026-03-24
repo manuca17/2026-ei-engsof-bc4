@@ -7,16 +7,6 @@
 
 <PageTitle>Perfil</PageTitle>
 
-@if (IsLoading)
-{
-    <div class="text-center py-5">Carregando...</div>
-}
-else if (CurrentUser is null)
-{
-    <div class="text-center py-5 text-muted">Redirecionando...</div>
-}
-else
-{
     <div class="max-w-2xl mx-auto space-y-6">
         <div class="d-flex align-items-center justify-content-between">
             <div>
@@ -118,7 +108,11 @@ else
                 <div class="d-flex flex-column gap-3">
                     <div class="d-flex justify-content-between align-items-center p-3 bg-light rounded">
                         <span class="text-muted">Membro desde</span>
-                        <span class="fw-semibold">fix</span>
+                        <span class="fw-semibold">@CurrentUser.DataHoraRegisto</span>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center p-3 bg-light rounded">
+                        <span class="text-muted">Ultima atualização</span>
+                        <span class="fw-semibold">@CurrentUser.DataHoraAtualizacao</span>
                     </div>
                     <div class="d-flex justify-content-between align-items-center p-3 bg-light rounded">
                         <span class="text-muted">ID do Utilizador</span>
@@ -128,24 +122,26 @@ else
             </div>
         </div>
     </div>
-}
+
 
 @code {
     private bool IsEditing;
-    private bool IsLoading = false;
 
     private Utilizador CurrentUser;
     private ProfileForm FormData { get; set; } = new();
 
-    protected override async Task OnAfterRenderAsync(bool firstRender)
-    {
-        if (!firstRender) return;
-        await LoadUserAsync();
-    }
 
-    private async Task LoadUserAsync()
+    protected override Task OnInitializedAsync()
     {
-        var CurrentUser = LoggedInUserContext.CurrentUser;
+        CurrentUser = LoggedInUserContext.CurrentUser;
+
+        if (CurrentUser is null)
+        {
+            NavigationManager.NavigateTo("/");
+            
+        }
+        
+        return base.OnInitializedAsync();
     }
 
     private void ResetForm()
@@ -164,12 +160,14 @@ else
 
     private async Task SaveProfileAsync()
     {
+        
     }
 
     private void CancelEdit()
     {
         IsEditing = false;
         ResetForm();
+        
     }
 
     private sealed class ProfileForm

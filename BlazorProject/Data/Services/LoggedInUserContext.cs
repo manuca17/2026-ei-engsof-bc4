@@ -24,7 +24,7 @@ public static class LoggedInUserContext
         {
             // Keep a detached copy so this state is independent from EF context lifetime.
             _currentUser = user;
-
+            Console.WriteLine(_currentUser);
         }
     }
 

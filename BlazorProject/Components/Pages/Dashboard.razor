@@ -77,7 +77,7 @@
             <div class="stat-value">€1 240,00</div>
         </div>
     </div>
-
+    
     <!-- Bottom Cards -->
     <div class="bottom-grid">
 
@@ -124,10 +124,11 @@
     private string DoctorName { get; set; } = "Utilizador";
     private int TotalPatients { get; set; }
     private bool IsLoading = true;
-
+    
     protected override async Task OnInitializedAsync()
     {
         var loggedUser = LoggedInUserContext.CurrentUser;
+        
         if (loggedUser is null)
         {
             NavigationManager.NavigateTo("/");

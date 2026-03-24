@@ -30,6 +30,10 @@ public partial class Utilizador
     public string? NumCarteira { get; set; }
 
     public string? Especialidade { get; set; }
+    
+    public string? DataHoraRegisto { get; set; }
+    
+    public string? DataHoraAtualizacao { get; set; }
 
     public Utilizador(string nome, string username, string password, string? telefone, string? email, string? numCarteira)
     {

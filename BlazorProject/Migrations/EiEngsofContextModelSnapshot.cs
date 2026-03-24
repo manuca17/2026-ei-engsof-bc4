@@ -347,6 +347,12 @@ namespace BlazorProject.Migrations
                         .HasColumnType("character varying(10)")
                         .HasColumnName("cod_postal");
 
+                    b.Property<string>("DataHoraAtualizacao")
+                        .HasColumnType("text");
+
+                    b.Property<string>("DataHoraRegisto")
+                        .HasColumnType("text");
+
                     b.Property<string>("Email")
                         .HasMaxLength(150)
                         .HasColumnType("character varying(150)")
