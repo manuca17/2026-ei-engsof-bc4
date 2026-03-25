@@ -36,9 +36,13 @@ public partial class EiEngsofContext : DbContext
 
     public virtual DbSet<UtilizadorConsulta> UtilizadorConsulta { get; set; }
     
+    public virtual DbSet<Anotacao> Anotacoes { get; set; }
+    
+    public virtual DbSet<ExameMedicoConsulta> ExameMedicoConsulta { get; set; }
+    
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
 #warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see https://go.microsoft.com/fwlink/?LinkId=723263.
-        => optionsBuilder.UseNpgsql("Host=localhost;Port=5432;Database=ei-engsof;Username=admin;Password=admin123");
+        => optionsBuilder.UseNpgsql("Host=localhost;Port=5433;Database=ei-engsof;Username=admin;Password=admin123");
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -93,12 +97,8 @@ public partial class EiEngsofContext : DbContext
 
             entity.ToTable("consulta");
 
-            entity.HasIndex(e => e.IdExameMedico, "idx_consulta_exame");
-
             entity.HasIndex(e => e.IdFatura, "idx_consulta_fatura");
-
             entity.HasIndex(e => e.IdPaciente, "idx_consulta_paciente");
-
             entity.HasIndex(e => e.IdTipoConsulta, "idx_consulta_tipo");
 
             entity.Property(e => e.IdConsulta).HasColumnName("id_consulta");
@@ -108,7 +108,6 @@ public partial class EiEngsofContext : DbContext
             entity.Property(e => e.DhInicio)
                 .HasColumnType("timestamp without time zone")
                 .HasColumnName("dh_inicio");
-            entity.Property(e => e.IdExameMedico).HasColumnName("id_exame_medico");
             entity.Property(e => e.IdFatura).HasColumnName("id_fatura");
             entity.Property(e => e.IdPaciente).HasColumnName("id_paciente");
             entity.Property(e => e.IdTipoConsulta).HasColumnName("id_tipo_consulta");
@@ -118,10 +117,6 @@ public partial class EiEngsofContext : DbContext
             entity.Property(e => e.ValorTotal)
                 .HasPrecision(10, 2)
                 .HasColumnName("valor_total");
-
-            entity.HasOne(d => d.IdExameMedicoNavigation).WithMany(p => p.Consulta)
-                .HasForeignKey(d => d.IdExameMedico)
-                .HasConstraintName("fk_con_exame");
 
             entity.HasOne(d => d.IdFaturaNavigation).WithMany(p => p.Consulta)
                 .HasForeignKey(d => d.IdFatura)
@@ -237,6 +232,10 @@ public partial class EiEngsofContext : DbContext
             entity.HasOne(d => d.CodPostalNavigation).WithMany(p => p.Pacientes)
                 .HasForeignKey(d => d.CodPostal)
                 .HasConstraintName("fk_pac_codpostal");
+            
+            entity.HasOne(d => d.IdUtilizadorNavigation).WithMany(p => p.Pacientes)
+                .HasForeignKey(d => d.IdUtilizador)
+                .HasConstraintName("fk_pac_utilizador");
         });
 
         modelBuilder.Entity<TipoConsulta>(entity =>
@@ -313,6 +312,30 @@ public partial class EiEngsofContext : DbContext
                 .HasConstraintName("fk_util_codpostal");
         });
 
+        modelBuilder.Entity<ExameMedicoConsulta>(entity =>
+        {
+            entity.HasKey(e => new { e.IdExameMedico, e.IdConsulta }).HasName("pk_exame_medico_consulta");
+
+            entity.ToTable("exame_medico_consulta");
+
+            entity.Property(e => e.IdExameMedico).HasColumnName("id_exame_medico");
+            entity.Property(e => e.IdConsulta).HasColumnName("id_consulta");
+            entity.Property(e => e.IdUtilzador).HasColumnName("id_utilizador");
+            entity.Property(e => e.dhRegisto)
+                .HasColumnType("timestamp without time zone")
+                .HasColumnName("dh_registo");
+
+            entity.HasOne(e => e.IdExameMedicoNavigation)
+                .WithMany(p => p.ExameMedicoConsultas)
+                .HasForeignKey(e => e.IdExameMedico)
+                .HasConstraintName("fk_emc_exame");
+
+            entity.HasOne(e => e.IdConsultaNavigation)
+                .WithMany(p => p.ExamesDaConsulta)
+                .HasForeignKey(e => e.IdConsulta)
+                .HasConstraintName("fk_emc_consulta");
+        });
+        
         modelBuilder.Entity<UtilizadorConsulta>(entity =>
         {
             entity.HasKey(e => new { e.IdUtilizador, e.IdConsulta }).HasName("pk_utilizador_consulta");

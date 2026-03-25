@@ -64,7 +64,7 @@ public class ConsultasService
                 FixedPrice = c.ValorTotal,
                 HourlyPrice = c.ValorHora,
                 StartAt = c.DhInicio,
-                ExamsCount = c.IdExameMedico.HasValue ? 1 : 0,
+                ExamsCount = c.ExamesDaConsulta.Count(),
                 NotesCount = c.Anotacaos.Count(),
                 InvitesCount = c.UtilizadorConsulta.Count(uc => !uc.IsCriador)
             })
@@ -98,7 +98,7 @@ public class ConsultasService
                 FixedPrice = c.ValorTotal,
                 HourlyPrice = c.ValorHora,
                 StartAt = c.DhInicio,
-                ExamsCount = c.IdExameMedico.HasValue ? 1 : 0,
+                ExamsCount = c.ExamesDaConsulta.Count(),
                 NotesCount = c.Anotacaos.Count(),
                 InvitesCount = c.UtilizadorConsulta.Count(uc => !uc.IsCriador)
             })
@@ -128,17 +128,17 @@ public class ConsultasService
                         UserName = n.IdUtilizadorNavigation != null ? n.IdUtilizadorNavigation.Nome : "Utilizador"
                     })
                     .ToList(),
-                CurrentExam = c.IdExameMedicoNavigation == null
-                    ? null
-                    : new DetailExamItem
-                    {
-                        Id = c.IdExameMedicoNavigation.IdExameMedico,
-                        Name = c.IdExameMedicoNavigation.Tipo ?? "Exame",
-                        Type = c.IdExameMedicoNavigation.Tipo ?? "Exame",
-                        Date = c.IdExameMedicoNavigation.DhExame,
-                        Description = null,
-                        Results = c.IdExameMedicoNavigation.Resultado
-                    }
+                    CurrentExams = c.ExamesDaConsulta.Count == 0
+                        ? new List<DetailExamItem>()
+                        : c.ExamesDaConsulta.Select(e => new DetailExamItem
+                        {
+                            Id = e.IdExameMedicoNavigation.IdExameMedico,
+                            Name = e.IdExameMedicoNavigation.Tipo ?? "Exame",
+                            Type = e.IdExameMedicoNavigation.Tipo ?? "Exame",
+                            Date = e.IdExameMedicoNavigation.DhExame,
+                            Description = null,
+                            Results = e.IdExameMedicoNavigation.Resultado
+                        }).ToList()
             })
             .FirstOrDefaultAsync();
 
@@ -150,32 +150,23 @@ public class ConsultasService
         List<DetailExamItem> availableExams = [];
         if (consulta.Consulta.IdPaciente.HasValue)
         {
-            var currentExamId = consulta.Consulta.IdExameMedico;
-            var availableExamIds = await context.Consulta
+            var currentExamIds = consulta.CurrentExams.Select(e => e.Id).ToHashSet();
+
+            availableExams = await context.ExameMedicoConsulta
                 .AsNoTracking()
-                .Where(c => c.IdPaciente == consulta.Consulta.IdPaciente && c.IdExameMedico.HasValue)
-                .Select(c => c.IdExameMedico!.Value)
-                .Where(idExame => currentExamId == null || idExame != currentExamId.Value)
+                .Where(emc => emc.IdConsultaNavigation!.IdPaciente == consulta.Consulta.IdPaciente
+                              && !currentExamIds.Contains(emc.IdExameMedico))
+                .Select(emc => new DetailExamItem
+                {
+                    Id = emc.IdExameMedicoNavigation!.IdExameMedico,
+                    Name = emc.IdExameMedicoNavigation.Tipo ?? "Exame",
+                    Type = emc.IdExameMedicoNavigation.Tipo ?? "Exame",
+                    Date = emc.IdExameMedicoNavigation.DhExame,
+                    Description = null,
+                    Results = emc.IdExameMedicoNavigation.Resultado
+                })
                 .Distinct()
                 .ToListAsync();
-
-            if (availableExamIds.Count > 0)
-            {
-                availableExams = await context.ExameMedicos
-                    .AsNoTracking()
-                    .Where(exam => availableExamIds.Contains(exam.IdExameMedico))
-                    .OrderByDescending(exam => exam.DhExame)
-                    .Select(exam => new DetailExamItem
-                    {
-                        Id = exam.IdExameMedico,
-                        Name = exam.Tipo ?? "Exame",
-                        Type = exam.Tipo ?? "Exame",
-                        Date = exam.DhExame,
-                        Description = null,
-                        Results = exam.Resultado
-                    })
-                    .ToListAsync();
-            }
         }
 
         return new ConsultationDetailItem
@@ -190,7 +181,7 @@ public class ConsultasService
             HourlyPrice = consulta.Consulta.ValorHora,
             StartAt = consulta.Consulta.DhInicio,
             EndAt = consulta.Consulta.DhFim,
-            Exams = consulta.CurrentExam is null ? [] : [consulta.CurrentExam],
+            Exams = consulta.CurrentExams,
             AvailableExams = availableExams,
             Annotations = consulta.Notes
         };
@@ -260,17 +251,6 @@ public class ConsultasService
             return (false, "Sem permissões para alterar esta consulta.");
         }
 
-        var consulta = await context.Consulta.FirstOrDefaultAsync(c => c.IdConsulta == idConsulta);
-        if (consulta is null)
-        {
-            return (false, "Consulta não encontrada.");
-        }
-
-        if (consulta.IdExameMedico.HasValue)
-        {
-            return (false, "Esta consulta já tem um exame associado. O modelo atual permite apenas 1 exame por consulta.");
-        }
-
         var exame = new ExameMedico
         {
             DhExame = date,
@@ -282,9 +262,15 @@ public class ConsultasService
         context.ExameMedicos.Add(exame);
         await context.SaveChangesAsync();
 
-        consulta.IdExameMedico = exame.IdExameMedico;
-        await context.SaveChangesAsync();
+        context.ExameMedicoConsulta.Add(new ExameMedicoConsulta
+        {
+            IdExameMedico = exame.IdExameMedico,
+            IdConsulta = idConsulta,
+            IdUtilzador = idUtilizador,
+            dhRegisto = DateTime.Now
+        });
 
+        await context.SaveChangesAsync();
         return (true, "Exame adicionado com sucesso");
     }
 
@@ -299,20 +285,11 @@ public class ConsultasService
             return (false, "Sem permissões para alterar esta consulta.");
         }
 
-        var consulta = await context.Consulta.FirstOrDefaultAsync(c => c.IdConsulta == idConsulta);
-        if (consulta is null)
-        {
-            return (false, "Consulta não encontrada.");
-        }
-
-        if (consulta.IdExameMedico.HasValue && consulta.IdExameMedico.Value == idExame)
+        var alreadyLinked = await context.ExameMedicoConsulta.AnyAsync(e =>
+            e.IdConsulta == idConsulta && e.IdExameMedico == idExame);
+        if (alreadyLinked)
         {
             return (false, "Este exame já está associado à consulta.");
-        }
-
-        if (consulta.IdExameMedico.HasValue)
-        {
-            return (false, "Esta consulta já tem um exame associado. O modelo atual permite apenas 1 exame por consulta.");
         }
 
         var examExists = await context.ExameMedicos.AnyAsync(e => e.IdExameMedico == idExame);
@@ -321,7 +298,14 @@ public class ConsultasService
             return (false, "Exame não encontrado.");
         }
 
-        consulta.IdExameMedico = idExame;
+        context.ExameMedicoConsulta.Add(new ExameMedicoConsulta
+        {
+            IdExameMedico = idExame,
+            IdConsulta = idConsulta,
+            IdUtilzador = idUtilizador,
+            dhRegisto = DateTime.Now
+        });
+
         await context.SaveChangesAsync();
         return (true, "Exame associado com sucesso");
     }

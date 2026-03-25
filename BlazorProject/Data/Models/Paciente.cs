@@ -7,6 +7,8 @@ public partial class Paciente
 {
     public int IdPaciente { get; set; }
 
+    public int? IdUtilizador { get; set; }
+
     public string Nome { get; set; } = null!;
 
     public string? Telefone { get; set; }
@@ -19,11 +21,14 @@ public partial class Paciente
 
     public string? CodPostal { get; set; }
 
+    
     public string? Nif { get; set; }
 
     public DateOnly? DtNasc { get; set; }
 
     public virtual CodigoPostal? CodPostalNavigation { get; set; }
 
+    public virtual Utilizador? IdUtilizadorNavigation { get; set; }
+    
     public virtual ICollection<Consulta> Consulta { get; set; } = new List<Consulta>();
 }

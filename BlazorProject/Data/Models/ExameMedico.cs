@@ -15,7 +15,7 @@ public partial class ExameMedico
 
     public int? IdUtilizador { get; set; }
 
-    public virtual ICollection<Consulta> Consulta { get; set; } = new List<Consulta>();
+    public virtual ICollection<ExameMedicoConsulta> ExameMedicoConsultas { get; set; } = new List<ExameMedicoConsulta>();
 
     public virtual Utilizador? IdUtilizadorNavigation { get; set; }
 }
