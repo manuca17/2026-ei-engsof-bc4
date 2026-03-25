@@ -3,6 +3,7 @@ using System;
 using BlazorProject.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace BlazorProject.Migrations
 {
     [DbContext(typeof(EiEngsofContext))]
-    partial class EiEngsofContextModelSnapshot : ModelSnapshot
+    [Migration("20260325225311_fix_for_consulta_exames")]
+    partial class fix_for_consulta_exames
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -287,9 +290,6 @@ namespace BlazorProject.Migrations
                         .HasColumnType("character varying(150)")
                         .HasColumnName("email");
 
-                    b.Property<int?>("IdUtilizador")
-                        .HasColumnType("integer");
-
                     b.Property<string>("Nif")
                         .HasMaxLength(20)
                         .HasColumnType("character varying(20)")
@@ -318,8 +318,6 @@ namespace BlazorProject.Migrations
 
                     b.HasKey("IdPaciente")
                         .HasName("pk_paciente");
-
-                    b.HasIndex("IdUtilizador");
 
                     b.HasIndex(new[] { "CodPostal" }, "idx_paciente_codpostal");
 
@@ -566,14 +564,7 @@ namespace BlazorProject.Migrations
                         .HasForeignKey("CodPostal")
                         .HasConstraintName("fk_pac_codpostal");
 
-                    b.HasOne("BlazorProject.Data.Models.Utilizador", "IdUtilizadorNavigation")
-                        .WithMany("Pacientes")
-                        .HasForeignKey("IdUtilizador")
-                        .HasConstraintName("fk_pac_utilizador");
-
                     b.Navigation("CodPostalNavigation");
-
-                    b.Navigation("IdUtilizadorNavigation");
                 });
 
             modelBuilder.Entity("BlazorProject.Data.Models.TipoConsulta", b =>
@@ -658,8 +649,6 @@ namespace BlazorProject.Migrations
                     b.Navigation("Anotacaos");
 
                     b.Navigation("ExameMedicos");
-
-                    b.Navigation("Pacientes");
 
                     b.Navigation("TipoConsulta");
 
