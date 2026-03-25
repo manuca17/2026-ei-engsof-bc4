@@ -1,4 +1,6 @@
 @page "/profile"
+@using BlazorProject.Data.Models
+@using BlazorProject.Services
 @rendermode InteractiveServer
 @inject NavigationManager NavigationManager
 @inject IJSRuntime JSRuntime
@@ -116,11 +118,11 @@ else
                 <div class="d-flex flex-column gap-3">
                     <div class="d-flex justify-content-between align-items-center p-3 bg-light rounded">
                         <span class="text-muted">Membro desde</span>
-                        <span class="fw-semibold">@CurrentUser.CreatedAt.ToLocalTime().ToString("dd/MM/yyyy")</span>
+                        <span class="fw-semibold">fix</span>
                     </div>
                     <div class="d-flex justify-content-between align-items-center p-3 bg-light rounded">
                         <span class="text-muted">ID do Utilizador</span>
-                        <span class="fw-monospace text-truncate" style="max-width: 240px;">@CurrentUser.Id</span>
+                        <span class="fw-monospace text-truncate" style="max-width: 240px;">@CurrentUser.IdUtilizador</span>
                     </div>
                 </div>
             </div>
@@ -130,9 +132,9 @@ else
 
 @code {
     private bool IsEditing;
-    private bool IsLoading = true;
+    private bool IsLoading = false;
 
-    private User? CurrentUser;
+    private Utilizador CurrentUser;
     private ProfileForm FormData { get; set; } = new();
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -143,28 +145,7 @@ else
 
     private async Task LoadUserAsync()
     {
-        var user = await JSRuntime.InvokeAsync<User?>("profileStorage.getCurrentUser");
-        if (user is null)
-        {
-            /*
-            / this is just for testing purposes
-            / we will have to fix the login so the user is properly stored
-            */
-            user = new User
-            {
-                Id = "1",
-                Nome = "Dr. João Silva",
-                Email = "joao@email.pt",
-                Especialidade = "Cardiologia",
-                Telefone = "+351 912 345 678",
-                CreatedAt = DateTime.Now.AddYears(-1)
-            };
-        }
-
-        CurrentUser = user;
-        ResetForm();
-        IsLoading = false;
-        StateHasChanged();
+        var CurrentUser = LoggedInUserContext.CurrentUser;
     }
 
     private void ResetForm()
@@ -183,69 +164,12 @@ else
 
     private async Task SaveProfileAsync()
     {
-        if (CurrentUser is null) return;
-
-        if (string.IsNullOrWhiteSpace(FormData.Nome) || string.IsNullOrWhiteSpace(FormData.Email))
-        {
-            await JSRuntime.InvokeVoidAsync("alert", "Por favor preencha o nome e o email.");
-            return;
-        }
-
-        var updates = new Dictionary<string, object?>
-        {
-            ["nome"] = FormData.Nome.Trim(),
-            ["email"] = FormData.Email.Trim(),
-            ["especialidade"] = string.IsNullOrWhiteSpace(FormData.Especialidade) ? null : FormData.Especialidade.Trim(),
-            ["telefone"] = string.IsNullOrWhiteSpace(FormData.Telefone) ? null : FormData.Telefone.Trim()
-        };
-
-        if (!string.IsNullOrWhiteSpace(FormData.Senha))
-        {
-            updates["senha"] = FormData.Senha;
-        }
-
-        var updated = await JSRuntime.InvokeAsync<User?>("profileStorage.updateUser", CurrentUser.Id, updates);
-        if (updated is not null)
-        {
-            CurrentUser = updated;
-            IsEditing = false;
-            ResetForm();
-            await JSRuntime.InvokeVoidAsync("alert", "Perfil atualizado com sucesso!");
-        }
-        else
-        {
-            await JSRuntime.InvokeVoidAsync("alert", "Não foi possível atualizar o perfil.");
-        }
     }
 
     private void CancelEdit()
     {
         IsEditing = false;
         ResetForm();
-    }
-
-    private sealed class User
-    {
-        [System.Text.Json.Serialization.JsonPropertyName("id")]
-        public string Id { get; set; } = string.Empty;
-
-        [System.Text.Json.Serialization.JsonPropertyName("nome")]
-        public string Nome { get; set; } = string.Empty;
-
-        [System.Text.Json.Serialization.JsonPropertyName("email")]
-        public string Email { get; set; } = string.Empty;
-
-        [System.Text.Json.Serialization.JsonPropertyName("especialidade")]
-        public string? Especialidade { get; set; }
-
-        [System.Text.Json.Serialization.JsonPropertyName("telefone")]
-        public string? Telefone { get; set; }
-
-        [System.Text.Json.Serialization.JsonPropertyName("senha")]
-        public string? Senha { get; set; }
-
-        [System.Text.Json.Serialization.JsonPropertyName("createdAt")]
-        public DateTime CreatedAt { get; set; }
     }
 
     private sealed class ProfileForm

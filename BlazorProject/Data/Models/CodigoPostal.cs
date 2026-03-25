@@ -11,5 +11,5 @@ public partial class CodigoPostal
 
     public virtual ICollection<Paciente> Pacientes { get; set; } = new List<Paciente>();
 
-    public virtual ICollection<Utilizador> Utilizadors { get; set; } = new List<Utilizador>();
+    public virtual ICollection<Utilizador> Utilizadores { get; set; } = new List<Utilizador>();
 }

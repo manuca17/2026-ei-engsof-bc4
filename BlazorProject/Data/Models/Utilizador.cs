@@ -30,6 +30,35 @@ public partial class Utilizador
     public string? NumCarteira { get; set; }
 
     public string? Especialidade { get; set; }
+    
+
+    public Utilizador(string nome, string username, string password, string? telefone, string? email, string? numCarteira)
+    {
+        Nome = nome;
+        Username = username;
+        Password = password;
+        Telefone = telefone;
+        Email = email;
+        NumCarteira = numCarteira;
+    }
+
+    public Utilizador(int idUtilizador, bool isManager, bool isAdmin, string nome, string username, string password, string? telefone, string? email, string? numPorta, string? rua, string? codPostal, string? numCarteira, string? especialidade, CodigoPostal? codPostalNavigation)
+    {
+        IdUtilizador = idUtilizador;
+        IsManager = isManager;
+        IsAdmin = isAdmin;
+        Nome = nome;
+        Username = username;
+        Password = password;
+        Telefone = telefone;
+        Email = email;
+        NumPorta = numPorta;
+        Rua = rua;
+        CodPostal = codPostal;
+        NumCarteira = numCarteira;
+        Especialidade = especialidade;
+        CodPostalNavigation = codPostalNavigation;
+    }
 
     public virtual ICollection<Anotacao> Anotacaos { get; set; } = new List<Anotacao>();
 

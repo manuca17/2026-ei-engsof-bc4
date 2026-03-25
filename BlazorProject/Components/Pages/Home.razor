@@ -1,4 +1,4 @@
-﻿@page "/"
+@page "/"
 @using BlazorProject.Data.Models
 @using BlazorProject.Services
 @layout LoginLayout
@@ -80,26 +80,36 @@
 
                     <div class="form-group">
                         <label>Nome Completo</label>
-                        <input type="text" class="form-control" placeholder="Dr. João Silva" />
+                        <input type="text" class="form-control" @bind="_nome" placeholder="João Silva" />
                     </div>
+                    
+                    <div class="form-group">
+                        <label>Nome Utilizador</label>
+                        <input type="text" class="form-control" @bind="_username" placeholder="Dr. Silva" />
+                    </div>
+                    
                     <div class="form-group">
                         <label>Email</label>
-                        <input type="email" class="form-control" placeholder="joao@example.com" />
+                        <input type="email" class="form-control" @bind="_regEmail" placeholder="joao@example.com" />
                     </div>
                     <div class="form-group">
                         <label>Senha</label>
-                        <input type="password" class="form-control" placeholder="••••••" />
+                        <input type="password" class="form-control" @bind="_regPassword" placeholder="••••••" />
                     </div>
                     <div class="form-group">
                         <label>Especialidade</label>
-                        <input type="text" class="form-control" placeholder="Cardiologia" />
+                        <input type="text" class="form-control" @bind="_especialidade" placeholder="Cardiologia" />
                     </div>
                     <div class="form-group">
                         <label>Telefone</label>
-                        <input type="text" class="form-control" placeholder="+351 912 345 678" />
+                        <input type="text" class="form-control" @bind="_tlf" placeholder="+351 912 345 678" />
+                    </div>
+                    <div class="form-group">
+                        <label>Num. Carteira</label>
+                        <input type="text" class="form-control" @bind="_carteira" placeholder="12932112" />
                     </div>
 
-                    <button class="btn-submit" @onclick='() => NavigationManager.NavigateTo("/dashboard")'>
+                    <button class="btn-submit" @onclick='HandleRegister'>
                         Criar Conta
                     </button>
                 </div>
@@ -112,8 +122,17 @@
 
 @code {
     private string _tab = "login";
+    // login
     private string _email = "";
     private string _password = "";
+    // register
+    private string _regEmail = "";
+    private string _regPassword = "";
+    private string _nome = "";
+    private string _username = "";
+    private string _carteira = "";
+    private string _especialidade = "";
+    private string _tlf = "";
     private string _erro = "";
 
     private async Task HandleLogin()
@@ -146,6 +165,49 @@
             _erro = $"Erro interno: {ex.Message}";
         }
     }
-    
-    
+
+    private async Task HandleRegister()
+    { 
+        try
+        {
+            Console.WriteLine($"[REGISTER] Tentativa de registo com: {_nome}");
+
+            if (string.IsNullOrWhiteSpace(_nome) || string.IsNullOrWhiteSpace(_regPassword) || string.IsNullOrWhiteSpace(_regEmail))
+            {
+                _erro = "Por favor preencha o formulario por completo!";
+                return;
+            }
+            
+            var tempUtilizador = new Utilizador(_nome,_username,_regPassword,_tlf,_regEmail,_carteira);
+            tempUtilizador.Especialidade = _especialidade;
+            var utilizador = await UtilizadorService.RegisterAsync(tempUtilizador);
+            
+            if (utilizador is not null)
+            {
+                LoggedInUserContext.SetCurrentUser(utilizador);
+                Console.ForegroundColor = ConsoleColor.Green;
+                Console.WriteLine($"[LOGIN] ✔ Registo bem sucedido para: {_nome}");
+                Console.ResetColor();
+                NavigationManager.NavigateTo("/dashboard");   
+            }
+            else
+            {
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.WriteLine($"[LOGIN] ✘ Registo falhado para: {_nome}");
+                Console.ResetColor();
+                _erro = "Password não segura!";   
+            }
+        }
+        catch (InvalidOperationException ex)
+        {
+            _erro = ex.Message;
+        }
+        catch (Exception ex)
+        {
+            Console.ForegroundColor = ConsoleColor.Red;
+            Console.WriteLine($"[REGISTER] ✘ Excepção: {ex.Message}");
+            Console.ResetColor();
+            _erro = $"Erro interno: {ex.Message}";
+        }
+    }   
 }

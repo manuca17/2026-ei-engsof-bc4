@@ -535,7 +535,7 @@ namespace BlazorProject.Migrations
             modelBuilder.Entity("BlazorProject.Data.Models.Utilizador", b =>
                 {
                     b.HasOne("BlazorProject.Data.Models.CodigoPostal", "CodPostalNavigation")
-                        .WithMany("Utilizadors")
+                        .WithMany("Utilizadores")
                         .HasForeignKey("CodPostal")
                         .HasConstraintName("fk_util_codpostal");
 
@@ -565,7 +565,7 @@ namespace BlazorProject.Migrations
                 {
                     b.Navigation("Pacientes");
 
-                    b.Navigation("Utilizadors");
+                    b.Navigation("Utilizadores");
                 });
 
             modelBuilder.Entity("BlazorProject.Data.Models.Consulta", b =>

@@ -32,7 +32,7 @@ public partial class EiEngsofContext : DbContext
 
     public virtual DbSet<TipoConsulta> TipoConsulta { get; set; }
 
-    public virtual DbSet<Utilizador> Utilizadors { get; set; }
+    public virtual DbSet<Utilizador> Utilizadores { get; set; }
 
     public virtual DbSet<UtilizadorConsulta> UtilizadorConsulta { get; set; }
     
@@ -308,7 +308,7 @@ public partial class EiEngsofContext : DbContext
                 .HasMaxLength(100)
                 .HasColumnName("username");
 
-            entity.HasOne(d => d.CodPostalNavigation).WithMany(p => p.Utilizadors)
+            entity.HasOne(d => d.CodPostalNavigation).WithMany(p => p.Utilizadores)
                 .HasForeignKey(d => d.CodPostal)
                 .HasConstraintName("fk_util_codpostal");
         });
