@@ -11,8 +11,10 @@
         <p class="sb-role">@GetSpecialty()</p>
     </div>
 
+    
     <!-- Navegação principal -->
     <nav class="sb-nav">
+        @if (CurrentUser?.IsAdmin == false) {
         <NavLink class="sb-link" href="dashboard" Match="NavLinkMatch.All">
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
                  stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -51,7 +53,7 @@
             </svg>
             Relatórios
         </NavLink>
-        
+
         <NavLink class="sb-link" href="profile">
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
                  stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -60,30 +62,32 @@
             </svg>
             Perfil
         </NavLink>
+        }
 
-        <!-- Separador + secção Admin -->
-        <div class="sb-separator"></div>
-        <div class="sb-section-label">Administração</div>
-
+        
+            <!-- Separador + secção Admin -->
+        
+        @if (CurrentUser?.IsAdmin == true) {
         <NavLink class="sb-link" href="user-management">
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
-                 stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
-                <circle cx="9" cy="7" r="4"/>
-                <path d="M19 8v6"/><path d="M22 11h-6"/>
-            </svg>
-            Gestão de Utilizadores
-        </NavLink>
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                     stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
+                    <circle cx="9" cy="7" r="4"/>
+                    <path d="M19 8v6"/><path d="M22 11h-6"/>
+                </svg>
+                Gestão de Utilizadores
+            </NavLink>
 
-        <NavLink class="sb-link" href="global-records">
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
-                 stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <ellipse cx="12" cy="5" rx="9" ry="3"/>
-                <path d="M3 5V19A9 3 0 0 0 21 19V5"/>
-                <path d="M3 12A9 3 0 0 0 21 12"/>
-            </svg>
-            Registos Globais
-        </NavLink>
+            <NavLink class="sb-link" href="global-records">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                     stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <ellipse cx="12" cy="5" rx="9" ry="3"/>
+                    <path d="M3 5V19A9 3 0 0 0 21 19V5"/>
+                    <path d="M3 12A9 3 0 0 0 21 12"/>
+                </svg>
+                Registos Globais
+            </NavLink>
+        }
     </nav>
 
     <!-- Footer com botão Sair -->
