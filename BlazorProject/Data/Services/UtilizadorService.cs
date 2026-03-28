@@ -72,17 +72,31 @@ public class UtilizadorService
     {
         await using var context = await _factory.CreateDbContextAsync();
 
+        var existing = await context.Utilizadores.FirstOrDefaultAsync(u => u.IdUtilizador == utilizador.IdUtilizador);
 
-        var exists = await context.Utilizadores.AnyAsync(u => u.IdUtilizador == utilizador.IdUtilizador);
-    
-        if (!exists) 
+        if (existing is null)
         {
             throw new Exception("User not found");
         }
 
-        context.Utilizadores.Update(utilizador);
+        existing.Nome = utilizador.Nome;
+        existing.Email = utilizador.Email;
+        existing.Telefone = utilizador.Telefone;
+        existing.Especialidade = utilizador.Especialidade;
+        existing.NumPorta = utilizador.NumPorta;
+        existing.Rua = utilizador.Rua;
+        existing.CodPostal = utilizador.CodPostal;
+        existing.NumCarteira = utilizador.NumCarteira;
+
+        if (!string.IsNullOrWhiteSpace(utilizador.Password))
+        {
+            var password = utilizador.Password;
+            existing.Password = password.StartsWith("$2")
+                ? password
+                : BCrypt.Net.BCrypt.HashPassword(password, workFactor: 12);
+        }
 
         await context.SaveChangesAsync();
-        return null;
+        return existing;
     }
 }

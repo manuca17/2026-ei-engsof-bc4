@@ -689,8 +689,8 @@ else
             HourlyPrice = dbConsultation.HourlyPrice,
             StartAt = dbConsultation.StartAt,
             EndAt = dbConsultation.EndAt,
-            OwnerUserId = loggedUser.IdUtilizador.ToString(),
-            OwnerUserName = loggedUser.Nome,
+            OwnerUserId = dbConsultation.OwnerUserId?.ToString() ?? loggedUser.IdUtilizador.ToString(),
+            OwnerUserName = string.IsNullOrWhiteSpace(dbConsultation.OwnerUserName) ? loggedUser.Nome : dbConsultation.OwnerUserName,
             Exams = dbConsultation.Exams.Select(exam => new ConsultationData.MedicalExamItem
             {
                 Id = exam.Id.ToString(),
@@ -710,7 +710,15 @@ else
                 UserId = annotation.UserId?.ToString() ?? string.Empty,
                 UserName = annotation.UserName
             }).ToList(),
-            Invites = []
+            Invites = dbConsultation.Invites.Select(invite => new ConsultationData.ConsultationInviteItem
+            {
+                Id = invite.UserId.ToString(),
+                UserId = invite.UserId.ToString(),
+                UserName = invite.UserName,
+                UserEmail = invite.UserEmail ?? string.Empty,
+                Status = invite.IsAccepted ? ConsultationData.InviteStatus.Accepted : ConsultationData.InviteStatus.Pending,
+                Annotations = []
+            }).ToList()
         };
 
         AvailableExams = dbConsultation.AvailableExams.Select(exam => new ConsultationData.MedicalExamItem
@@ -742,6 +750,50 @@ else
 
         AvailableExams = Store.GetExamsByPatient(Consultation.PatientId)
             .Where(exam => Consultation.Exams.All(existing => existing.Id != exam.Id))
+            .OrderByDescending(exam => exam.Date)
+            .ToList();
+    }
+
+    private async Task RefreshAvailableExamsAsync()
+    {
+        if (Consultation is null)
+        {
+            AvailableExams = [];
+            return;
+        }
+
+        if (!TryGetDbConsultationId(out var idConsulta))
+        {
+            RefreshAvailableExams();
+            return;
+        }
+
+        var loggedUser = LoggedInUserContext.CurrentUser;
+        if (loggedUser is null)
+        {
+            AvailableExams = [];
+            return;
+        }
+
+        var dbConsultation = await ConsultasService.GetDetailForDoctorAsync(loggedUser.IdUtilizador, idConsulta);
+        if (dbConsultation is null)
+        {
+            AvailableExams = [];
+            return;
+        }
+
+        AvailableExams = dbConsultation.AvailableExams
+            .Select(exam => new ConsultationData.MedicalExamItem
+            {
+                Id = exam.Id.ToString(),
+                PatientId = dbConsultation.PatientId?.ToString() ?? string.Empty,
+                Name = exam.Name,
+                Type = exam.Type,
+                Date = exam.Date,
+                Description = exam.Description,
+                Results = exam.Results,
+                CreatedAt = exam.Date
+            })
             .OrderByDescending(exam => exam.Date)
             .ToList();
     }
@@ -849,7 +901,7 @@ else
 
     private void CloseEditDialog() => EditDialogOpen = false;
 
-    private void SaveEdit()
+    private async Task SaveEdit()
     {
         if (Consultation is null)
         {
@@ -878,6 +930,42 @@ else
             ? ConsultationData.ChargingType.PorHora
             : ConsultationData.ChargingType.Fixo;
 
+        if (TryGetDbConsultationId(out var idConsulta))
+        {
+            var loggedUser = LoggedInUserContext.CurrentUser;
+            if (loggedUser is null)
+            {
+                SetStatus("Sessão inválida. Faça login novamente.", true);
+                return;
+            }
+
+            var dbChargingType = EditChargingType == "por_hora"
+                ? ConsultasService.ChargingType.PorHora
+                : ConsultasService.ChargingType.Fixo;
+
+            var result = await ConsultasService.UpdateForDoctorAsync(
+                loggedUser.IdUtilizador,
+                idConsulta,
+                new ConsultasService.UpdateConsultaRequest
+                {
+                    Description = EditDescription,
+                    ChargingType = dbChargingType,
+                    FixedPrice = dbChargingType == ConsultasService.ChargingType.Fixo ? EditFixedPrice : null,
+                    HourlyPrice = dbChargingType == ConsultasService.ChargingType.PorHora ? EditHourlyPrice : null
+                });
+
+            if (!result.Ok)
+            {
+                SetStatus(result.ErrorMessage ?? "Não foi possível atualizar a consulta.", true);
+                return;
+            }
+
+            EditDialogOpen = false;
+            await LoadConsultationFromRouteAsync();
+            SetStatus("Consulta atualizada com sucesso.");
+            return;
+        }
+
         if (!Store.UpdateConsultation(
                 Consultation.Id,
                 EditDescription,
@@ -894,12 +982,12 @@ else
         SetStatus("Consulta atualizada com sucesso.");
     }
 
-    private void OpenExamDialog()
+    private async Task OpenExamDialog()
     {
         ExamDialogOpen = true;
         ResetExamForm();
         ExamMode = "new";
-        RefreshAvailableExams();
+        await RefreshAvailableExamsAsync();
     }
 
     private void CloseExamDialog()
@@ -1124,7 +1212,7 @@ else
 
     private void CloseInviteDialog() => InviteDialogOpen = false;
 
-    private void SendInvite()
+    private async Task SendInvite()
     {
         if (Consultation is null)
         {
@@ -1134,6 +1222,30 @@ else
         if (string.IsNullOrWhiteSpace(InviteEmail))
         {
             SetStatus("Introduza o email do utilizador a convidar.", true);
+            return;
+        }
+
+        if (TryGetDbConsultationId(out var idConsulta))
+        {
+            var loggedUser = LoggedInUserContext.CurrentUser;
+            if (loggedUser is null)
+            {
+                SetStatus("Sessão inválida. Faça login novamente.", true);
+                return;
+            }
+
+            var sendResult = await ConsultasService.SendInviteAsync(loggedUser.IdUtilizador, idConsulta, InviteEmail.Trim());
+            if (!sendResult.Ok)
+            {
+                SetStatus(sendResult.Message, true);
+                return;
+            }
+
+            InviteDialogOpen = false;
+            InviteEmail = string.Empty;
+            InviteAnnotation = string.Empty;
+            await LoadConsultationFromRouteAsync();
+            SetStatus(sendResult.Message);
             return;
         }
 
@@ -1151,10 +1263,31 @@ else
         SetStatus(result.message);
     }
 
-    private void AcceptInvite(string inviteId)
+    private async Task AcceptInvite(string inviteId)
     {
         if (Consultation is null)
         {
+            return;
+        }
+
+        if (TryGetDbConsultationId(out var idConsulta))
+        {
+            var loggedUser = LoggedInUserContext.CurrentUser;
+            if (loggedUser is null)
+            {
+                SetStatus("Sessão inválida. Faça login novamente.", true);
+                return;
+            }
+
+            var result = await ConsultasService.AcceptInviteAsync(loggedUser.IdUtilizador, idConsulta);
+            if (!result.Ok)
+            {
+                SetStatus(result.Message, true);
+                return;
+            }
+
+            await LoadConsultationFromRouteAsync();
+            SetStatus(result.Message);
             return;
         }
 
@@ -1170,10 +1303,38 @@ else
 
     private void CloseInviteRemovalDialog() => InviteToRemoveId = null;
 
-    private void ConfirmRemoveInvite()
+    private async Task ConfirmRemoveInvite()
     {
         if (Consultation is null || string.IsNullOrWhiteSpace(InviteToRemoveId))
         {
+            return;
+        }
+
+        if (TryGetDbConsultationId(out var idConsulta))
+        {
+            var loggedUser = LoggedInUserContext.CurrentUser;
+            if (loggedUser is null)
+            {
+                SetStatus("Sessão inválida. Faça login novamente.", true);
+                return;
+            }
+
+            if (!int.TryParse(InviteToRemoveId, out var invitedUserId))
+            {
+                SetStatus("Convite inválido.", true);
+                return;
+            }
+
+            var result = await ConsultasService.RemoveInviteAsync(loggedUser.IdUtilizador, idConsulta, invitedUserId);
+            if (!result.Ok)
+            {
+                SetStatus(result.Message, true);
+                return;
+            }
+
+            InviteToRemoveId = null;
+            await LoadConsultationFromRouteAsync();
+            SetStatus(result.Message);
             return;
         }
 
@@ -1198,6 +1359,12 @@ else
     {
         if (Consultation is null)
         {
+            return;
+        }
+
+        if (TryGetDbConsultationId(out _))
+        {
+            SetStatus("Comentários de convites ainda não estão disponíveis para consultas da base de dados.", true);
             return;
         }
 

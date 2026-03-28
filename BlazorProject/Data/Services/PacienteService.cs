@@ -36,6 +36,9 @@ public class PacienteService
     
     public async Task<List<Paciente>> GetByDoctorAsync(int idUtilizador)
     {
+        if (idUtilizador <= 0)
+            return new List<Paciente>();
+
         await using var context = await _contextFactory.CreateDbContextAsync();
 
         var patientIds = context.UtilizadorConsulta
@@ -47,7 +50,8 @@ public class PacienteService
 
         return await context.Pacientes
             .AsNoTracking()
-            .Where(p => patientIds.Contains(p.IdPaciente))
+            // Show both patients created by this doctor and patients linked via consultations.
+            .Where(p => p.IdUtilizador == idUtilizador || patientIds.Contains(p.IdPaciente))
             .OrderBy(p => p.Nome)
             .ToListAsync();
     }
@@ -56,12 +60,17 @@ public class PacienteService
     /// <summary>
     /// Adds a new patient or updates an existing one.
     /// </summary>
-    public async Task SavePacienteAsync(Paciente paciente)
+    public async Task SavePacienteAsync(Paciente paciente, int? creatorUserId = null)
     {
         using var context = _contextFactory.CreateDbContext();
         
         if (paciente.IdPaciente == 0)
+        {
+            if (paciente.IdUtilizador is null && creatorUserId.HasValue)
+                paciente.IdUtilizador = creatorUserId.Value;
+
             context.Pacientes.Add(paciente);
+        }
         else
             context.Pacientes.Update(paciente);
 

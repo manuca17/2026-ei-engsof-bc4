@@ -153,8 +153,18 @@
 
     private async Task SavePatient()
     {
+        int doctorId = LoggedInUserContext.CurrentUser?.IdUtilizador ?? 0;
+
         // Validation
-        if (string.IsNullOrWhiteSpace(NewPatient.Nome) || string.IsNullOrWhiteSpace(NewPatient.Telefone))
+        if (doctorId <= 0)
+        {
+            await JSRuntime.InvokeVoidAsync("alert", "Sessão inválida. Inicie sessão novamente.");
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(NewPatient.Nome) ||
+            string.IsNullOrWhiteSpace(NewPatient.Telefone) ||
+            !BirthDateHelper.HasValue)
         {
             await JSRuntime.InvokeVoidAsync("alert", "Por favor, preencha o Nome, Data de Nascimento e Telefone.");
             return;
@@ -165,7 +175,7 @@
             // Transfer helper date to model
             NewPatient.DtNasc = DateOnly.FromDateTime(BirthDateHelper.Value);
 
-            await PatientService.SavePacienteAsync(NewPatient);
+            await PatientService.SavePacienteAsync(NewPatient, doctorId);
             
             await LoadPatients(); 
             CloseDialog();

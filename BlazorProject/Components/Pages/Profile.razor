@@ -4,6 +4,8 @@
 @rendermode InteractiveServer
 @inject NavigationManager NavigationManager
 @inject IJSRuntime JSRuntime
+@inject UtilizadorService UtilizadorService
+@inject ConsultasService ConsultasService
 
 <PageTitle>Perfil</PageTitle>
 
@@ -127,15 +129,55 @@ else
                 </div>
             </div>
         </div>
+
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Convites para Consultas</h5>
+                <span class="badge bg-primary">@PendingInvites.Count</span>
+            </div>
+            <div class="card-body">
+                @if (PendingInvites.Count == 0)
+                {
+                    <div class="text-muted text-center py-3">Sem convites pendentes.</div>
+                }
+                else
+                {
+                    <div class="d-flex flex-column gap-3">
+                        @foreach (var invite in PendingInvites)
+                        {
+                            <div class="p-3 border rounded bg-light">
+                                <div class="d-flex justify-content-between align-items-start gap-2">
+                                    <div>
+                                        <div class="fw-semibold">@invite.PatientName</div>
+                                        <div class="small text-muted">Convidado por: @invite.OwnerName</div>
+                                        @if (invite.StartAt is not null)
+                                        {
+                                            <div class="small text-muted">Início: @invite.StartAt.Value.ToString("dd/MM/yyyy HH:mm")</div>
+                                        }
+                                    </div>
+                                    <span class="badge bg-warning text-dark">Pendente</span>
+                                </div>
+                                <div class="d-flex gap-2 mt-3">
+                                    <button class="btn btn-sm btn-success" @onclick="() => AcceptInviteAsync(invite.IdConsulta)">Aceitar</button>
+                                    <button class="btn btn-sm btn-outline-danger" @onclick="() => DeclineInviteAsync(invite.IdConsulta)">Recusar</button>
+                                    <button class="btn btn-sm btn-outline-primary" @onclick='() => NavigationManager.NavigateTo($"/consultations/{invite.IdConsulta}")'>Ver consulta</button>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+            </div>
+        </div>
     </div>
 }
 
 @code {
     private bool IsEditing;
-    private bool IsLoading = false;
+    private bool IsLoading = true;
 
-    private Utilizador CurrentUser;
+    private Utilizador? CurrentUser;
     private ProfileForm FormData { get; set; } = new();
+    private List<ConsultasService.PendingInviteItem> PendingInvites { get; set; } = [];
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -145,7 +187,19 @@ else
 
     private async Task LoadUserAsync()
     {
-        var CurrentUser = LoggedInUserContext.CurrentUser;
+        CurrentUser = LoggedInUserContext.CurrentUser;
+
+        if (CurrentUser is null)
+        {
+            IsLoading = false;
+            NavigationManager.NavigateTo("/");
+            return;
+        }
+
+        ResetForm();
+        PendingInvites = await ConsultasService.GetPendingInvitesForDoctorAsync(CurrentUser.IdUtilizador);
+        IsLoading = false;
+        await InvokeAsync(StateHasChanged);
     }
 
     private void ResetForm()
@@ -164,6 +218,75 @@ else
 
     private async Task SaveProfileAsync()
     {
+        if (CurrentUser is null)
+        {
+            NavigationManager.NavigateTo("/");
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(FormData.Nome) || string.IsNullOrWhiteSpace(FormData.Email))
+        {
+            await JSRuntime.InvokeVoidAsync("alert", "Nome e email são obrigatórios.");
+            return;
+        }
+
+        var updatedUser = new Utilizador(
+            CurrentUser.IdUtilizador,
+            CurrentUser.IsManager,
+            CurrentUser.IsAdmin,
+            FormData.Nome.Trim(),
+            CurrentUser.Username,
+            string.IsNullOrWhiteSpace(FormData.Senha) ? CurrentUser.Password : FormData.Senha,
+            string.IsNullOrWhiteSpace(FormData.Telefone) ? null : FormData.Telefone.Trim(),
+            FormData.Email.Trim(),
+            CurrentUser.NumPorta,
+            CurrentUser.Rua,
+            CurrentUser.CodPostal,
+            CurrentUser.NumCarteira,
+            string.IsNullOrWhiteSpace(FormData.Especialidade) ? null : FormData.Especialidade.Trim(),
+            CurrentUser.CodPostalNavigation);
+
+        var savedUser = await UtilizadorService.UpdateAsync(updatedUser);
+        CurrentUser = savedUser;
+        LoggedInUserContext.SetCurrentUser(savedUser);
+
+        IsEditing = false;
+        ResetForm();
+        await JSRuntime.InvokeVoidAsync("alert", "Perfil atualizado com sucesso.");
+    }
+
+    private async Task AcceptInviteAsync(int idConsulta)
+    {
+        if (CurrentUser is null)
+        {
+            return;
+        }
+
+        var result = await ConsultasService.AcceptInviteAsync(CurrentUser.IdUtilizador, idConsulta);
+        if (!result.Ok)
+        {
+            await JSRuntime.InvokeVoidAsync("alert", result.Message);
+            return;
+        }
+
+        PendingInvites = await ConsultasService.GetPendingInvitesForDoctorAsync(CurrentUser.IdUtilizador);
+    }
+
+    private async Task DeclineInviteAsync(int idConsulta)
+    {
+        if (CurrentUser is null)
+        {
+            return;
+        }
+
+        var result = await ConsultasService.DeclineInviteAsync(CurrentUser.IdUtilizador, idConsulta);
+        if (!result.Ok)
+        {
+            await JSRuntime.InvokeVoidAsync("alert", result.Message);
+            return;
+        }
+
+        PendingInvites = await ConsultasService.GetPendingInvitesForDoctorAsync(CurrentUser.IdUtilizador);
     }
 
     private void CancelEdit()

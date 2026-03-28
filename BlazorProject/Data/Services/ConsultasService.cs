@@ -15,6 +15,11 @@ public class ConsultasService
 
     public async Task<List<PatientOptionItem>> GetPatientsForDoctorAsync(int idUtilizador)
     {
+        if (idUtilizador <= 0)
+        {
+            return [];
+        }
+
         await using var context = await _factory.CreateDbContextAsync();
 
         var patientIds = context.UtilizadorConsulta
@@ -26,7 +31,8 @@ public class ConsultasService
 
         return await context.Pacientes
             .AsNoTracking()
-            .Where(p => patientIds.Contains(p.IdPaciente))
+            // Include both patients created by this doctor and linked-by-consultation patients.
+            .Where(p => p.IdUtilizador == idUtilizador || patientIds.Contains(p.IdPaciente))
             .OrderBy(p => p.Nome)
             .Select(p => new PatientOptionItem
             {
@@ -117,6 +123,14 @@ public class ConsultasService
             {
                 Consulta = c,
                 LatestEstado = c.Estados.OrderByDescending(e => e.DhRegisto).FirstOrDefault(),
+                Owner = c.UtilizadorConsulta
+                    .Where(uc => uc.IsCriador)
+                    .Select(uc => new
+                    {
+                        uc.IdUtilizador,
+                        Nome = uc.IdUtilizadorNavigation != null ? uc.IdUtilizadorNavigation.Nome : "Médico"
+                    })
+                    .FirstOrDefault(),
                 Notes = c.Anotacaos
                     .OrderByDescending(n => n.DhCriacao)
                     .Select(n => new DetailAnnotationItem
@@ -126,6 +140,16 @@ public class ConsultasService
                         CreatedAt = n.DhCriacao,
                         UserId = n.IdUtilizador,
                         UserName = n.IdUtilizadorNavigation != null ? n.IdUtilizadorNavigation.Nome : "Utilizador"
+                    })
+                    .ToList(),
+                Invites = c.UtilizadorConsulta
+                    .Where(uc => !uc.IsCriador)
+                    .Select(uc => new DetailInviteItem
+                    {
+                        UserId = uc.IdUtilizador,
+                        UserName = uc.IdUtilizadorNavigation != null ? uc.IdUtilizadorNavigation.Nome : "Utilizador",
+                        UserEmail = uc.IdUtilizadorNavigation != null ? uc.IdUtilizadorNavigation.Email : null,
+                        IsAccepted = uc.ConviteAceite
                     })
                     .ToList(),
                     CurrentExams = c.ExamesDaConsulta.Count == 0
@@ -181,10 +205,163 @@ public class ConsultasService
             HourlyPrice = consulta.Consulta.ValorHora,
             StartAt = consulta.Consulta.DhInicio,
             EndAt = consulta.Consulta.DhFim,
+            OwnerUserId = consulta.Owner != null ? consulta.Owner.IdUtilizador : null,
+            OwnerUserName = consulta.Owner != null ? consulta.Owner.Nome : "Médico",
             Exams = consulta.CurrentExams,
             AvailableExams = availableExams,
-            Annotations = consulta.Notes
+            Annotations = consulta.Notes,
+            Invites = consulta.Invites
         };
+    }
+
+    public async Task<(bool Ok, string Message)> SendInviteAsync(int idUtilizador, int idConsulta, string inviteEmail)
+    {
+        await using var context = await _factory.CreateDbContextAsync();
+
+        var isCreator = await context.UtilizadorConsulta.AnyAsync(link =>
+            link.IdUtilizador == idUtilizador && link.IdConsulta == idConsulta && link.IsCriador);
+        if (!isCreator)
+        {
+            return (false, "Só o criador da consulta pode enviar convites.");
+        }
+
+        if (string.IsNullOrWhiteSpace(inviteEmail))
+        {
+            return (false, "Introduza um email válido.");
+        }
+
+        var invitedUser = await context.Utilizadores.FirstOrDefaultAsync(u => u.Email == inviteEmail.Trim());
+        if (invitedUser is null)
+        {
+            return (false, "Utilizador não encontrado.");
+        }
+
+        if (invitedUser.IdUtilizador == idUtilizador)
+        {
+            return (false, "Não pode convidar-se a si mesmo.");
+        }
+
+        var existingInvite = await context.UtilizadorConsulta
+            .FirstOrDefaultAsync(link =>
+                link.IdConsulta == idConsulta &&
+                link.IdUtilizador == invitedUser.IdUtilizador &&
+                !link.IsCriador);
+
+        if (existingInvite is not null)
+        {
+            return existingInvite.ConviteAceite
+                ? (false, "O utilizador já participa nesta consulta.")
+                : (false, "Já existe um convite pendente para este utilizador.");
+        }
+
+        context.UtilizadorConsulta.Add(new UtilizadorConsulta
+        {
+            IdConsulta = idConsulta,
+            IdUtilizador = invitedUser.IdUtilizador,
+            IsCriador = false,
+            ConviteAceite = false
+        });
+
+        await context.SaveChangesAsync();
+        return (true, $"Convite enviado para {invitedUser.Nome}.");
+    }
+
+    public async Task<(bool Ok, string Message)> AcceptInviteAsync(int idUtilizador, int idConsulta)
+    {
+        await using var context = await _factory.CreateDbContextAsync();
+
+        var invite = await context.UtilizadorConsulta
+            .FirstOrDefaultAsync(link =>
+                link.IdConsulta == idConsulta &&
+                link.IdUtilizador == idUtilizador &&
+                !link.IsCriador);
+
+        if (invite is null)
+        {
+            return (false, "Convite não encontrado.");
+        }
+
+        if (invite.ConviteAceite)
+        {
+            return (false, "Convite já aceite.");
+        }
+
+        invite.ConviteAceite = true;
+        await context.SaveChangesAsync();
+        return (true, "Convite aceite com sucesso.");
+    }
+
+    public async Task<(bool Ok, string Message)> RemoveInviteAsync(int idUtilizador, int idConsulta, int invitedUserId)
+    {
+        await using var context = await _factory.CreateDbContextAsync();
+
+        var isCreator = await context.UtilizadorConsulta.AnyAsync(link =>
+            link.IdUtilizador == idUtilizador && link.IdConsulta == idConsulta && link.IsCriador);
+        if (!isCreator)
+        {
+            return (false, "Só o criador da consulta pode remover convites.");
+        }
+
+        var invite = await context.UtilizadorConsulta
+            .FirstOrDefaultAsync(link =>
+                link.IdConsulta == idConsulta &&
+                link.IdUtilizador == invitedUserId &&
+                !link.IsCriador);
+
+        if (invite is null)
+        {
+            return (false, "Convite não encontrado.");
+        }
+
+        context.UtilizadorConsulta.Remove(invite);
+        await context.SaveChangesAsync();
+        return (true, "Convite removido com sucesso.");
+    }
+
+    public async Task<(bool Ok, string Message)> DeclineInviteAsync(int idUtilizador, int idConsulta)
+    {
+        await using var context = await _factory.CreateDbContextAsync();
+
+        var invite = await context.UtilizadorConsulta
+            .FirstOrDefaultAsync(link =>
+                link.IdConsulta == idConsulta &&
+                link.IdUtilizador == idUtilizador &&
+                !link.IsCriador &&
+                !link.ConviteAceite);
+
+        if (invite is null)
+        {
+            return (false, "Convite pendente não encontrado.");
+        }
+
+        context.UtilizadorConsulta.Remove(invite);
+        await context.SaveChangesAsync();
+        return (true, "Convite recusado.");
+    }
+
+    public async Task<List<PendingInviteItem>> GetPendingInvitesForDoctorAsync(int idUtilizador)
+    {
+        await using var context = await _factory.CreateDbContextAsync();
+
+        return await context.UtilizadorConsulta
+            .AsNoTracking()
+            .Where(link => link.IdUtilizador == idUtilizador && !link.IsCriador && !link.ConviteAceite)
+            .Select(link => new PendingInviteItem
+            {
+                IdConsulta = link.IdConsulta,
+                PatientName = link.IdConsultaNavigation != null && link.IdConsultaNavigation.IdPacienteNavigation != null
+                    ? link.IdConsultaNavigation.IdPacienteNavigation.Nome
+                    : "Paciente sem nome",
+                OwnerName = link.IdConsultaNavigation != null
+                    ? link.IdConsultaNavigation.UtilizadorConsulta
+                        .Where(ownerLink => ownerLink.IsCriador)
+                        .Select(ownerLink => ownerLink.IdUtilizadorNavigation != null ? ownerLink.IdUtilizadorNavigation.Nome : "Médico")
+                        .FirstOrDefault() ?? "Médico"
+                    : "Médico",
+                StartAt = link.IdConsultaNavigation != null ? link.IdConsultaNavigation.DhInicio : null
+            })
+            .OrderByDescending(item => item.StartAt ?? DateTime.MinValue)
+            .ToListAsync();
     }
 
     public async Task<bool> StartConsultationAsync(int idUtilizador, int idConsulta)
@@ -379,6 +556,77 @@ public class ConsultasService
         }
     }
 
+    public async Task<(bool Ok, string? ErrorMessage)> UpdateForDoctorAsync(int idUtilizador, int idConsulta, UpdateConsultaRequest request)
+    {
+        await using var context = await _factory.CreateDbContextAsync();
+
+        var hasAccess = await context.UtilizadorConsulta.AnyAsync(link =>
+            link.IdUtilizador == idUtilizador &&
+            link.IdConsulta == idConsulta &&
+            (link.IsCriador || link.ConviteAceite));
+
+        if (!hasAccess)
+        {
+            return (false, "Sem permissões para editar esta consulta.");
+        }
+
+        if (string.IsNullOrWhiteSpace(request.Description))
+        {
+            return (false, "A descrição é obrigatória.");
+        }
+
+        if (request.ChargingType == ChargingType.Fixo && (!request.FixedPrice.HasValue || request.FixedPrice <= 0))
+        {
+            return (false, "Introduza um preço fixo válido.");
+        }
+
+        if (request.ChargingType == ChargingType.PorHora && (!request.HourlyPrice.HasValue || request.HourlyPrice <= 0))
+        {
+            return (false, "Introduza um preço por hora válido.");
+        }
+
+        var consulta = await context.Consulta
+            .Include(c => c.Estados)
+            .FirstOrDefaultAsync(c => c.IdConsulta == idConsulta);
+
+        if (consulta is null)
+        {
+            return (false, "Consulta não encontrada.");
+        }
+
+        var latestEstado = consulta.Estados
+            .OrderByDescending(e => e.DhRegisto)
+            .FirstOrDefault();
+
+        var normalizedStatus = (latestEstado?.EstadoTo ?? string.Empty).Trim().ToLowerInvariant();
+        if (normalizedStatus.Contains("encerr"))
+        {
+            return (false, "Não é possível editar uma consulta encerrada.");
+        }
+
+        consulta.ValorTotal = request.ChargingType == ChargingType.Fixo ? request.FixedPrice : null;
+        consulta.ValorHora = request.ChargingType == ChargingType.PorHora ? request.HourlyPrice : null;
+
+        if (latestEstado is null)
+        {
+            context.Estados.Add(new Estado
+            {
+                IdConsulta = idConsulta,
+                EstadoTo = "Agendada",
+                Comentario = request.Description.Trim(),
+                DhRegisto = DateTime.Now
+            });
+        }
+        else
+        {
+            latestEstado.Comentario = request.Description.Trim();
+            latestEstado.DhRegisto = DateTime.Now;
+        }
+
+        await context.SaveChangesAsync();
+        return (true, null);
+    }
+
     private static ConsultationStatus MapStatus(string? status)
     {
         var normalized = (status ?? string.Empty).Trim().ToLowerInvariant();
@@ -441,6 +689,14 @@ public class ConsultasService
         public decimal? HourlyPrice { get; init; }
     }
 
+    public sealed class UpdateConsultaRequest
+    {
+        public string Description { get; init; } = string.Empty;
+        public ChargingType ChargingType { get; init; }
+        public decimal? FixedPrice { get; init; }
+        public decimal? HourlyPrice { get; init; }
+    }
+
     public sealed class ConsultationDetailItem
     {
         public int Id { get; init; }
@@ -453,9 +709,20 @@ public class ConsultasService
         public decimal? HourlyPrice { get; init; }
         public DateTime? StartAt { get; init; }
         public DateTime? EndAt { get; init; }
+        public int? OwnerUserId { get; init; }
+        public string OwnerUserName { get; init; } = string.Empty;
         public List<DetailExamItem> Exams { get; init; } = [];
         public List<DetailExamItem> AvailableExams { get; init; } = [];
         public List<DetailAnnotationItem> Annotations { get; init; } = [];
+        public List<DetailInviteItem> Invites { get; init; } = [];
+    }
+
+    public sealed class DetailInviteItem
+    {
+        public int UserId { get; init; }
+        public string UserName { get; init; } = string.Empty;
+        public string? UserEmail { get; init; }
+        public bool IsAccepted { get; init; }
     }
 
     public sealed class DetailExamItem
@@ -475,5 +742,13 @@ public class ConsultasService
         public DateTime CreatedAt { get; init; }
         public int? UserId { get; init; }
         public string UserName { get; init; } = string.Empty;
+    }
+
+    public sealed class PendingInviteItem
+    {
+        public int IdConsulta { get; init; }
+        public string PatientName { get; init; } = string.Empty;
+        public string OwnerName { get; init; } = string.Empty;
+        public DateTime? StartAt { get; init; }
     }
 }
