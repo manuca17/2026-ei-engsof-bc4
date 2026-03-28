@@ -248,17 +248,7 @@ else
                                         </div>
                                     }
 
-                                    @if (isMyInvite && invite.Status == ConsultationData.InviteStatus.Accepted)
-                                    {
-                                        <div class="invite-form-block">
-                                            <label class="form-label" for="comment-@invite.Id">Adicionar comentário</label>
-                                            <textarea id="comment-@invite.Id"
-                                                      rows="3"
-                                                      value="@GetInviteComment(invite.Id)"
-                                                      @oninput='e => SetInviteComment(invite.Id, e.Value?.ToString())'></textarea>
-                                            <button class="btn-outline full-width" @onclick='() => AddInviteComment(invite.Id)'>Guardar comentário</button>
-                                        </div>
-                                    }
+
                                 </article>
                             }
                         </div>
@@ -571,7 +561,6 @@ else
     private string AnnotationText = string.Empty;
     private string InviteEmail = string.Empty;
     private string InviteAnnotation = string.Empty;
-    private readonly Dictionary<string, string> InviteComments = [];
 
     private string CurrentUserId => CurrentUser?.Id ?? LoggedInUserContext.CurrentUser?.IdUtilizador.ToString() ?? "u1";
     private string CurrentUserName => CurrentUser?.Name ?? "Dr. João Silva";
@@ -1347,43 +1336,6 @@ else
         InviteToRemoveId = null;
         LoadConsultation();
         SetStatus("Convite removido com sucesso.");
-    }
-
-    private string GetInviteComment(string inviteId) =>
-        InviteComments.TryGetValue(inviteId, out var value) ? value : string.Empty;
-
-    private void SetInviteComment(string inviteId, string? value) =>
-        InviteComments[inviteId] = value ?? string.Empty;
-
-    private void AddInviteComment(string inviteId)
-    {
-        if (Consultation is null)
-        {
-            return;
-        }
-
-        if (TryGetDbConsultationId(out _))
-        {
-            SetStatus("Comentários de convites ainda não estão disponíveis para consultas da base de dados.", true);
-            return;
-        }
-
-        var text = GetInviteComment(inviteId);
-        if (string.IsNullOrWhiteSpace(text))
-        {
-            SetStatus("Escreva um comentário antes de guardar.", true);
-            return;
-        }
-
-        if (!Store.AddInviteAnnotation(Consultation.Id, inviteId, CurrentUserId, text))
-        {
-            SetStatus("Não foi possível guardar o comentário.", true);
-            return;
-        }
-
-        InviteComments[inviteId] = string.Empty;
-        LoadConsultation();
-        SetStatus("Comentário adicionado com sucesso.");
     }
 
     private static string StatusClass(ConsultationData.ConsultationStatus status) => status switch

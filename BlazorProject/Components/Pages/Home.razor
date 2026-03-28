@@ -147,7 +147,7 @@
                 Console.ForegroundColor = ConsoleColor.Green;
                 Console.WriteLine($"[LOGIN] ✔ Login bem sucedido para: {_email}");
                 Console.ResetColor();
-                NavigationManager.NavigateTo("/dashboard");
+                NavigationManager.NavigateTo(utilizador.IsAdmin ? "/user-management" : "/dashboard");
             }
             else
             {

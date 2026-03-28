@@ -19,6 +19,7 @@ builder.Services.AddDbContextFactory<EiEngsofContext>((DbContextOptionsBuilder o
 builder.Services.AddScoped<UtilizadorService>();
 builder.Services.AddScoped<PacienteService>();
 builder.Services.AddScoped<ConsultasService>();
+builder.Services.AddScoped<AdminService>();
 builder.Services.AddScoped<ExameMedico>();
 var app = builder.Build();
 
@@ -38,6 +39,36 @@ try
         Console.WriteLine("✔  Base de dados ligada com sucesso!");
         Console.WriteLine($"   → Utilizadores: {utilizadores}  |  Pacientes: {pacientes}  |  Consultas: {consultas}");
         Console.ResetColor();
+
+        // ── Seed admin padrão se não existir nenhum ───────────────────────
+        bool adminExists = await dbCtx.Utilizadores.AnyAsync(u => u.IsAdmin);
+        if (!adminExists)
+        {
+            const string defaultAdminEmail    = "admin@clinic.pt";
+            const string defaultAdminPassword = "Admin@1234";
+            const string defaultAdminUsername = "admin";
+
+            var adminHash = BCrypt.Net.BCrypt.HashPassword(defaultAdminPassword, workFactor: 12);
+            dbCtx.Utilizadores.Add(new Utilizador(
+                nome:        "Administrador",
+                username:    defaultAdminUsername,
+                password:    adminHash,
+                telefone:    null,
+                email:       defaultAdminEmail,
+                numCarteira: null)
+            {
+                IsAdmin   = true,
+                IsManager = true
+            });
+            await dbCtx.SaveChangesAsync();
+
+            Console.ForegroundColor = ConsoleColor.Yellow;
+            Console.WriteLine("★  Admin padrão criado:");
+            Console.WriteLine($"   → Email:  {defaultAdminEmail}");
+            Console.WriteLine($"   → Senha:  {defaultAdminPassword}");
+            Console.ResetColor();
+        }
+        // ─────────────────────────────────────────────────────────────────
     }
     else
     {

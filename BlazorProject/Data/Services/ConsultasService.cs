@@ -627,6 +627,155 @@ public class ConsultasService
         return (true, null);
     }
 
+    public async Task<List<ReportConsultationItem>> GetMonthlyReportAsync(int idUtilizador, int year, int month)
+    {
+        await using var context = await _factory.CreateDbContextAsync();
+
+        var startOfMonth = new DateTime(year, month, 1);
+        var startOfNextMonth = startOfMonth.AddMonths(1);
+
+        return await context.UtilizadorConsulta
+            .AsNoTracking()
+            .Where(link => link.IdUtilizador == idUtilizador && link.IsCriador)
+            .Select(link => link.IdConsultaNavigation)
+            .Where(c => c.DhFim.HasValue && c.DhFim >= startOfMonth && c.DhFim < startOfNextMonth)
+            .Select(c => new ReportConsultationItem
+            {
+                Id = c.IdConsulta,
+                PatientId = c.IdPaciente ?? 0,
+                PatientName = c.IdPacienteNavigation != null ? c.IdPacienteNavigation.Nome : "Sem paciente",
+                Description = c.Estados
+                    .OrderByDescending(e => e.DhRegisto)
+                    .Select(e => e.Comentario)
+                    .FirstOrDefault() ?? "Consulta médica",
+                DhInicio = c.DhInicio,
+                DhFim = c.DhFim,
+                ValorTotal = c.ValorTotal,
+                ValorHora = c.ValorHora,
+                IsHourly = c.ValorHora.HasValue && c.ValorHora.Value > 0
+            })
+            .OrderBy(c => c.DhFim)
+            .ToListAsync();
+    }
+
+    public async Task<List<ReportConsultationItem>> GetPatientMonthlyReportAsync(int idUtilizador, int patientId, int year, int month)
+    {
+        await using var context = await _factory.CreateDbContextAsync();
+
+        var startOfMonth = new DateTime(year, month, 1);
+        var startOfNextMonth = startOfMonth.AddMonths(1);
+
+        return await context.UtilizadorConsulta
+            .AsNoTracking()
+            .Where(link => link.IdUtilizador == idUtilizador && (link.IsCriador || link.ConviteAceite))
+            .Select(link => link.IdConsultaNavigation)
+            .Where(c => c.IdPaciente == patientId && c.DhFim.HasValue && c.DhFim >= startOfMonth && c.DhFim < startOfNextMonth)
+            .Select(c => new ReportConsultationItem
+            {
+                Id = c.IdConsulta,
+                PatientId = c.IdPaciente ?? 0,
+                PatientName = c.IdPacienteNavigation != null ? c.IdPacienteNavigation.Nome : "Sem paciente",
+                Description = c.Estados
+                    .OrderByDescending(e => e.DhRegisto)
+                    .Select(e => e.Comentario)
+                    .FirstOrDefault() ?? "Consulta médica",
+                DhInicio = c.DhInicio,
+                DhFim = c.DhFim,
+                ValorTotal = c.ValorTotal,
+                ValorHora = c.ValorHora,
+                IsHourly = c.ValorHora.HasValue && c.ValorHora.Value > 0
+            })
+            .OrderBy(c => c.DhFim)
+            .ToListAsync();
+    }
+
+    public sealed class ReportConsultationItem
+    {
+        public int Id { get; init; }
+        public int PatientId { get; init; }
+        public string PatientName { get; init; } = string.Empty;
+        public string Description { get; init; } = string.Empty;
+        public DateTime DhInicio { get; init; }
+        public DateTime? DhFim { get; init; }
+        public decimal? ValorTotal { get; init; }
+        public decimal? ValorHora { get; init; }
+        public bool IsHourly { get; init; }
+
+        public double Hours => DhFim.HasValue
+            ? Math.Max(0d, (DhFim.Value - DhInicio).TotalHours)
+            : 0d;
+
+        public decimal Price => IsHourly
+            ? Math.Round((decimal)Hours * (ValorHora ?? 0m), 2)
+            : (ValorTotal ?? 0m);
+    }
+
+    public async Task<DashboardStats> GetDashboardStatsAsync(int idUtilizador)
+    {
+        await using var context = await _factory.CreateDbContextAsync();
+
+        var now = DateTime.Now;
+        var startOfMonth = new DateTime(now.Year, now.Month, 1);
+        var startOfNextMonth = startOfMonth.AddMonths(1);
+
+        var consultations = await context.UtilizadorConsulta
+            .AsNoTracking()
+            .Where(link => link.IdUtilizador == idUtilizador && (link.IsCriador || link.ConviteAceite))
+            .Select(link => link.IdConsultaNavigation)
+            .Select(c => new
+            {
+                c.IdConsulta,
+                c.DhInicio,
+                c.DhFim,
+                c.ValorTotal,
+                c.ValorHora,
+                LatestStatus = c.Estados
+                    .OrderByDescending(e => e.DhRegisto)
+                    .Select(e => e.EstadoTo)
+                    .FirstOrDefault()
+            })
+            .ToListAsync();
+
+        var total = consultations.Count;
+
+        var pending = consultations.Count(c =>
+        {
+            var status = MapStatus(c.LatestStatus);
+            return status == ConsultationStatus.Agendada || status == ConsultationStatus.EmAndamento;
+        });
+
+        decimal monthlyRevenue = 0m;
+        foreach (var c in consultations.Where(c => c.DhInicio >= startOfMonth && c.DhInicio < startOfNextMonth))
+        {
+            if (c.ValorHora.HasValue && c.ValorHora.Value > 0)
+            {
+                if (c.DhFim.HasValue)
+                {
+                    var hours = (decimal)(c.DhFim.Value - c.DhInicio).TotalHours;
+                    monthlyRevenue += c.ValorHora.Value * Math.Max(0, hours);
+                }
+            }
+            else if (c.ValorTotal.HasValue)
+            {
+                monthlyRevenue += c.ValorTotal.Value;
+            }
+        }
+
+        return new DashboardStats
+        {
+            TotalConsultations = total,
+            PendingConsultations = pending,
+            MonthlyRevenue = monthlyRevenue
+        };
+    }
+
+    public sealed class DashboardStats
+    {
+        public int TotalConsultations { get; init; }
+        public int PendingConsultations { get; init; }
+        public decimal MonthlyRevenue { get; init; }
+    }
+
     private static ConsultationStatus MapStatus(string? status)
     {
         var normalized = (status ?? string.Empty).Trim().ToLowerInvariant();

@@ -1,0 +1,266 @@
+﻿@page "/user-management"
+@using BlazorProject.Services
+@rendermode InteractiveServer
+@inject AdminService AdminService
+@inject NavigationManager NavigationManager
+
+<PageTitle>Gestão de Utilizadores</PageTitle>
+
+@if (IsLoading)
+{
+    <div class="admin-page">
+        <section class="detail-card detail-empty">A carregar utilizadores...</section>
+    </div>
+}
+else
+{
+    <div class="admin-page">
+        <div class="detail-header">
+            <div class="detail-header-main">
+                <div>
+                    <h1>Gestão de Utilizadores</h1>
+                    <p>Criar e gerir médicos do sistema</p>
+                </div>
+            </div>
+            <div class="detail-header-actions">
+                <button class="btn-primary" @onclick="OpenCreateDialog">
+                    <span aria-hidden="true">＋</span>
+                    Criar Médico
+                </button>
+            </div>
+        </div>
+
+        @if (!string.IsNullOrWhiteSpace(StatusMessage))
+        {
+            <div class="feedback-banner @(StatusIsError ? "feedback-error" : "feedback-success")">
+                @StatusMessage
+            </div>
+        }
+
+        <div class="stack-list">
+            @if (Medicos.Count == 0)
+            {
+                <section class="detail-card detail-empty">
+                    Nenhum médico registado no sistema.
+                </section>
+            }
+            else
+            {
+                @foreach (var medico in Medicos)
+                {
+                    <article class="detail-card">
+                        <div class="list-card-top">
+                            <div>
+                                <h3>@medico.Nome</h3>
+                                @if (!string.IsNullOrWhiteSpace(medico.Especialidade))
+                                {
+                                    <p class="content-text">🩺 @medico.Especialidade</p>
+                                }
+                                <div class="info-grid" style="margin-top: 0.5rem;">
+                                    @if (!string.IsNullOrWhiteSpace(medico.Email))
+                                    {
+                                        <div class="info-item">
+                                            <span class="info-label">Email</span>
+                                            <strong>@medico.Email</strong>
+                                        </div>
+                                    }
+                                    @if (!string.IsNullOrWhiteSpace(medico.Telefone))
+                                    {
+                                        <div class="info-item">
+                                            <span class="info-label">Telefone</span>
+                                            <strong>@medico.Telefone</strong>
+                                        </div>
+                                    }
+                                    @if (!string.IsNullOrWhiteSpace(medico.NumCarteira))
+                                    {
+                                        <div class="info-item">
+                                            <span class="info-label">Nº Carteira</span>
+                                            <strong>@medico.NumCarteira</strong>
+                                        </div>
+                                    }
+                                </div>
+                            </div>
+                            <button class="icon-btn danger" title="Eliminar médico" @onclick='() => MedicoToDelete = medico'>
+                                ✕
+                            </button>
+                        </div>
+                    </article>
+                }
+            }
+        </div>
+    </div>
+}
+
+@* Dialog — Criar Médico *@
+@if (CreateDialogOpen)
+{
+    <div class="modal-backdrop" @onclick="CloseCreateDialog">
+        <div class="dialog-panel" @onclick:stopPropagation="true">
+            <div class="dialog-header">
+                <h3>Criar Novo Médico</h3>
+                <p>Preencha os dados do novo médico. Os campos com * são obrigatórios.</p>
+            </div>
+
+            <div class="dialog-body">
+                <div class="field">
+                    <label>Nome Completo *</label>
+                    <input type="text" @bind="FormNome" placeholder="Dr. João Silva" />
+                </div>
+                <div class="field">
+                    <label>Email *</label>
+                    <input type="email" @bind="FormEmail" placeholder="joao@example.com" />
+                </div>
+                <div class="field">
+                    <label>Senha *</label>
+                    <input type="password" @bind="FormPassword" placeholder="••••••••" />
+                </div>
+                <div class="field">
+                    <label>Especialidade</label>
+                    <input type="text" @bind="FormEspecialidade" placeholder="Cardiologia" />
+                </div>
+                <div class="field">
+                    <label>Telefone</label>
+                    <input type="text" @bind="FormTelefone" placeholder="+351 912 345 678" />
+                </div>
+                <div class="field">
+                    <label>Nº Carteira Profissional</label>
+                    <input type="text" @bind="FormCarteira" placeholder="12345678" />
+                </div>
+
+                @if (!string.IsNullOrWhiteSpace(DialogError))
+                {
+                    <p style="color: var(--danger, #dc2626); font-size: 0.875rem;">@DialogError</p>
+                }
+            </div>
+
+            <div class="dialog-actions">
+                <button class="btn-primary" @onclick="HandleCreateMedico">Criar Médico</button>
+                <button class="btn-outline" @onclick="CloseCreateDialog">Cancelar</button>
+            </div>
+        </div>
+    </div>
+}
+
+@* Dialog — Confirmar Eliminação *@
+@if (MedicoToDelete is not null)
+{
+    <div class="modal-backdrop" @onclick='() => MedicoToDelete = null'>
+        <div class="confirm-dialog" @onclick:stopPropagation="true">
+            <h3>Confirmar Eliminação</h3>
+            <p>
+                Tem a certeza que deseja eliminar o médico <strong>@MedicoToDelete.Nome</strong>?
+            </p>
+            <p style="color: var(--danger, #dc2626); font-weight: 600; margin-top: 0.5rem;">
+                Atenção: Esta ação irá também eliminar todos os pacientes, consultas e registos
+                associados a este médico. Esta ação não pode ser revertida.
+            </p>
+            <div class="dialog-actions">
+                <button class="btn-danger" @onclick="HandleDeleteMedico">Eliminar</button>
+                <button class="btn-outline" @onclick='() => MedicoToDelete = null'>Cancelar</button>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private bool IsLoading = true;
+    private bool StatusIsError;
+    private string? StatusMessage;
+    private List<AdminService.AdminMedicoItem> Medicos = [];
+
+    private bool CreateDialogOpen;
+    private string FormNome = string.Empty;
+    private string FormEmail = string.Empty;
+    private string FormPassword = string.Empty;
+    private string FormEspecialidade = string.Empty;
+    private string FormTelefone = string.Empty;
+    private string FormCarteira = string.Empty;
+    private string? DialogError;
+
+    private AdminService.AdminMedicoItem? MedicoToDelete;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var loggedUser = LoggedInUserContext.CurrentUser;
+        if (loggedUser is null)
+        {
+            NavigationManager.NavigateTo("/");
+            return;
+        }
+
+        if (!loggedUser.IsAdmin)
+        {
+            NavigationManager.NavigateTo("/dashboard");
+            return;
+        }
+
+        await LoadMedicosAsync();
+        IsLoading = false;
+    }
+
+    private async Task LoadMedicosAsync()
+    {
+        Medicos = await AdminService.GetAllMedicosAsync();
+    }
+
+    private void OpenCreateDialog()
+    {
+        FormNome = FormEmail = FormPassword = FormEspecialidade = FormTelefone = FormCarteira = string.Empty;
+        DialogError = null;
+        CreateDialogOpen = true;
+    }
+
+    private void CloseCreateDialog()
+    {
+        CreateDialogOpen = false;
+        DialogError = null;
+    }
+
+    private async Task HandleCreateMedico()
+    {
+        DialogError = null;
+
+        if (string.IsNullOrWhiteSpace(FormNome) || string.IsNullOrWhiteSpace(FormEmail) || string.IsNullOrWhiteSpace(FormPassword))
+        {
+            DialogError = "Por favor preencha todos os campos obrigatórios.";
+            return;
+        }
+
+        var result = await AdminService.CreateMedicoAsync(new AdminService.CreateMedicoRequest
+        {
+            Nome = FormNome,
+            Email = FormEmail,
+            Password = FormPassword,
+            Especialidade = FormEspecialidade,
+            Telefone = FormTelefone,
+            NumCarteira = FormCarteira
+        });
+
+        if (!result.Ok)
+        {
+            DialogError = result.Message;
+            return;
+        }
+
+        CreateDialogOpen = false;
+        await LoadMedicosAsync();
+        SetStatus(result.Message);
+    }
+
+    private async Task HandleDeleteMedico()
+    {
+        if (MedicoToDelete is null) return;
+
+        var result = await AdminService.DeleteMedicoAsync(MedicoToDelete.Id);
+        MedicoToDelete = null;
+
+        await LoadMedicosAsync();
+        SetStatus(result.Message, !result.Ok);
+    }
+
+    private void SetStatus(string message, bool isError = false)
+    {
+        StatusMessage = message;
+        StatusIsError = isError;
+    }
+}

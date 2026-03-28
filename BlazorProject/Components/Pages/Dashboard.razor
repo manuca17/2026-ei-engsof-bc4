@@ -4,6 +4,7 @@
 @using BlazorProject.Services
 @inject NavigationManager NavigationManager
 @inject PacienteService PacienteService
+@inject ConsultasService ConsultasService
 
 <PageTitle>Dashboard</PageTitle>
 
@@ -46,7 +47,7 @@
                     </svg>
                 </div>
             </div>
-            <div class="stat-value">48</div>
+            <div class="stat-value">@(IsLoading ? "..." : TotalConsultations.ToString())</div>
         </div>
 
         <div class="stat-card">
@@ -60,7 +61,7 @@
                     </svg>
                 </div>
             </div>
-            <div class="stat-value">5</div>
+            <div class="stat-value">@(IsLoading ? "..." : PendingConsultations.ToString())</div>
         </div>
 
         <div class="stat-card">
@@ -74,7 +75,7 @@
                     </svg>
                 </div>
             </div>
-            <div class="stat-value">€1 240,00</div>
+            <div class="stat-value">@(IsLoading ? "..." : $"€{MonthlyRevenue:N2}")</div>
         </div>
     </div>
 
@@ -123,6 +124,9 @@
 @code {
     private string DoctorName { get; set; } = "Utilizador";
     private int TotalPatients { get; set; }
+    private int TotalConsultations { get; set; }
+    private int PendingConsultations { get; set; }
+    private decimal MonthlyRevenue { get; set; }
     private bool IsLoading = true;
 
     protected override async Task OnInitializedAsync()
@@ -138,8 +142,15 @@
 
         try
         {
-                var patients = await PacienteService.GetByDoctorAsync(loggedUser.IdUtilizador);
-            TotalPatients = patients.Count;
+            var patientsTask = PacienteService.GetByDoctorAsync(loggedUser.IdUtilizador);
+            var statsTask = ConsultasService.GetDashboardStatsAsync(loggedUser.IdUtilizador);
+
+            await Task.WhenAll(patientsTask, statsTask);
+
+            TotalPatients = patientsTask.Result.Count;
+            TotalConsultations = statsTask.Result.TotalConsultations;
+            PendingConsultations = statsTask.Result.PendingConsultations;
+            MonthlyRevenue = statsTask.Result.MonthlyRevenue;
         }
         finally
         {

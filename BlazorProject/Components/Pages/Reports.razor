@@ -2,10 +2,9 @@
 @page "/relatorios"
 @using System.Text.Json.Serialization
 @using BlazorProject.Services
-@using ConsultationData = BlazorProject.Services.ConsultationStore
 @rendermode InteractiveServer
 @inject IJSRuntime JSRuntime
-@inject ConsultationStore Store
+@inject ConsultasService ConsultasService
 
 <PageTitle>Relatórios</PageTitle>
 
@@ -160,7 +159,7 @@ else
 
                     <div class="field">
                         <label>Paciente</label>
-                        <select @bind="SelectedPatientId" @bind:after="LoadPatientReport">
+                        <select @bind="SelectedPatientId" @bind:after="LoadPatientReportAsync">
                             <option value="">Escolha um paciente</option>
                             @foreach (var patient in AvailablePatients)
                             {
@@ -265,27 +264,27 @@ else
     private readonly int[] Years = [2024, 2025, 2026];
     private readonly MonthOption[] Months =
     [
-        new(0, "Janeiro"),
-        new(1, "Fevereiro"),
-        new(2, "Março"),
-        new(3, "Abril"),
-        new(4, "Maio"),
-        new(5, "Junho"),
-        new(6, "Julho"),
-        new(7, "Agosto"),
-        new(8, "Setembro"),
-        new(9, "Outubro"),
-        new(10, "Novembro"),
-        new(11, "Dezembro")
+        new(1, "Janeiro"),
+        new(2, "Fevereiro"),
+        new(3, "Março"),
+        new(4, "Abril"),
+        new(5, "Maio"),
+        new(6, "Junho"),
+        new(7, "Julho"),
+        new(8, "Agosto"),
+        new(9, "Setembro"),
+        new(10, "Outubro"),
+        new(11, "Novembro"),
+        new(12, "Dezembro")
     ];
 
     private bool IsLoading = true;
     private ReportsTab ActiveTab = ReportsTab.User;
-    private int SelectedMonth = DateTime.Now.Month - 1;
+    private int SelectedMonth = DateTime.Now.Month;
     private int SelectedYear = DateTime.Now.Year;
     private string SelectedPatientId = string.Empty;
-    private ConsultationData.UserItem? CurrentUser;
-    private List<ConsultationData.PatientItem> AvailablePatients = [];
+    private int CurrentUserId;
+    private List<PatientOption> AvailablePatients = [];
     private MonthlyReport UserReport { get; set; } = MonthlyReport.Empty();
     private MonthlyReport PatientReport { get; set; } = MonthlyReport.Empty();
 
@@ -298,18 +297,28 @@ else
             return;
         }
 
-        var storedUser = await JSRuntime.InvokeAsync<StoredUser?>("profileStorage.getCurrentUser");
-        CurrentUser = Store.FindUser(storedUser?.Email, storedUser?.Nome)
-                      ?? Store.Users.FirstOrDefault(user => user.Id == "u1");
+        var loggedUser = LoggedInUserContext.CurrentUser;
+        if (loggedUser is not null)
+        {
+            CurrentUserId = loggedUser.IdUtilizador;
+        }
+        else
+        {
+            var storedUser = await JSRuntime.InvokeAsync<StoredUser?>("profileStorage.getCurrentUser");
+            if (storedUser?.Email is not null)
+            {
+                // fallback: try to get from DB via logged context
+            }
+        }
 
-        LoadReportsPage();
+        await LoadReportsPageAsync();
         IsLoading = false;
         StateHasChanged();
     }
 
-    private void LoadReportsPage()
+    private async Task LoadReportsPageAsync()
     {
-        if (CurrentUser is null)
+        if (CurrentUserId <= 0)
         {
             AvailablePatients = [];
             UserReport = MonthlyReport.Empty();
@@ -317,120 +326,90 @@ else
             return;
         }
 
-        AvailablePatients = Store.Consultations
-            .Where(consultation => consultation.OwnerUserId == CurrentUser.Id)
-            .Select(consultation => consultation.PatientId)
-            .Distinct(StringComparer.OrdinalIgnoreCase)
-            .Join(Store.Patients, patientId => patientId, patient => patient.Id, (_, patient) => patient)
-            .OrderBy(patient => patient.Name)
+        var patientsTask = ConsultasService.GetPatientsForDoctorAsync(CurrentUserId);
+        var userReportTask = ConsultasService.GetMonthlyReportAsync(CurrentUserId, SelectedYear, SelectedMonth);
+
+        await Task.WhenAll(patientsTask, userReportTask);
+
+        AvailablePatients = patientsTask.Result
+            .Select(p => new PatientOption(p.Id.ToString(), p.Name))
             .ToList();
 
-        LoadUserReport();
-        LoadPatientReport();
+        UserReport = BuildReport(userReportTask.Result);
+        PatientReport = MonthlyReport.Empty();
+        SelectedPatientId = string.Empty;
     }
 
-    private void OnPeriodChanged()
+    private async Task OnPeriodChanged()
     {
-        LoadUserReport();
-        LoadPatientReport();
-    }
+        if (CurrentUserId <= 0) return;
 
-    private void LoadUserReport()
-    {
-        if (CurrentUser is null)
+        var userReportTask = ConsultasService.GetMonthlyReportAsync(CurrentUserId, SelectedYear, SelectedMonth);
+
+        Task<List<ConsultasService.ReportConsultationItem>>? patientReportTask = null;
+        if (!string.IsNullOrWhiteSpace(SelectedPatientId) && int.TryParse(SelectedPatientId, out var patientId))
         {
-            UserReport = MonthlyReport.Empty();
-            return;
+            patientReportTask = ConsultasService.GetPatientMonthlyReportAsync(CurrentUserId, patientId, SelectedYear, SelectedMonth);
         }
 
-        UserReport = BuildMonthlyReport(Store.Consultations.Where(consultation => consultation.OwnerUserId == CurrentUser.Id));
+        await userReportTask;
+        UserReport = BuildReport(userReportTask.Result);
+
+        if (patientReportTask is not null)
+        {
+            await patientReportTask;
+            PatientReport = BuildReport(patientReportTask.Result);
+        }
+        else
+        {
+            PatientReport = MonthlyReport.Empty();
+        }
     }
 
-    private void LoadPatientReport()
+    private async Task LoadPatientReportAsync()
     {
-        if (string.IsNullOrWhiteSpace(SelectedPatientId))
+        if (string.IsNullOrWhiteSpace(SelectedPatientId) || !int.TryParse(SelectedPatientId, out var patientId))
         {
             PatientReport = MonthlyReport.Empty();
             return;
         }
 
-        PatientReport = BuildMonthlyReport(Store.Consultations.Where(consultation => consultation.PatientId == SelectedPatientId));
+        var items = await ConsultasService.GetPatientMonthlyReportAsync(CurrentUserId, patientId, SelectedYear, SelectedMonth);
+        PatientReport = BuildReport(items);
     }
 
-    private MonthlyReport BuildMonthlyReport(IEnumerable<ConsultationData.ConsultationItem> consultations)
+    private static MonthlyReport BuildReport(List<ConsultasService.ReportConsultationItem> items)
     {
-        var filtered = consultations
-            .Where(consultation => consultation.Status == ConsultationData.ConsultationStatus.Encerrada)
-            .Where(consultation => consultation.EndAt.HasValue)
-            .Where(consultation => consultation.EndAt!.Value.Month - 1 == SelectedMonth && consultation.EndAt.Value.Year == SelectedYear)
-            .Select(consultation => new ConsultationSummary(
-                consultation.Id,
-                consultation.PatientName,
-                consultation.Description,
-                CalculateHours(consultation),
-                CalculatePrice(consultation)))
-            .OrderBy(summary => summary.Id)
-            .ToList();
-
-        var sourceConsultations = consultations
-            .Where(consultation => consultation.Status == ConsultationData.ConsultationStatus.Encerrada)
-            .Where(consultation => consultation.EndAt.HasValue)
-            .Where(consultation => consultation.EndAt!.Value.Month - 1 == SelectedMonth && consultation.EndAt.Value.Year == SelectedYear)
-            .OrderBy(consultation => consultation.EndAt)
-            .ToList();
-
-        var days = sourceConsultations
-            .GroupBy(consultation => consultation.EndAt!.Value.Day)
-            .OrderBy(group => group.Key)
-            .Select(group =>
+        var days = items
+            .GroupBy(c => c.DhFim!.Value.Day)
+            .OrderBy(g => g.Key)
+            .Select(g =>
             {
-                var dayConsultations = group.Select(consultation => new ConsultationSummary(
-                    consultation.Id,
-                    consultation.PatientName,
-                    consultation.Description,
-                    CalculateHours(consultation),
-                    CalculatePrice(consultation)))
-                    .ToList();
+                var dayConsultations = g.Select(c => new ConsultationSummary(
+                    c.Id.ToString(),
+                    c.PatientName,
+                    c.Description,
+                    c.Hours,
+                    c.Price)).ToList();
 
-                var totalHours = dayConsultations.Sum(consultation => consultation.Horas);
-                var totalPrice = dayConsultations.Sum(consultation => consultation.Preco);
+                var totalHours = dayConsultations.Sum(c => c.Horas);
+                var totalPrice = dayConsultations.Sum(c => c.Preco);
 
-                return new DailyReport(group.Key, totalHours, totalPrice, totalHours > 8d, dayConsultations);
+                return new DailyReport(g.Key, totalHours, totalPrice, totalHours > 8d, dayConsultations);
             })
             .ToList();
 
-        return new MonthlyReport(days.Sum(day => day.TotalHoras), days.Sum(day => day.TotalPreco), days.Sum(day => day.Consultas.Count), days);
+        return new MonthlyReport(
+            days.Sum(d => d.TotalHoras),
+            days.Sum(d => d.TotalPreco),
+            days.Sum(d => d.Consultas.Count),
+            days);
     }
 
-    private static double CalculateHours(ConsultationData.ConsultationItem consultation)
-    {
-        if (consultation.StartAt is null || consultation.EndAt is null)
-        {
-            return 0d;
-        }
-
-        var totalHours = (consultation.EndAt.Value - consultation.StartAt.Value).TotalHours;
-        return totalHours > 0 ? totalHours : 0d;
-    }
-
-    private static decimal CalculatePrice(ConsultationData.ConsultationItem consultation)
-    {
-        if (consultation.ChargingType == ConsultationData.ChargingType.Fixo)
-        {
-            return consultation.FixedPrice ?? 0m;
-        }
-
-        var hours = CalculateHours(consultation);
-        return Math.Round((decimal)hours * (consultation.HourlyPrice ?? 0m), 2);
-    }
-
-    private enum ReportsTab
-    {
-        User,
-        Patient
-    }
+    private enum ReportsTab { User, Patient }
 
     private sealed record MonthOption(int Value, string Label);
+    private sealed record PatientOption(string Id, string Name);
     private sealed record ConsultationSummary(string Id, string PacienteNome, string Descricao, double Horas, decimal Preco);
     private sealed record DailyReport(int Dia, double TotalHoras, decimal TotalPreco, bool Overtime, List<ConsultationSummary> Consultas);
     private sealed record MonthlyReport(double TotalHoras, decimal TotalPreco, int TotalConsultas, List<DailyReport> Dias)

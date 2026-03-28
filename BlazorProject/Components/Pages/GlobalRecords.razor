@@ -1,0 +1,323 @@
+﻿@page "/global-records"
+@using BlazorProject.Services
+@rendermode InteractiveServer
+@inject AdminService AdminService
+@inject NavigationManager NavigationManager
+
+<PageTitle>Registos Globais</PageTitle>
+
+@if (IsLoading)
+{
+    <div class="admin-page">
+        <section class="detail-card detail-empty">A carregar registos globais...</section>
+    </div>
+}
+else
+{
+    <div class="admin-page">
+        <div class="detail-header">
+            <div>
+                <h1>Registos Globais</h1>
+                <p>Visualização completa de todos os dados do sistema</p>
+            </div>
+        </div>
+
+        @* Stats *@
+        <div class="stats-grid" style="margin-bottom: 1.5rem;">
+            <div class="stat-card">
+                <div class="stat-top">
+                    <span class="stat-label">Total de Consultas</span>
+                    <div class="stat-icon bg-blue">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                             stroke="#2563eb" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect width="18" height="18" x="3" y="4" rx="2" ry="2"/>
+                            <line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/>
+                            <line x1="3" x2="21" y1="10" y2="10"/>
+                        </svg>
+                    </div>
+                </div>
+                <div class="stat-value">@Stats.TotalConsultas</div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-top">
+                    <span class="stat-label">Total de Médicos</span>
+                    <div class="stat-icon bg-green">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                             stroke="#16a34a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
+                            <circle cx="9" cy="7" r="4"/>
+                            <path d="M22 21v-2a4 4 0 0 0-3-3.87"/>
+                            <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                        </svg>
+                    </div>
+                </div>
+                <div class="stat-value">@Stats.TotalMedicos</div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-top">
+                    <span class="stat-label">Total de Pacientes</span>
+                    <div class="stat-icon bg-orange">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                             stroke="#ea580c" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
+                            <circle cx="9" cy="7" r="4"/>
+                        </svg>
+                    </div>
+                </div>
+                <div class="stat-value">@Stats.TotalPacientes</div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-top">
+                    <span class="stat-label">Receita Total (Encerradas)</span>
+                    <div class="stat-icon bg-purple">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                             stroke="#9333ea" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="12" x2="12" y1="2" y2="22"/>
+                            <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+                        </svg>
+                    </div>
+                </div>
+                <div class="stat-value">€@Stats.TotalReceita.ToString("N2")</div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-top">
+                    <span class="stat-label">Total de Exames</span>
+                    <div class="stat-icon bg-green">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                             stroke="#16a34a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/>
+                            <polyline points="14 2 14 8 20 8"/>
+                        </svg>
+                    </div>
+                </div>
+                <div class="stat-value">@Stats.TotalExames</div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-top">
+                    <span class="stat-label">Total de Anotações</span>
+                    <div class="stat-icon bg-blue">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                             stroke="#2563eb" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                        </svg>
+                    </div>
+                </div>
+                <div class="stat-value">@Stats.TotalAnotacoes</div>
+            </div>
+        </div>
+
+        @* Search *@
+        <div class="field" style="margin-bottom: 1rem;">
+            <input type="text" placeholder="Pesquisar por paciente, médico ou descrição..."
+                   @bind="SearchTerm" @bind:event="oninput" />
+        </div>
+
+        @* Tabs *@
+        <div class="reports-tabs">
+            <button type="button"
+                    class="@(ActiveTab == "consultations" ? "tab-button active" : "tab-button")"
+                    @onclick='() => ActiveTab = "consultations"'>
+                Consultas (@FilteredConsultations.Count)
+            </button>
+            <button type="button"
+                    class="@(ActiveTab == "patients" ? "tab-button active" : "tab-button")"
+                    @onclick='() => ActiveTab = "patients"'>
+                Pacientes (@FilteredPatients.Count)
+            </button>
+        </div>
+
+        @if (ActiveTab == "consultations")
+        {
+            <div class="stack-list" style="margin-top: 1rem;">
+                @if (FilteredConsultations.Count == 0)
+                {
+                    <section class="detail-card detail-empty">Nenhuma consulta encontrada.</section>
+                }
+                else
+                {
+                    @foreach (var c in FilteredConsultations)
+                    {
+                        <article class="detail-card">
+                            <div class="list-card-top">
+                                <div>
+                                    <h3>@c.Description</h3>
+                                    <p>
+                                        Paciente: <strong>@c.PatientName</strong>
+                                        &nbsp;·&nbsp;
+                                        Médico: <strong>@c.DoctorName</strong>
+                                    </p>
+                                </div>
+                                <span class="status-badge @StatusClass(c.StatusNormalized)">@c.StatusNormalized</span>
+                            </div>
+
+                            <div class="info-grid" style="margin-top: 0.75rem;">
+                                <div class="info-item">
+                                    <span class="info-label">Início</span>
+                                    <strong>@c.DhInicio.ToString("dd/MM/yyyy HH:mm")</strong>
+                                </div>
+                                @if (c.DhFim.HasValue)
+                                {
+                                    <div class="info-item">
+                                        <span class="info-label">Fim</span>
+                                        <strong>@c.DhFim.Value.ToString("dd/MM/yyyy HH:mm")</strong>
+                                    </div>
+                                }
+                                <div class="info-item">
+                                    <span class="info-label">Cobrança</span>
+                                    <strong>
+                                        @if (c.IsHourly)
+                                        {
+                                            @($"€{c.ValorHora:N2}/hora")
+                                        }
+                                        else
+                                        {
+                                            @($"€{c.ValorTotal:N2} (fixo)")
+                                        }
+                                    </strong>
+                                </div>
+                                @if (c.StatusNormalized == "Encerrada")
+                                {
+                                    <div class="info-item">
+                                        <span class="info-label">Total Cobrado</span>
+                                        <strong style="color: var(--success, #16a34a)">€@c.CalculatedPrice.ToString("N2")</strong>
+                                    </div>
+                                }
+                                <div class="info-item">
+                                    <span class="info-label">Exames</span>
+                                    <strong>@c.ExamsCount</strong>
+                                </div>
+                                <div class="info-item">
+                                    <span class="info-label">Anotações</span>
+                                    <strong>@c.AnnotationsCount</strong>
+                                </div>
+                            </div>
+                        </article>
+                    }
+                }
+            </div>
+        }
+        else
+        {
+            <div class="stack-list" style="margin-top: 1rem;">
+                @if (FilteredPatients.Count == 0)
+                {
+                    <section class="detail-card detail-empty">Nenhum paciente encontrado.</section>
+                }
+                else
+                {
+                    @foreach (var p in FilteredPatients)
+                    {
+                        <article class="detail-card">
+                            <div class="list-card-top">
+                                <div>
+                                    <h3>@p.Nome</h3>
+                                    <p>Médico responsável: <strong>@p.DoctorName</strong></p>
+                                </div>
+                            </div>
+
+                            <div class="info-grid" style="margin-top: 0.75rem;">
+                                @if (p.DtNasc.HasValue)
+                                {
+                                    <div class="info-item">
+                                        <span class="info-label">Data de Nascimento</span>
+                                        <strong>@p.DtNasc.Value.ToString("dd/MM/yyyy")</strong>
+                                    </div>
+                                }
+                                @if (!string.IsNullOrWhiteSpace(p.Telefone))
+                                {
+                                    <div class="info-item">
+                                        <span class="info-label">Telefone</span>
+                                        <strong>@p.Telefone</strong>
+                                    </div>
+                                }
+                                @if (!string.IsNullOrWhiteSpace(p.Email))
+                                {
+                                    <div class="info-item">
+                                        <span class="info-label">Email</span>
+                                        <strong>@p.Email</strong>
+                                    </div>
+                                }
+                                @if (!string.IsNullOrWhiteSpace(p.Rua))
+                                {
+                                    <div class="info-item">
+                                        <span class="info-label">Endereço</span>
+                                        <strong>@p.Rua</strong>
+                                    </div>
+                                }
+                            </div>
+                        </article>
+                    }
+                }
+            </div>
+        }
+    </div>
+}
+
+@code {
+    private bool IsLoading = true;
+    private string ActiveTab = "consultations";
+    private string SearchTerm = string.Empty;
+
+    private AdminService.GlobalStatsItem Stats = new();
+    private List<AdminService.AdminConsultationItem> AllConsultations = [];
+    private List<AdminService.AdminPatientItem> AllPatients = [];
+
+    private List<AdminService.AdminConsultationItem> FilteredConsultations =>
+        string.IsNullOrWhiteSpace(SearchTerm)
+            ? AllConsultations
+            : AllConsultations.Where(c =>
+                c.PatientName.Contains(SearchTerm, StringComparison.OrdinalIgnoreCase) ||
+                c.DoctorName.Contains(SearchTerm, StringComparison.OrdinalIgnoreCase) ||
+                c.Description.Contains(SearchTerm, StringComparison.OrdinalIgnoreCase))
+            .ToList();
+
+    private List<AdminService.AdminPatientItem> FilteredPatients =>
+        string.IsNullOrWhiteSpace(SearchTerm)
+            ? AllPatients
+            : AllPatients.Where(p =>
+                p.Nome.Contains(SearchTerm, StringComparison.OrdinalIgnoreCase) ||
+                (p.Email ?? string.Empty).Contains(SearchTerm, StringComparison.OrdinalIgnoreCase) ||
+                (p.Telefone ?? string.Empty).Contains(SearchTerm, StringComparison.OrdinalIgnoreCase) ||
+                p.DoctorName.Contains(SearchTerm, StringComparison.OrdinalIgnoreCase))
+            .ToList();
+
+    protected override async Task OnInitializedAsync()
+    {
+        var loggedUser = LoggedInUserContext.CurrentUser;
+        if (loggedUser is null)
+        {
+            NavigationManager.NavigateTo("/");
+            return;
+        }
+
+        if (!loggedUser.IsAdmin)
+        {
+            NavigationManager.NavigateTo("/dashboard");
+            return;
+        }
+
+        var statsTask = AdminService.GetGlobalStatsAsync();
+        var consultationsTask = AdminService.GetAllConsultationsAsync();
+        var patientsTask = AdminService.GetAllPatientsAsync();
+
+        await Task.WhenAll(statsTask, consultationsTask, patientsTask);
+
+        Stats = statsTask.Result;
+        AllConsultations = consultationsTask.Result;
+        AllPatients = patientsTask.Result;
+
+        IsLoading = false;
+    }
+
+    private static string StatusClass(string status) => status switch
+    {
+        "Encerrada" => "status-green",
+        "Em Andamento" => "status-blue",
+        _ => "status-gray"
+    };
+}
