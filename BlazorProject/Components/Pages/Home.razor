@@ -112,6 +112,12 @@
                     <button class="btn-submit" @onclick='HandleRegister'>
                         Criar Conta
                     </button>
+                    
+                    @if (!string.IsNullOrEmpty(_erro))
+                    {
+                        <p style="color:red; margin-top:8px;">@_erro</p>
+                    }
+
                 </div>
             }
 

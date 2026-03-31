@@ -19,34 +19,42 @@ else if (CurrentUser is null)
 }
 else
 {
-    <div class="max-w-2xl mx-auto space-y-6">
+    <div class="max-w-2xl mx-auto d-flex flex-column gap-4">
         <div class="d-flex align-items-center justify-content-between">
             <div>
                 <h1 class="h3 mb-2">Meu Perfil</h1>
                 <p class="text-muted mb-0">Gerir as suas informações pessoais</p>
             </div>
-            @if (!IsEditing)
-            {
-                <button class="btn btn-primary" @onclick="() => IsEditing = true">
-                    <span class="me-2">✎</span>
-                    Editar
-                </button>
-            }
-        </div>
+        </div>~
 
         <div class="card">
-            <div class="card-header">
+            <div class="card-header d-flex justify-content-between align-items-center">
                 <h5 class="mb-0">Informações Pessoais</h5>
+                @if (!IsEditingPersonal)
+                {
+                    <button class="btn btn-sm btn-primary" @onclick="() => IsEditingPersonal = true">
+                        <span class="me-2">✎</span>
+                        Editar
+                    </button>
+                }
             </div>
             <div class="card-body">
-                @if (!IsEditing)
+                @if (!IsEditingPersonal)
                 {
                     <div class="space-y-4">
                         <div class="d-flex align-items-center gap-3 p-3 bg-light rounded">
                             <span class="fs-5 text-secondary">👤</span>
                             <div class="flex-grow-1">
-                                <p class="text-muted small mb-0">Nome</p>
+                                <p class="text-muted small mb-0">Nome Completo</p>
                                 <p class="fw-semibold mb-0">@CurrentUser.Nome</p>
+                            </div>
+                        </div>
+
+                        <div class="d-flex align-items-center gap-3 p-3 bg-light rounded">
+                            <span class="fs-5 text-secondary">🆔</span>
+                            <div class="flex-grow-1">
+                                <p class="text-muted small mb-0">Username</p>
+                                <p class="fw-semibold mb-0">@CurrentUser.Username</p>
                             </div>
                         </div>
 
@@ -84,6 +92,11 @@ else
                         </div>
 
                         <div class="mb-3">
+                            <label class="form-label" for="username">Username *</label>
+                            <input id="username" class="form-control" @bind="FormData.Username" required />
+                        </div>
+
+                        <div class="mb-3">
                             <label class="form-label" for="email">Email *</label>
                             <input id="email" type="email" class="form-control" @bind="FormData.Email" required />
                         </div>
@@ -105,7 +118,74 @@ else
 
                         <div class="d-flex gap-3 pt-2">
                             <button class="btn btn-primary flex-grow-1" type="button" @onclick="SaveProfileAsync">Salvar Alterações</button>
-                            <button class="btn btn-outline-secondary flex-grow-1" type="button" @onclick="CancelEdit">Cancelar</button>
+                            <button class="btn btn-outline-secondary flex-grow-1" type="button" @onclick="CancelEditPersonal">Cancelar</button>
+                        </div>
+                    </form>
+                }
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Morada</h5>
+                @if (!IsEditingAddress)
+                {
+                    <button class="btn btn-sm btn-primary" @onclick="() => IsEditingAddress = true">
+                        <span class="me-2">✎</span>
+                        Editar
+                    </button>
+                }
+            </div>
+            <div class="card-body">
+                @if (!IsEditingAddress)
+                {
+                    <div class="space-y-4">
+                        <div class="d-flex align-items-center gap-3 p-3 bg-light rounded">
+                            <span class="fs-5 text-secondary">🏠</span>
+                            <div class="flex-grow-1">
+                                <p class="text-muted small mb-0">Rua</p>
+                                <p class="fw-semibold mb-0">@(!string.IsNullOrWhiteSpace(CurrentUser.Rua) ? CurrentUser.Rua : "Não definida")</p>
+                            </div>
+                        </div>
+
+                        <div class="d-flex align-items-center gap-3 p-3 bg-light rounded">
+                            <span class="fs-5 text-secondary">#</span>
+                            <div class="flex-grow-1">
+                                <p class="text-muted small mb-0">Número da Porta</p>
+                                <p class="fw-semibold mb-0">@(!string.IsNullOrWhiteSpace(CurrentUser.NumPorta) ? CurrentUser.NumPorta : "Não definido")</p>
+                            </div>
+                        </div>
+
+                        <div class="d-flex align-items-center gap-3 p-3 bg-light rounded">
+                            <span class="fs-5 text-secondary">📮</span>
+                            <div class="flex-grow-1">
+                                <p class="text-muted small mb-0">Código Postal</p>
+                                <p class="fw-semibold mb-0">@(!string.IsNullOrWhiteSpace(CurrentUser.CodPostal) ? CurrentUser.CodPostal : "Não definido")</p>
+                            </div>
+                        </div>
+                    </div>
+                }
+                else
+                {
+                    <form onsubmit="return false;">
+                        <div class="mb-3">
+                            <label class="form-label" for="rua">Rua</label>
+                            <input id="rua" class="form-control" placeholder="Ex: Avenida da Liberdade" @bind="FormData.Rua" />
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label" for="numPorta">Número da Porta</label>
+                            <input id="numPorta" class="form-control" placeholder="Ex: 12A" @bind="FormData.NumPorta" />
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label" for="codPostal">Código Postal</label>
+                            <input id="codPostal" class="form-control" placeholder="Ex: 1000-001" @bind="FormData.CodPostal" />
+                        </div>
+
+                        <div class="d-flex gap-3 pt-2">
+                            <button class="btn btn-primary flex-grow-1" type="button" @onclick="SaveProfileAsync">Salvar Alterações</button>
+                            <button class="btn btn-outline-secondary flex-grow-1" type="button" @onclick="CancelEditAddress">Cancelar</button>
                         </div>
                     </form>
                 }
@@ -154,7 +234,8 @@ else
 }
 
 @code {
-    private bool IsEditing;
+    private bool IsEditingPersonal;
+    private bool IsEditingAddress;
     private bool IsLoading = true;
 
     private Utilizador? CurrentUser;
@@ -191,9 +272,13 @@ else
         FormData = new ProfileForm
         {
             Nome = CurrentUser.Nome,
+            Username = CurrentUser.Username,
             Email = CurrentUser.Email,
             Especialidade = CurrentUser.Especialidade ?? string.Empty,
             Telefone = CurrentUser.Telefone ?? string.Empty,
+            Rua = CurrentUser.Rua ?? string.Empty,
+            NumPorta = CurrentUser.NumPorta ?? string.Empty,
+            CodPostal = CurrentUser.CodPostal ?? string.Empty,
             Senha = string.Empty
         };
     }
@@ -206,9 +291,9 @@ else
             return;
         }
 
-        if (string.IsNullOrWhiteSpace(FormData.Nome) || string.IsNullOrWhiteSpace(FormData.Email))
+        if (string.IsNullOrWhiteSpace(FormData.Nome) || string.IsNullOrWhiteSpace(FormData.Username) || string.IsNullOrWhiteSpace(FormData.Email))
         {
-            await JSRuntime.InvokeVoidAsync("alert", "Nome e email são obrigatórios.");
+            await JSRuntime.InvokeVoidAsync("alert", "Nome, username e email são obrigatórios.");
             return;
         }
 
@@ -217,13 +302,13 @@ else
             CurrentUser.IsManager,
             CurrentUser.IsAdmin,
             FormData.Nome.Trim(),
-            CurrentUser.Username,
+            FormData.Username.Trim(),
             string.IsNullOrWhiteSpace(FormData.Senha) ? CurrentUser.Password : FormData.Senha,
             string.IsNullOrWhiteSpace(FormData.Telefone) ? null : FormData.Telefone.Trim(),
             FormData.Email.Trim(),
-            CurrentUser.NumPorta,
-            CurrentUser.Rua,
-            CurrentUser.CodPostal,
+            string.IsNullOrWhiteSpace(FormData.NumPorta) ? null : FormData.NumPorta.Trim(),
+            string.IsNullOrWhiteSpace(FormData.Rua) ? null : FormData.Rua.Trim(),
+            string.IsNullOrWhiteSpace(FormData.CodPostal) ? null : FormData.CodPostal.Trim(),
             CurrentUser.NumCarteira,
             string.IsNullOrWhiteSpace(FormData.Especialidade) ? null : FormData.Especialidade.Trim(),
             CurrentUser.CodPostalNavigation);
@@ -232,7 +317,8 @@ else
         CurrentUser = savedUser;
         LoggedInUserContext.SetCurrentUser(savedUser);
 
-        IsEditing = false;
+        IsEditingPersonal = false;
+        IsEditingAddress = false;
         ResetForm();
         await JSRuntime.InvokeVoidAsync("alert", "Perfil atualizado com sucesso.");
     }
@@ -271,18 +357,28 @@ else
         PendingInvites = await ConsultasService.GetPendingInvitesForDoctorAsync(CurrentUser.IdUtilizador);
     }
 
-    private void CancelEdit()
+    private void CancelEditPersonal()
     {
-        IsEditing = false;
+        IsEditingPersonal = false;
+        ResetForm();
+    }
+
+    private void CancelEditAddress()
+    {
+        IsEditingAddress = false;
         ResetForm();
     }
 
     private sealed class ProfileForm
     {
         public string Nome { get; set; } = string.Empty;
+        public string Username { get; set; } = string.Empty;
         public string Email { get; set; } = string.Empty;
         public string Especialidade { get; set; } = string.Empty;
         public string Telefone { get; set; } = string.Empty;
+        public string Rua { get; set; } = string.Empty;
+        public string NumPorta { get; set; } = string.Empty;
+        public string CodPostal { get; set; } = string.Empty;
         public string Senha { get; set; } = string.Empty;
     }
 }

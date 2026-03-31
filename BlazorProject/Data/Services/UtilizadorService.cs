@@ -40,20 +40,29 @@ public class UtilizadorService
 
         await using var context = await _factory.CreateDbContextAsync();
 
+        
         bool usernameExists = await context.Utilizadores.AnyAsync(u => u.Username == utilizador.Username);
         if (usernameExists) throw new InvalidOperationException("Username já existe.");
 
+        
         bool emailExists = await context.Utilizadores.AnyAsync(u => u.Email == utilizador.Email);
         if (emailExists) throw new InvalidOperationException("Email já registado.");
 
+        
+        if (utilizador.Password.Length <= 8 ) throw new InvalidOperationException("Password is too short.");
+        
+        
         string hash = BCrypt.Net.BCrypt.HashPassword(utilizador.Password, workFactor: 12);
         utilizador.Password = hash;
 
+        
         context.Utilizadores.Add(utilizador);
 
         try
         {
             await context.SaveChangesAsync();
+            return utilizador;
+
         }
         catch (Exception ex)
         {
@@ -65,7 +74,7 @@ public class UtilizadorService
             throw;
         }
 
-        return utilizador;
+        return null;
     }
 
     public async Task<Utilizador> UpdateAsync(Utilizador utilizador)

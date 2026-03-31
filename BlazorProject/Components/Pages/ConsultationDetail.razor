@@ -569,7 +569,11 @@ else
     private bool TryGetDbConsultationId(out int idConsulta)
     {
         idConsulta = 0;
-        return Consultation is not null && int.TryParse(Consultation.Id, out idConsulta);
+        bool success = Consultation is not null && int.TryParse(Consultation.Id, out idConsulta);
+    
+        Console.WriteLine("[DEBUG INTEL] consulta id: " + idConsulta);
+    
+        return success;
     }
 
     private ConsultationData.MedicalExamItem? SelectedExistingExam =>

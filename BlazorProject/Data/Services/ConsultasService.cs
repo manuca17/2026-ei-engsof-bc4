@@ -220,6 +220,7 @@ public class ConsultasService
 
         var isCreator = await context.UtilizadorConsulta.AnyAsync(link =>
             link.IdUtilizador == idUtilizador && link.IdConsulta == idConsulta && link.IsCriador);
+        
         if (!isCreator)
         {
             return (false, "Só o criador da consulta pode enviar convites.");
@@ -297,6 +298,7 @@ public class ConsultasService
 
         var isCreator = await context.UtilizadorConsulta.AnyAsync(link =>
             link.IdUtilizador == idUtilizador && link.IdConsulta == idConsulta && link.IsCriador);
+        
         if (!isCreator)
         {
             return (false, "Só o criador da consulta pode remover convites.");
