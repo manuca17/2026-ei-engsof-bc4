@@ -14,6 +14,9 @@ Sistema web desenvolvido para médicos independentes gerirem consultas, paciente
 - Pedro Arias - 33191
 - Guilherme Maciel - 33245
 
+## Sprints
+https://github.com/manuca17/2026-ei-engsof-bc4/blob/main/Sprints/SPRINTS.md
+
 ## Naming conventions
 Para branches:
 -> [primeira letra do primeiro nome][primeira letra do ultimo nome]-[dia][mes]-[proposito da branch]
