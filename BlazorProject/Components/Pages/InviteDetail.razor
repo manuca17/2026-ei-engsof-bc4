@@ -1,0 +1,329 @@
+@page "/invites/{Id}"
+@using BlazorProject.Services
+@rendermode InteractiveServer
+@inject NavigationManager NavigationManager
+@inject IJSRuntime JSRuntime
+@inject ConsultasService ConsultasService
+
+<PageTitle>Detalhes do Convite</PageTitle>
+
+@if (IsLoading)
+{
+    <div class="consult-detail-page">
+        <section class="detail-card detail-empty">A carregar convite...</section>
+    </div>
+}
+else if (Consultation is null)
+{
+    <div class="consult-detail-page">
+        <section class="detail-card detail-empty">
+            <h1>Convite não encontrado</h1>
+            <p>Não foi possível localizar o convite pedido.</p>
+            <button class="btn-outline" @onclick='() => NavigationManager.NavigateTo("/profile")'>Voltar ao Perfil</button>
+        </section>
+    </div>
+}
+else
+{
+    <div class="consult-detail-page">
+        <div class="detail-header">
+            <div class="detail-header-main">
+                <button class="btn-outline back-btn" @onclick='() => NavigationManager.NavigateTo("/profile")'>
+                    <span aria-hidden="true">←</span>
+                    Voltar
+                </button>
+                <div>
+                    <h1>@Consultation.PatientName</h1>
+                    <p>@Consultation.Description</p>
+                </div>
+            </div>
+
+            <div class="detail-header-actions">
+                <button class="btn-primary" @onclick="AcceptInviteAsync" disabled="@(IsProcessing || IsAccepted)">
+                    <span aria-hidden="true">✓</span>
+                    @(IsAccepted ? "Aceite" : IsProcessing ? "A aceitar..." : "Aceitar Convite")
+                </button>
+                <button class="btn-outline" @onclick="DeclineInviteAsync" disabled="@(IsProcessing || IsAccepted)">
+                    <span aria-hidden="true">✕</span>
+                    @(IsProcessing ? "A recusar..." : "Recusar")
+                </button>
+            </div>
+        </div>
+
+        @if (!string.IsNullOrWhiteSpace(StatusMessage))
+        {
+            <div class="feedback-banner @(StatusIsError ? "feedback-error" : "feedback-success")">
+                @StatusMessage
+            </div>
+        }
+
+        <div class="detail-grid">
+            <div class="detail-main">
+                <section class="detail-card">
+                    <div class="section-header">
+                        <h2>Detalhes do Convite</h2>
+                    </div>
+
+                    <div class="info-grid">
+                        <div class="info-item">
+                            <span class="info-label">Estado da Consulta</span>
+                            <span class="status-badge @StatusClass(Consultation.Status)">@StatusLabel(Consultation.Status)</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Médico Responsável</span>
+                            <strong>@Consultation.OwnerUserName</strong>
+                        </div>
+                        @if (Consultation.StartAt is not null)
+                        {
+                            <div class="info-item">
+                                <span class="info-label">Data/Hora Início</span>
+                                <strong>@Consultation.StartAt.Value.ToString("dd/MM/yyyy HH:mm")</strong>
+                            </div>
+                        }
+                        @if (Consultation.EndAt is not null)
+                        {
+                            <div class="info-item">
+                                <span class="info-label">Data/Hora Fim</span>
+                                <strong>@Consultation.EndAt.Value.ToString("dd/MM/yyyy HH:mm")</strong>
+                            </div>
+                        }
+                        <div class="info-item">
+                            <span class="info-label">Tipo de Cobrança</span>
+                            <strong>@ChargingTypeLabel(Consultation.ChargingType)</strong>
+                        </div>
+                        @if (Consultation.ChargingType == ConsultasService.ChargingType.Fixo)
+                        {
+                            <div class="info-item">
+                                <span class="info-label">Preço Fixo</span>
+                                <strong>€@(Consultation.FixedPrice?.ToString("0.00") ?? "0.00")</strong>
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="info-item">
+                                <span class="info-label">Preço por Hora</span>
+                                <strong>€@(Consultation.HourlyPrice?.ToString("0.00") ?? "0.00")/h</strong>
+                            </div>
+                        }
+                    </div>
+                </section>
+
+                @if (Consultation.Exams.Count > 0)
+                {
+                    <section class="detail-card">
+                        <div class="section-header">
+                            <h3>Exames (@Consultation.Exams.Count)</h3>
+                        </div>
+                        <div class="items-list">
+                            @foreach (var exam in Consultation.Exams)
+                            {
+                                <div class="item-row">
+                                    <div class="item-main">
+                                        <strong>@exam.Name</strong>
+                                        <p class="item-meta">@exam.Date.ToString("dd/MM/yyyy HH:mm")</p>
+                                        @if (!string.IsNullOrWhiteSpace(exam.Results))
+                                        {
+                                            <p class="item-text">@exam.Results</p>
+                                        }
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    </section>
+                }
+
+                @if (Consultation.Annotations.Count > 0)
+                {
+                    <section class="detail-card">
+                        <div class="section-header">
+                            <h3>Anotações (@Consultation.Annotations.Count)</h3>
+                        </div>
+                        <div class="items-list">
+                            @foreach (var annotation in Consultation.Annotations)
+                            {
+                                <div class="item-row">
+                                    <div class="item-main">
+                                        <p class="item-text">@annotation.Text</p>
+                                        <p class="item-meta">Por @annotation.UserName em @annotation.CreatedAt.ToString("dd/MM/yyyy HH:mm")</p>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    </section>
+                }
+            </div>
+
+            <aside class="detail-sidebar">
+                <section class="detail-card">
+                    <div class="section-header">
+                        <h3>Médicos na Consulta</h3>
+                    </div>
+                    <div class="items-list">
+                        @foreach (var invite in Consultation.Invites)
+                        {
+                            <div class="item-row">
+                                <div class="item-main">
+                                    <strong>@invite.UserName</strong>
+                                    @if (!string.IsNullOrWhiteSpace(invite.UserEmail))
+                                    {
+                                        <p class="item-meta">@invite.UserEmail</p>
+                                    }
+                                </div>
+                                <span class="status-badge @(invite.IsAccepted ? "status-green" : "status-gray")">
+                                    @(invite.IsAccepted ? "Aceite" : "Pendente")
+                                </span>
+                            </div>
+                        }
+                    </div>
+                </section>
+            </aside>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter]
+    public string? Id { get; set; }
+
+    private ConsultasService.ConsultationDetailItem? Consultation { get; set; }
+    private bool IsLoading = true;
+    private bool IsProcessing;
+    private bool IsAccepted;
+    private string? StatusMessage;
+    private bool StatusIsError;
+    private int? LoggedDoctorId;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var loggedUser = LoggedInUserContext.CurrentUser;
+        if (loggedUser is null)
+        {
+            NavigationManager.NavigateTo("/");
+            return;
+        }
+
+        LoggedDoctorId = loggedUser.IdUtilizador;
+
+        if (!int.TryParse(Id, out var consultationId))
+        {
+            IsLoading = false;
+            return;
+        }
+
+        await LoadConsultationAsync(consultationId);
+    }
+
+    private async Task LoadConsultationAsync(int consultationId)
+    {
+        try
+        {
+            IsLoading = true;
+            if (LoggedDoctorId.HasValue)
+            {
+                Consultation = await ConsultasService.GetInviteDetailAsync(LoggedDoctorId.Value, consultationId);
+                
+                if (Consultation is not null)
+                {
+                    var invite = Consultation.Invites.FirstOrDefault(i => i.UserId == LoggedDoctorId.Value);
+                    IsAccepted = invite?.IsAccepted ?? false;
+                }
+            }
+        }
+        finally
+        {
+            IsLoading = false;
+        }
+    }
+
+    private async Task AcceptInviteAsync()
+    {
+        if (!LoggedDoctorId.HasValue || Consultation is null)
+        {
+            return;
+        }
+
+        try
+        {
+            IsProcessing = true;
+            StatusMessage = null;
+
+            var result = await ConsultasService.AcceptInviteAsync(LoggedDoctorId.Value, Consultation.Id);
+            if (!result.Ok)
+            {
+                StatusMessage = result.Message;
+                StatusIsError = true;
+                return;
+            }
+
+            IsAccepted = true;
+            StatusMessage = "Convite aceite com sucesso!";
+            StatusIsError = false;
+            
+            await InvokeAsync(StateHasChanged);
+        }
+        finally
+        {
+            IsProcessing = false;
+        }
+    }
+
+    private async Task DeclineInviteAsync()
+    {
+        if (!LoggedDoctorId.HasValue || Consultation is null)
+        {
+            return;
+        }
+
+        if (!await JSRuntime.InvokeAsync<bool>("confirm", "Tem a certeza que deseja recusar este convite?"))
+        {
+            return;
+        }
+
+        try
+        {
+            IsProcessing = true;
+            StatusMessage = null;
+
+            var result = await ConsultasService.DeclineInviteAsync(LoggedDoctorId.Value, Consultation.Id);
+            if (!result.Ok)
+            {
+                StatusMessage = result.Message;
+                StatusIsError = true;
+                return;
+            }
+
+            StatusMessage = "Convite recusado. Redirecionando...";
+            StatusIsError = false;
+            
+            await Task.Delay(1500);
+            NavigationManager.NavigateTo("/profile");
+        }
+        finally
+        {
+            IsProcessing = false;
+        }
+    }
+
+    private static string StatusClass(ConsultasService.ConsultationStatus status) => status switch
+    {
+        ConsultasService.ConsultationStatus.Agendada => "status-gray",
+        ConsultasService.ConsultationStatus.EmAndamento => "status-blue",
+        ConsultasService.ConsultationStatus.Encerrada => "status-green",
+        _ => "status-gray"
+    };
+
+    private static string StatusLabel(ConsultasService.ConsultationStatus status) => status switch
+    {
+        ConsultasService.ConsultationStatus.Agendada => "Agendada",
+        ConsultasService.ConsultationStatus.EmAndamento => "Em andamento",
+        ConsultasService.ConsultationStatus.Encerrada => "Encerrada",
+        _ => "Desconhecido"
+    };
+
+    private static string ChargingTypeLabel(ConsultasService.ChargingType type) => type switch
+    {
+        ConsultasService.ChargingType.Fixo => "Preço Fixo",
+        ConsultasService.ChargingType.PorHora => "Preço por Hora",
+        _ => "Desconhecido"
+    };
+}
