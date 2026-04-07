@@ -214,6 +214,109 @@ public class ConsultasService
         };
     }
 
+    public async Task<ConsultationDetailItem?> GetInviteDetailAsync(int idUtilizador, int idConsulta)
+    {
+        await using var context = await _factory.CreateDbContextAsync();
+
+        var consulta = await context.UtilizadorConsulta
+            .AsNoTracking()
+            .Where(link => link.IdUtilizador == idUtilizador && !link.IsCriador && link.IdConsulta == idConsulta)
+            .Select(link => link.IdConsultaNavigation)
+            .Select(c => new
+            {
+                Consulta = c,
+                LatestEstado = c.Estados.OrderByDescending(e => e.DhRegisto).FirstOrDefault(),
+                Owner = c.UtilizadorConsulta
+                    .Where(uc => uc.IsCriador)
+                    .Select(uc => new
+                    {
+                        uc.IdUtilizador,
+                        Nome = uc.IdUtilizadorNavigation != null ? uc.IdUtilizadorNavigation.Nome : "Médico"
+                    })
+                    .FirstOrDefault(),
+                Notes = c.Anotacaos
+                    .OrderByDescending(n => n.DhCriacao)
+                    .Select(n => new DetailAnnotationItem
+                    {
+                        Id = n.IdAnotacao,
+                        Text = n.Descricao ?? string.Empty,
+                        CreatedAt = n.DhCriacao,
+                        UserId = n.IdUtilizador,
+                        UserName = n.IdUtilizadorNavigation != null ? n.IdUtilizadorNavigation.Nome : "Utilizador"
+                    })
+                    .ToList(),
+                Invites = c.UtilizadorConsulta
+                    .Where(uc => !uc.IsCriador)
+                    .Select(uc => new DetailInviteItem
+                    {
+                        UserId = uc.IdUtilizador,
+                        UserName = uc.IdUtilizadorNavigation != null ? uc.IdUtilizadorNavigation.Nome : "Utilizador",
+                        UserEmail = uc.IdUtilizadorNavigation != null ? uc.IdUtilizadorNavigation.Email : null,
+                        IsAccepted = uc.ConviteAceite
+                    })
+                    .ToList(),
+                CurrentExams = c.ExamesDaConsulta.Count == 0
+                    ? new List<DetailExamItem>()
+                    : c.ExamesDaConsulta.Select(e => new DetailExamItem
+                    {
+                        Id = e.IdExameMedicoNavigation.IdExameMedico,
+                        Name = e.IdExameMedicoNavigation.Tipo ?? "Exame",
+                        Type = e.IdExameMedicoNavigation.Tipo ?? "Exame",
+                        Date = e.IdExameMedicoNavigation.DhExame,
+                        Description = null,
+                        Results = e.IdExameMedicoNavigation.Resultado
+                    }).ToList()
+            })
+            .FirstOrDefaultAsync();
+
+        if (consulta is null)
+        {
+            return null;
+        }
+
+        List<DetailExamItem> availableExams = [];
+        if (consulta.Consulta.IdPaciente.HasValue)
+        {
+            var currentExamIds = consulta.CurrentExams.Select(e => e.Id).ToHashSet();
+
+            availableExams = await context.ExameMedicoConsulta
+                .AsNoTracking()
+                .Where(emc => emc.IdConsultaNavigation!.IdPaciente == consulta.Consulta.IdPaciente
+                              && !currentExamIds.Contains(emc.IdExameMedico))
+                .Select(emc => new DetailExamItem
+                {
+                    Id = emc.IdExameMedicoNavigation!.IdExameMedico,
+                    Name = emc.IdExameMedicoNavigation.Tipo ?? "Exame",
+                    Type = emc.IdExameMedicoNavigation.Tipo ?? "Exame",
+                    Date = emc.IdExameMedicoNavigation.DhExame,
+                    Description = null,
+                    Results = emc.IdExameMedicoNavigation.Resultado
+                })
+                .Distinct()
+                .ToListAsync();
+        }
+
+        return new ConsultationDetailItem
+        {
+            Id = consulta.Consulta.IdConsulta,
+            PatientId = consulta.Consulta.IdPaciente,
+            PatientName = consulta.Consulta.IdPacienteNavigation != null ? consulta.Consulta.IdPacienteNavigation.Nome : "Paciente sem nome",
+            Description = consulta.LatestEstado?.Comentario ?? "Consulta médica",
+            Status = MapStatus(consulta.LatestEstado?.EstadoTo),
+            ChargingType = consulta.Consulta.ValorHora.HasValue && consulta.Consulta.ValorHora.Value > 0 ? ChargingType.PorHora : ChargingType.Fixo,
+            FixedPrice = consulta.Consulta.ValorTotal,
+            HourlyPrice = consulta.Consulta.ValorHora,
+            StartAt = consulta.Consulta.DhInicio,
+            EndAt = consulta.Consulta.DhFim,
+            OwnerUserId = consulta.Owner != null ? consulta.Owner.IdUtilizador : null,
+            OwnerUserName = consulta.Owner != null ? consulta.Owner.Nome : "Médico",
+            Exams = consulta.CurrentExams,
+            AvailableExams = availableExams,
+            Annotations = consulta.Notes,
+            Invites = consulta.Invites
+        };
+    }
+
     public async Task<(bool Ok, string Message)> SendInviteAsync(int idUtilizador, int idConsulta, string inviteEmail)
     {
         await using var context = await _factory.CreateDbContextAsync();

@@ -222,7 +222,7 @@ else
                                 <div class="d-flex gap-2 mt-3">
                                     <button class="btn btn-sm btn-success" @onclick="() => AcceptInviteAsync(invite.IdConsulta)">Aceitar</button>
                                     <button class="btn btn-sm btn-outline-danger" @onclick="() => DeclineInviteAsync(invite.IdConsulta)">Recusar</button>
-                                    <button class="btn btn-sm btn-outline-primary" @onclick='() => NavigationManager.NavigateTo($"/consultations/{invite.IdConsulta}")'>Ver consulta</button>
+                                    <button class="btn btn-sm btn-outline-primary" @onclick='() => NavigationManager.NavigateTo($"/invites/{invite.IdConsulta}")'>Ver consulta</button>
                                 </div>
                             </div>
                         }
