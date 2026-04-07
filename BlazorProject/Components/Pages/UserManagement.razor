@@ -226,6 +226,24 @@ else
             return;
         }
 
+        if (!Regex.IsValidEmail(FormEmail))
+        {
+            DialogError = "Email inválido.";
+            return;
+        }
+
+        if (!string.IsNullOrWhiteSpace(FormTelefone) && !Regex.IsValidPhoneNumber(FormTelefone))
+        {
+            DialogError = "Número de telefone inválido.";
+            return;
+        }
+
+        if (!string.IsNullOrWhiteSpace(FormCarteira) && !Regex.IsValidNumCarteira(FormCarteira))
+        {
+            DialogError = "Número de carteira inválido. Deve conter exatamente 9 dígitos.";
+            return;
+        }
+
         var result = await AdminService.CreateMedicoAsync(new AdminService.CreateMedicoRequest
         {
             Nome = FormNome,

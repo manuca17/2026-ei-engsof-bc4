@@ -183,6 +183,24 @@
                 _erro = "Por favor preencha o formulario por completo!";
                 return;
             }
+
+            if (!Regex.IsValidEmail(_regEmail))
+            {
+                _erro = "Email inválido.";
+                return;
+            }
+
+            if (!string.IsNullOrWhiteSpace(_tlf) && !Regex.IsValidPhoneNumber(_tlf))
+            {
+                _erro = "Número de telefone inválido.";
+                return;
+            }
+
+            if (!string.IsNullOrWhiteSpace(_carteira) && !Regex.IsValidNumCarteira(_carteira))
+            {
+                _erro = "Número de carteira inválido. Deve conter exatamente 9 dígitos.";
+                return;
+            }
             
             var tempUtilizador = new Utilizador(_nome,_username,_regPassword,_tlf,_regEmail,_carteira);
             tempUtilizador.Especialidade = _especialidade;
