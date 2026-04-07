@@ -3,6 +3,7 @@ using System;
 using BlazorProject.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace BlazorProject.Migrations
 {
     [DbContext(typeof(EiEngsofContext))]
-    partial class EiEngsofContextModelSnapshot : ModelSnapshot
+    [Migration("20260324143101_addDhRegistoDhAtualizacao")]
+    partial class addDhRegistoDhAtualizacao
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -99,6 +102,10 @@ namespace BlazorProject.Migrations
                         .HasColumnType("timestamp without time zone")
                         .HasColumnName("dh_inicio");
 
+                    b.Property<int?>("IdExameMedico")
+                        .HasColumnType("integer")
+                        .HasColumnName("id_exame_medico");
+
                     b.Property<int?>("IdFatura")
                         .HasColumnType("integer")
                         .HasColumnName("id_fatura");
@@ -123,6 +130,8 @@ namespace BlazorProject.Migrations
 
                     b.HasKey("IdConsulta")
                         .HasName("pk_consulta");
+
+                    b.HasIndex(new[] { "IdExameMedico" }, "idx_consulta_exame");
 
                     b.HasIndex(new[] { "IdFatura" }, "idx_consulta_fatura");
 
@@ -204,37 +213,6 @@ namespace BlazorProject.Migrations
                     b.ToTable("exame_medico", (string)null);
                 });
 
-            modelBuilder.Entity("BlazorProject.Data.Models.ExameMedicoConsulta", b =>
-                {
-                    b.Property<int>("IdExameMedico")
-                        .HasColumnType("integer")
-                        .HasColumnName("id_exame_medico");
-
-                    b.Property<int>("IdConsulta")
-                        .HasColumnType("integer")
-                        .HasColumnName("id_consulta");
-
-                    b.Property<int?>("IdUtilizadorNavigationIdUtilizador")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("IdUtilzador")
-                        .HasColumnType("integer")
-                        .HasColumnName("id_utilizador");
-
-                    b.Property<DateTime?>("dhRegisto")
-                        .HasColumnType("timestamp without time zone")
-                        .HasColumnName("dh_registo");
-
-                    b.HasKey("IdExameMedico", "IdConsulta")
-                        .HasName("pk_exame_medico_consulta");
-
-                    b.HasIndex("IdConsulta");
-
-                    b.HasIndex("IdUtilizadorNavigationIdUtilizador");
-
-                    b.ToTable("exame_medico_consulta", (string)null);
-                });
-
             modelBuilder.Entity("BlazorProject.Data.Models.Fatura", b =>
                 {
                     b.Property<int>("IdFatura")
@@ -287,9 +265,6 @@ namespace BlazorProject.Migrations
                         .HasColumnType("character varying(150)")
                         .HasColumnName("email");
 
-                    b.Property<int?>("IdUtilizador")
-                        .HasColumnType("integer");
-
                     b.Property<string>("Nif")
                         .HasMaxLength(20)
                         .HasColumnType("character varying(20)")
@@ -318,8 +293,6 @@ namespace BlazorProject.Migrations
 
                     b.HasKey("IdPaciente")
                         .HasName("pk_paciente");
-
-                    b.HasIndex("IdUtilizador");
 
                     b.HasIndex(new[] { "CodPostal" }, "idx_paciente_codpostal");
 
@@ -378,6 +351,9 @@ namespace BlazorProject.Migrations
                         .HasColumnName("cod_postal");
 
                     b.Property<string>("DataHoraAtualizacao")
+                        .HasColumnType("text");
+
+                    b.Property<string>("DataHoraRegisto")
                         .HasColumnType("text");
 
                     b.Property<string>("Email")
@@ -492,6 +468,11 @@ namespace BlazorProject.Migrations
 
             modelBuilder.Entity("BlazorProject.Data.Models.Consulta", b =>
                 {
+                    b.HasOne("BlazorProject.Data.Models.ExameMedico", "IdExameMedicoNavigation")
+                        .WithMany("Consulta")
+                        .HasForeignKey("IdExameMedico")
+                        .HasConstraintName("fk_con_exame");
+
                     b.HasOne("BlazorProject.Data.Models.Fatura", "IdFaturaNavigation")
                         .WithMany("Consulta")
                         .HasForeignKey("IdFatura")
@@ -506,6 +487,8 @@ namespace BlazorProject.Migrations
                         .WithMany("Consulta")
                         .HasForeignKey("IdTipoConsulta")
                         .HasConstraintName("fk_con_tipo");
+
+                    b.Navigation("IdExameMedicoNavigation");
 
                     b.Navigation("IdFaturaNavigation");
 
@@ -535,33 +518,6 @@ namespace BlazorProject.Migrations
                     b.Navigation("IdUtilizadorNavigation");
                 });
 
-            modelBuilder.Entity("BlazorProject.Data.Models.ExameMedicoConsulta", b =>
-                {
-                    b.HasOne("BlazorProject.Data.Models.Consulta", "IdConsultaNavigation")
-                        .WithMany("ExamesDaConsulta")
-                        .HasForeignKey("IdConsulta")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
-                        .HasConstraintName("fk_emc_consulta");
-
-                    b.HasOne("BlazorProject.Data.Models.ExameMedico", "IdExameMedicoNavigation")
-                        .WithMany("ExameMedicoConsultas")
-                        .HasForeignKey("IdExameMedico")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
-                        .HasConstraintName("fk_emc_exame");
-
-                    b.HasOne("BlazorProject.Data.Models.Utilizador", "IdUtilizadorNavigation")
-                        .WithMany()
-                        .HasForeignKey("IdUtilizadorNavigationIdUtilizador");
-
-                    b.Navigation("IdConsultaNavigation");
-
-                    b.Navigation("IdExameMedicoNavigation");
-
-                    b.Navigation("IdUtilizadorNavigation");
-                });
-
             modelBuilder.Entity("BlazorProject.Data.Models.Paciente", b =>
                 {
                     b.HasOne("BlazorProject.Data.Models.CodigoPostal", "CodPostalNavigation")
@@ -569,14 +525,7 @@ namespace BlazorProject.Migrations
                         .HasForeignKey("CodPostal")
                         .HasConstraintName("fk_pac_codpostal");
 
-                    b.HasOne("BlazorProject.Data.Models.Utilizador", "IdUtilizadorNavigation")
-                        .WithMany("Pacientes")
-                        .HasForeignKey("IdUtilizador")
-                        .HasConstraintName("fk_pac_utilizador");
-
                     b.Navigation("CodPostalNavigation");
-
-                    b.Navigation("IdUtilizadorNavigation");
                 });
 
             modelBuilder.Entity("BlazorProject.Data.Models.TipoConsulta", b =>
@@ -631,14 +580,12 @@ namespace BlazorProject.Migrations
 
                     b.Navigation("Estados");
 
-                    b.Navigation("ExamesDaConsulta");
-
                     b.Navigation("UtilizadorConsulta");
                 });
 
             modelBuilder.Entity("BlazorProject.Data.Models.ExameMedico", b =>
                 {
-                    b.Navigation("ExameMedicoConsultas");
+                    b.Navigation("Consulta");
                 });
 
             modelBuilder.Entity("BlazorProject.Data.Models.Fatura", b =>
@@ -661,8 +608,6 @@ namespace BlazorProject.Migrations
                     b.Navigation("Anotacaos");
 
                     b.Navigation("ExameMedicos");
-
-                    b.Navigation("Pacientes");
 
                     b.Navigation("TipoConsulta");
 
