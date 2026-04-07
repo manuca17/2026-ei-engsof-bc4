@@ -14,8 +14,9 @@ Sistema web desenvolvido para médicos independentes gerirem consultas, paciente
 - Pedro Arias - 33191
 - Guilherme Maciel - 33245
 
-## Sprints
-https://github.com/manuca17/2026-ei-engsof-bc4/blob/main/Sprints/SPRINTS.md
+## Documentação de Sprints
+Calendarização de Sprints - https://github.com/manuca17/2026-ei-engsof-bc4/blob/main/Sprints/SPRINTS.md
+Retrospects - https://github.com/manuca17/2026-ei-engsof-bc4/blob/main/Retrospects/RETROSPECTS.md
 
 ## Naming conventions
 Para branches:
@@ -35,5 +36,3 @@ https://www.figma.com/team_invite/redeem/oV9wD6B1w7JbTfRJoiKM7P?t=PPqnjRkwHvZsCR
 
 ## Diagrama de Classes de Domínio
 ![Diagrama de Classes de Domínio](https://github.com/manuca17/2026-ei-engsof-bc4/blob/main/BD/Diagramas/DiagramaClassesDominioES2.drawio.png)
-
-
