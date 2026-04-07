@@ -170,6 +170,18 @@
             return;
         }
 
+        if (!Regex.IsValidPhoneNumber(NewPatient.Telefone))
+        {
+            await JSRuntime.InvokeVoidAsync("alert", "Número de telefone inválido.");
+            return;
+        }
+
+        if (!string.IsNullOrWhiteSpace(NewPatient.Email) && !Regex.IsValidEmail(NewPatient.Email))
+        {
+            await JSRuntime.InvokeVoidAsync("alert", "Email inválido.");
+            return;
+        }
+
         try 
         {
             // Transfer helper date to model

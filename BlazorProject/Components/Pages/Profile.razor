@@ -297,6 +297,24 @@ else
             return;
         }
 
+        if (!Regex.IsValidEmail(FormData.Email))
+        {
+            await JSRuntime.InvokeVoidAsync("alert", "Email inválido.");
+            return;
+        }
+
+        if (!string.IsNullOrWhiteSpace(FormData.Telefone) && !Regex.IsValidPhoneNumber(FormData.Telefone))
+        {
+            await JSRuntime.InvokeVoidAsync("alert", "Número de telefone inválido.");
+            return;
+        }
+
+        if (!string.IsNullOrWhiteSpace(FormData.CodPostal) && !Regex.IsValidPostalCode(FormData.CodPostal))
+        {
+            await JSRuntime.InvokeVoidAsync("alert", "Código postal inválido. Formato esperado: XXXX-XXX.");
+            return;
+        }
+
         var updatedUser = new Utilizador(
             CurrentUser.IdUtilizador,
             CurrentUser.IsManager,
