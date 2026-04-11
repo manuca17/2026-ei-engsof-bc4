@@ -163,7 +163,10 @@ else
                 <section class="detail-card">
                     <div class="section-header">
                         <h2>Anotações (@Consultation.NotesCount)</h2>
-                        <button class="btn-primary" @onclick="OpenAnnotationDialog">Adicionar</button>
+                        @if (Consultation.Status == ConsultationData.ConsultationStatus.EmAndamento)
+                        {
+                            <button class="btn-primary" @onclick="OpenAnnotationDialog">Adicionar</button>
+                        }
                     </div>
 
                     @if (Consultation.NotesCount == 0)
@@ -192,7 +195,7 @@ else
                 <section class="detail-card">
                     <div class="section-header">
                         <h2>Convites (@Consultation.InvitesCount)</h2>
-                        @if (IsOwner)
+                        @if (IsOwner && Consultation.Status != ConsultationData.ConsultationStatus.Encerrada)
                         {
                             <button class="btn-primary" @onclick="OpenInviteDialog">Convidar</button>
                         }
@@ -1158,6 +1161,12 @@ else
             return;
         }
 
+        if (Consultation.Status != ConsultationData.ConsultationStatus.EmAndamento)
+        {
+            SetStatus("Só é possível adicionar anotações quando a consulta está em andamento.", true);
+            return;
+        }
+
         if (TryGetDbConsultationId(out var idConsulta))
         {
             var loggedUser = LoggedInUserContext.CurrentUser;
@@ -1215,6 +1224,12 @@ else
         if (string.IsNullOrWhiteSpace(InviteEmail))
         {
             SetStatus("Introduza o email do utilizador a convidar.", true);
+            return;
+        }
+
+        if (Consultation.Status == ConsultationData.ConsultationStatus.Encerrada)
+        {
+            SetStatus("Não é possível convidar utilizadores para uma consulta encerrada.", true);
             return;
         }
 

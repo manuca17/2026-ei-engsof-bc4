@@ -358,6 +358,17 @@ public class ConsultasService
                 : (false, "Já existe um convite pendente para este utilizador.");
         }
 
+        var latestStatus = await context.Estados
+            .Where(e => e.IdConsulta == idConsulta)
+            .OrderByDescending(e => e.DhRegisto)
+            .Select(e => e.EstadoTo)
+            .FirstOrDefaultAsync();
+
+        if (MapStatus(latestStatus).Equals(ConsultationStatus.Encerrada))
+        {
+            return (false, "Não é possível convidar utilizadores para uma consulta encerrada.");
+        }
+
         context.UtilizadorConsulta.Add(new UtilizadorConsulta
         {
             IdConsulta = idConsulta,
@@ -601,6 +612,17 @@ public class ConsultasService
         if (!hasAccess)
         {
             return (false, "Sem permissões para alterar esta consulta.");
+        }
+
+        var latestStatus = await context.Estados
+            .Where(e => e.IdConsulta == idConsulta)
+            .OrderByDescending(e => e.DhRegisto)
+            .Select(e => e.EstadoTo)
+            .FirstOrDefaultAsync();
+
+        if (!MapStatus(latestStatus).Equals(ConsultationStatus.EmAndamento))
+        {
+            return (false, "Só é possível adicionar anotações quando a consulta está em andamento.");
         }
 
         context.Anotacaos.Add(new Anotacao
