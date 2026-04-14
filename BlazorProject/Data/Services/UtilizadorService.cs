@@ -1,5 +1,7 @@
 using System.Security.Cryptography;
+using System.Text.RegularExpressions;
 using Microsoft.AspNetCore.Cryptography.KeyDerivation;
+using Regex = BlazorProject.Utils.Regex;
 
 namespace BlazorProject.Services;
 using BlazorProject.Data;
@@ -80,7 +82,6 @@ public class UtilizadorService
     public async Task<Utilizador> UpdateAsync(Utilizador utilizador)
     {
         await using var context = await _factory.CreateDbContextAsync();
-
         var existing = await context.Utilizadores.FirstOrDefaultAsync(u => u.IdUtilizador == utilizador.IdUtilizador);
 
         if (existing is null)
@@ -88,24 +89,31 @@ public class UtilizadorService
             throw new Exception("User not found");
         }
 
-        existing.Nome = utilizador.Nome;
-        existing.Email = utilizador.Email;
-        existing.Telefone = utilizador.Telefone;
-        existing.Especialidade = utilizador.Especialidade;
-        existing.NumPorta = utilizador.NumPorta;
-        existing.Rua = utilizador.Rua;
-        existing.CodPostal = utilizador.CodPostal;
-        existing.NumCarteira = utilizador.NumCarteira;
-
-        if (!string.IsNullOrWhiteSpace(utilizador.Password))
+        if (Regex.IsValidEmail(utilizador.Email)
+            && Regex.IsValidNumCarteira(utilizador.NumCarteira)
+            && Regex.IsValidPostalCode(utilizador.CodPostal)
+            && Regex.IsValidPhoneNumber(utilizador.Telefone))
         {
-            var password = utilizador.Password;
-            existing.Password = password.StartsWith("$2")
-                ? password
-                : BCrypt.Net.BCrypt.HashPassword(password, workFactor: 12);
-        }
+            existing.Nome = utilizador.Nome;
+            existing.Email = utilizador.Email;
+            existing.Telefone = utilizador.Telefone;
+            existing.Especialidade = utilizador.Especialidade;
+            existing.NumPorta = utilizador.NumPorta;
+            existing.Rua = utilizador.Rua;
+            existing.CodPostal = utilizador.CodPostal;
+            existing.NumCarteira = utilizador.NumCarteira;
 
-        await context.SaveChangesAsync();
-        return existing;
+            if (!string.IsNullOrWhiteSpace(utilizador.Password))
+            {
+                var password = utilizador.Password;
+                existing.Password = password.StartsWith("$2")
+                    ? password
+                    : BCrypt.Net.BCrypt.HashPassword(password, workFactor: 12);
+            }
+
+            await context.SaveChangesAsync();
+            return existing;   
+        }
+            return existing;
     }
 }
