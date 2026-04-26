@@ -129,6 +129,15 @@
     protected override async Task OnInitializedAsync()
     {
         await LoadPatients();
+        
+        var uri = new Uri(NavigationManager.Uri);
+        var query = System.Web.HttpUtility.ParseQueryString(uri.Query);
+
+        if (query["newPatient"] == "true")
+        {
+            DialogOpen = true;
+            NavigationManager.NavigateTo("/patients", replace: true);
+        }
     }
 
     private async Task LoadPatients()
