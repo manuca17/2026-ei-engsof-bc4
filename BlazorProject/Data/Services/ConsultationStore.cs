@@ -288,6 +288,7 @@ public sealed class ConsultationStore
 
     public bool RemoveExam(string consultationId, string examId)
     {
+        Console.WriteLine($"[DEBUG INTEL] RemoveExam called with consultationId: {consultationId} and examId: {examId}");
         var consultation = GetById(consultationId);
         if (consultation is null)
         {
@@ -452,6 +453,8 @@ public sealed class ConsultationStore
         public string Type { get; set; } = string.Empty;
         public string? Description { get; set; }
         public string? Results { get; set; }
+        public string? FileName { get; set; }
+        public string? FilePath { get; set; }
         public DateTime Date { get; set; }
         public DateTime CreatedAt { get; set; }
     }

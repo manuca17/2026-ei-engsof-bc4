@@ -30,7 +30,10 @@ public partial class Utilizador
     public string? NumCarteira { get; set; }
 
     public string? Especialidade { get; set; }
-    
+
+    public string? FotoNome { get; set; }
+
+    public string? FotoCaminho { get; set; }
 
     public string? DataHoraAtualizacao { get; set; }
 
@@ -45,7 +48,7 @@ public partial class Utilizador
         NumCarteira = numCarteira;
     }
 
-    public Utilizador(int idUtilizador, bool isManager, bool isAdmin, string nome, string username, string password, string? telefone, string? email, string? numPorta, string? rua, string? codPostal, string? numCarteira, string? especialidade, CodigoPostal? codPostalNavigation)
+    public Utilizador(int idUtilizador, bool isManager, bool isAdmin, string nome, string username, string password, string? telefone, string? email, string? numPorta, string? rua, string? codPostal, string? numCarteira, string? especialidade, string? fotoNome, string? fotoCaminho, CodigoPostal? codPostalNavigation)
     {
         IdUtilizador = idUtilizador;
         IsManager = isManager;
@@ -60,6 +63,8 @@ public partial class Utilizador
         CodPostal = codPostal;
         NumCarteira = numCarteira;
         Especialidade = especialidade;
+        FotoNome = fotoNome;
+        FotoCaminho = fotoCaminho;
         CodPostalNavigation = codPostalNavigation;
     }
 

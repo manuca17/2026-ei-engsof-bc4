@@ -161,7 +161,9 @@ public class ConsultasService
                             Type = e.IdExameMedicoNavigation.Tipo ?? "Exame",
                             Date = e.IdExameMedicoNavigation.DhExame,
                             Description = null,
-                            Results = e.IdExameMedicoNavigation.Resultado
+                            Results = e.IdExameMedicoNavigation.Resultado,
+                            FileName = e.IdExameMedicoNavigation.FicheiroNome,
+                            FilePath = e.IdExameMedicoNavigation.FicheiroCaminho
                         }).ToList()
             })
             .FirstOrDefaultAsync();
@@ -187,7 +189,9 @@ public class ConsultasService
                     Type = emc.IdExameMedicoNavigation.Tipo ?? "Exame",
                     Date = emc.IdExameMedicoNavigation.DhExame,
                     Description = null,
-                    Results = emc.IdExameMedicoNavigation.Resultado
+                    Results = emc.IdExameMedicoNavigation.Resultado,
+                    FileName = emc.IdExameMedicoNavigation.FicheiroNome,
+                    FilePath = emc.IdExameMedicoNavigation.FicheiroCaminho
                 })
                 .Distinct()
                 .ToListAsync();
@@ -264,7 +268,9 @@ public class ConsultasService
                         Type = e.IdExameMedicoNavigation.Tipo ?? "Exame",
                         Date = e.IdExameMedicoNavigation.DhExame,
                         Description = null,
-                        Results = e.IdExameMedicoNavigation.Resultado
+                        Results = e.IdExameMedicoNavigation.Resultado,
+                        FileName = e.IdExameMedicoNavigation.FicheiroNome,
+                        FilePath = e.IdExameMedicoNavigation.FicheiroCaminho
                     }).ToList()
             })
             .FirstOrDefaultAsync();
@@ -533,7 +539,7 @@ public class ConsultasService
         return true;
     }
 
-    public async Task<(bool Ok, string Message)> AddNewExamAsync(int idUtilizador, int idConsulta, DateTime date, string type, string? results)
+    public async Task<(bool Ok, string Message)> AddNewExamAsync(int idUtilizador, int idConsulta, DateTime date, string type, string? results, string? fileName, string? filePath)
     {
         await using var context = await _factory.CreateDbContextAsync();
 
@@ -549,12 +555,15 @@ public class ConsultasService
             DhExame = date,
             Tipo = type,
             Resultado = results,
+            FicheiroNome = fileName,
+            FicheiroCaminho = filePath,
             IdUtilizador = idUtilizador
         };
-
+        
+        Console.WriteLine($"[ADD EXAM] Adding new exam for consulta {idConsulta} by user {idUtilizador} with type {type} and date {date} and results {(string.IsNullOrWhiteSpace(results) ? "null/empty" : "provided")} and fileName {(string.IsNullOrWhiteSpace(fileName) ? "null/empty" : "provided")} and filePath {(string.IsNullOrWhiteSpace(filePath) ? "null/empty" : "provided")}");
         context.ExameMedicos.Add(exame);
         await context.SaveChangesAsync();
-
+        Console.WriteLine($"[ADD EXAM] New exam added with id {exame.IdExameMedico} for consulta {idConsulta} by user {idUtilizador} with type {type} and date {date} and results {(string.IsNullOrWhiteSpace(results) ? "null/empty" : "provided")} and fileName {(string.IsNullOrWhiteSpace(fileName) ? "null/empty" : "provided")} and filePath {(string.IsNullOrWhiteSpace(filePath) ? "null/empty" : "provided")}");
         context.ExameMedicoConsulta.Add(new ExameMedicoConsulta
         {
             IdExameMedico = exame.IdExameMedico,
@@ -601,6 +610,30 @@ public class ConsultasService
 
         await context.SaveChangesAsync();
         return (true, "Exame associado com sucesso");
+    }
+
+    public async Task<(bool Ok, string Message)> RemoveExamAsync(int idUtilizador, int idConsulta, int idExameMedico)
+    {
+        await using var context = await _factory.CreateDbContextAsync();
+
+        var hasAccess = await context.UtilizadorConsulta.AnyAsync(link =>
+            link.IdUtilizador == idUtilizador && link.IdConsulta == idConsulta && (link.IsCriador || link.ConviteAceite));
+        if (!hasAccess)
+        {
+            return (false, "Sem permissões para alterar esta consulta.");
+        }
+
+        var examConsultaLink = await context.ExameMedicoConsulta
+            .FirstOrDefaultAsync(e => e.IdConsulta == idConsulta && e.IdExameMedico == idExameMedico);
+
+        if (examConsultaLink is null)
+        {
+            return (false, "Associação de exame não encontrada.");
+        }
+
+        context.ExameMedicoConsulta.Remove(examConsultaLink);
+        await context.SaveChangesAsync();
+        return (true, "Exame removido com sucesso.");
     }
 
     public async Task<(bool Ok, string Message)> AddAnnotationAsync(int idUtilizador, int idConsulta, string text)
@@ -1009,6 +1042,8 @@ public class ConsultasService
         public DateTime Date { get; init; }
         public string? Description { get; init; }
         public string? Results { get; init; }
+        public string? FileName { get; init; }
+        public string? FilePath { get; init; }
     }
 
     public sealed class DetailAnnotationItem

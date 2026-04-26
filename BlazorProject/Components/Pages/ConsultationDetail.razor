@@ -1,9 +1,11 @@
 @page "/consultations/{Id}"
 @using BlazorProject.Services
+@using Microsoft.AspNetCore.Components.Forms
 @using ConsultationData = BlazorProject.Services.ConsultationStore
 @rendermode InteractiveServer
 @inject NavigationManager NavigationManager
 @inject IJSRuntime JSRuntime
+@inject IWebHostEnvironment Environment
 @inject ConsultationStore Store
 @inject ConsultasService ConsultasService
 
@@ -133,6 +135,7 @@ else
                                             <h3>@exam.Name</h3>
                                             <p>@exam.Type - @exam.Date.ToString("dd/MM/yyyy")</p>
                                         </div>
+                                        @exam.FileName
 
                                         @if (IsOwner)
                                         {
@@ -152,6 +155,16 @@ else
                                         <div class="subsection-block">
                                             <span class="subsection-title">Resultados</span>
                                             <p class="content-text">@exam.Results</p>
+                                        </div>
+                                    }
+
+                                    @if (!string.IsNullOrWhiteSpace(exam.FilePath))
+                                    {
+                                        <div class="subsection-block">
+                                            <span class="subsection-title">Ficheiro</span>
+                                            <a class="btn btn-outline-secondary btn-sm" href="@exam.FilePath" target="_blank" rel="noopener noreferrer">
+                                                @(!string.IsNullOrWhiteSpace(exam.FileName) ? exam.FileName : "Abrir ficheiro")
+                                            </a>
                                         </div>
                                     }
                                 </article>
@@ -352,6 +365,14 @@ else
                                 <textarea rows="3" @bind="ExamDescription"></textarea>
                             </div>
                             <div class="field field-span-2">
+                                <label>Ficheiro do Exame (Opcional)</label>
+                                <InputFile OnChange="HandleExamFileSelected" />
+                                @if (!string.IsNullOrWhiteSpace(ExamSelectedFileName))
+                                {
+                                    <p class="file-selected-name">Ficheiro selecionado: @ExamSelectedFileName</p>
+                                }
+                            </div>
+                            <div class="field field-span-2">
                                 <label>Resultados</label>
                                 <textarea rows="4" @bind="ExamResults"></textarea>
                             </div>
@@ -426,6 +447,17 @@ else
                                         @if (!string.IsNullOrWhiteSpace(SelectedExistingExam.Results))
                                         {
                                             <div class="preview-item preview-full"><span>Resultados</span><strong>@SelectedExistingExam.Results</strong></div>
+                                        }
+                                        @if (!string.IsNullOrWhiteSpace(SelectedExistingExam.FilePath))
+                                        {
+                                            <div class="preview-item preview-full">
+                                                <span>Ficheiro</span>
+                                                <strong>
+                                                    <a href="@SelectedExistingExam.FilePath" target="_blank" rel="noopener noreferrer">
+                                                        @(!string.IsNullOrWhiteSpace(SelectedExistingExam.FileName) ? SelectedExistingExam.FileName : "Abrir ficheiro")
+                                                    </a>
+                                                </strong>
+                                            </div>
                                         }
                                     </div>
                                 </div>
@@ -558,6 +590,8 @@ else
     private string ExamDescription = string.Empty;
     private DateTime ExamDate = DateTime.Today;
     private string ExamResults = string.Empty;
+    private IBrowserFile? ExamSelectedFile;
+    private string? ExamSelectedFileName;
     private string SelectedExistingExamId = string.Empty;
     private List<ConsultationData.MedicalExamItem> AvailableExams = [];
 
@@ -664,7 +698,6 @@ else
         {
             return;
         }
-
         Consultation = new ConsultationData.ConsultationItem
         {
             Id = dbConsultation.Id.ToString(),
@@ -695,6 +728,8 @@ else
                 Type = exam.Type,
                 Date = exam.Date,
                 Description = exam.Description,
+                FilePath = exam.FilePath,
+                FileName = exam.FileName,
                 Results = exam.Results,
                 CreatedAt = exam.Date
             }).ToList(),
@@ -724,6 +759,8 @@ else
             Name = exam.Name,
             Type = exam.Type,
             Date = exam.Date,
+            FilePath = exam.FilePath,
+            FileName = exam.FileName,
             Description = exam.Description,
             Results = exam.Results,
             CreatedAt = exam.Date
@@ -1011,7 +1048,37 @@ else
         ExamDescription = string.Empty;
         ExamResults = string.Empty;
         ExamDate = DateTime.Today;
+        ExamSelectedFile = null;
+        ExamSelectedFileName = null;
         SelectedExistingExamId = string.Empty;
+    }
+
+    private void HandleExamFileSelected(InputFileChangeEventArgs e)
+    {
+        ExamSelectedFile = e.File;
+        ExamSelectedFileName = ExamSelectedFile?.Name;
+    }
+
+    private async Task<(string OriginalFileName, string RelativePath)?> SaveExamFileAsync(IBrowserFile file)
+    {
+        try
+        {
+            var uploadsFolder = Path.Combine(Environment.WebRootPath, "uploads", "exams");
+            Directory.CreateDirectory(uploadsFolder);
+            var extension = Path.GetExtension(file.Name);
+            var generatedFileName = $"{Guid.NewGuid()}{extension}";
+            var fullPath = Path.Combine(uploadsFolder, generatedFileName);
+
+            await using var fileStream = File.Create(fullPath);
+            await using var sourceStream = file.OpenReadStream(1024 * 1024 * 50);
+            await sourceStream.CopyToAsync(fileStream);
+
+            return (file.Name, $"/uploads/exams/{generatedFileName}");
+        }
+        catch
+        {
+            return null;
+        }
     }
 
     private async Task HandleAddExam()
@@ -1043,12 +1110,30 @@ else
                     return;
                 }
 
+                string? examFileName = null;
+                string? examFilePath = null;
+                if (ExamSelectedFile is not null)
+                {
+                    var upload = await SaveExamFileAsync(ExamSelectedFile);
+                    if (upload is null)
+                    {
+                        SetStatus("Não foi possível carregar o ficheiro do exame.", true);
+                        return;
+                    }
+
+                    var (originalFileName, relativePath) = upload.Value;
+                    examFileName = originalFileName;
+                    examFilePath = relativePath;
+                }
+
                 var addResult = await ConsultasService.AddNewExamAsync(
                     loggedUser.IdUtilizador,
                     idConsulta,
                     ExamDate.Date,
                     ExamType.Trim(),
-                    string.IsNullOrWhiteSpace(ExamResults) ? null : ExamResults.Trim());
+                    string.IsNullOrWhiteSpace(ExamResults) ? null : ExamResults.Trim(),
+                    examFileName,
+                    examFilePath);
 
                 if (!addResult.Ok)
                 {
@@ -1122,22 +1207,40 @@ else
 
     private void CloseExamRemovalDialog() => ExamToRemoveId = null;
 
-    private void ConfirmRemoveExam()
+    private async Task ConfirmRemoveExam()
     {
+        Console.WriteLine("[DEBUG INTEL] ConfirmRemoveExam called with ExamToRemoveId: " + ExamToRemoveId + " and Consultation.Id: " + Consultation?.Id);
         if (Consultation is null || string.IsNullOrWhiteSpace(ExamToRemoveId))
         {
             return;
         }
 
-        if (!Store.RemoveExam(Consultation.Id, ExamToRemoveId))
+        var loggedUser = LoggedInUserContext.CurrentUser;
+        if (loggedUser is null)
         {
-            SetStatus("Não foi possível remover o exame.", true);
+            SetStatus("Sessão inválida. Faça login novamente.", true);
             return;
         }
 
-        ExamToRemoveId = null;
-        LoadConsultation();
-        SetStatus("Exame removido com sucesso.");
+        if (TryGetDbConsultationId(out var idConsulta) && int.TryParse(ExamToRemoveId, out var idExameMedico))
+        {
+            var result = await ConsultasService.RemoveExamAsync(loggedUser.IdUtilizador, idConsulta, idExameMedico);
+            if (!result.Ok)
+            {
+                SetStatus(result.Message, true);
+                ExamToRemoveId = null;
+                return;
+            }
+
+            ExamToRemoveId = null;
+            await LoadConsultationFromRouteAsync();
+            SetStatus(result.Message);
+        }
+        else
+        {
+            SetStatus("Não foi possível remover o exame.", true);
+            ExamToRemoveId = null;
+        }
     }
 
     private void OpenAnnotationDialog()

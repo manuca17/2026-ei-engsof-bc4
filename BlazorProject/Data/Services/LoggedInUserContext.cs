@@ -18,14 +18,17 @@ public static class LoggedInUserContext
         }
     }
 
+    public static event Action? CurrentUserChanged;
+
     public static void SetCurrentUser(Utilizador user)
     {
         lock (SyncRoot)
         {
             // Keep a detached copy so this state is independent from EF context lifetime.
             _currentUser = user;
-
         }
+
+        CurrentUserChanged?.Invoke();
     }
 
     public static void Clear()
@@ -34,5 +37,7 @@ public static class LoggedInUserContext
         {
             _currentUser = null;
         }
+
+        CurrentUserChanged?.Invoke();
     }
 }

@@ -1,0 +1,113 @@
+﻿Using project 'C:\Users\Pedro\2026-ei-engsof-bc4\BlazorProject\BlazorProject.csproj'.
+Using startup project 'C:\Users\Pedro\2026-ei-engsof-bc4\BlazorProject\BlazorProject.csproj'.
+dotnet msbuild /getProperty:ProjectName /getProperty:AssemblyName /getProperty:DesignAssembly /getProperty:Language /getProperty:OutputPath /getProperty:PlatformTarget /getProperty:ProjectAssetsFile /getProperty:ProjectDir /getProperty:RootNamespace /getProperty:RuntimeFrameworkVersion /getProperty:TargetFileName /getProperty:TargetFrameworkMoniker /getProperty:Nullable /getProperty:TargetFramework /getProperty:TargetPlatformIdentifier /getProperty:Platform /t:ResolvePackageAssets /getItem:RuntimeCopyLocalItems C:\Users\Pedro\2026-ei-engsof-bc4\BlazorProject\BlazorProject.csproj
+dotnet msbuild /getProperty:ProjectName /getProperty:AssemblyName /getProperty:DesignAssembly /getProperty:Language /getProperty:OutputPath /getProperty:PlatformTarget /getProperty:ProjectAssetsFile /getProperty:ProjectDir /getProperty:RootNamespace /getProperty:RuntimeFrameworkVersion /getProperty:TargetFileName /getProperty:TargetFrameworkMoniker /getProperty:Nullable /getProperty:TargetFramework /getProperty:TargetPlatformIdentifier /getProperty:Platform /t:ResolvePackageAssets /getItem:RuntimeCopyLocalItems C:\Users\Pedro\2026-ei-engsof-bc4\BlazorProject\BlazorProject.csproj
+Build started...
+dotnet build C:\Users\Pedro\2026-ei-engsof-bc4\BlazorProject\BlazorProject.csproj /verbosity:quiet /nologo /p:PublishAot=false
+
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:01.43
+
+Build succeeded.
+dotnet exec --depsfile C:\Users\Pedro\2026-ei-engsof-bc4\BlazorProject\bin\Debug\net10.0\BlazorProject.deps.json --additionalprobingpath C:\Users\Pedro\.nuget\packages --additionalprobingpath "C:\Program Files (x86)\Microsoft Visual Studio\Shared\NuGetPackages" --runtimeconfig C:\Users\Pedro\2026-ei-engsof-bc4\BlazorProject\bin\Debug\net10.0\BlazorProject.runtimeconfig.json C:\Users\Pedro\.dotnet\tools\.store\dotnet-ef\10.0.5\dotnet-ef\10.0.5\tools\net8.0\any\tools\net8.0\any\ef.dll database update --assembly C:\Users\Pedro\2026-ei-engsof-bc4\BlazorProject\bin\Debug\net10.0\BlazorProject.dll --project C:\Users\Pedro\2026-ei-engsof-bc4\BlazorProject\BlazorProject.csproj --startup-assembly C:\Users\Pedro\2026-ei-engsof-bc4\BlazorProject\bin\Debug\net10.0\BlazorProject.dll --startup-project C:\Users\Pedro\2026-ei-engsof-bc4\BlazorProject\BlazorProject.csproj --project-dir C:\Users\Pedro\2026-ei-engsof-bc4\BlazorProject\ --root-namespace BlazorProject --language C# --framework net10.0 --design-assembly C:\Users\Pedro\.nuget\packages\microsoft.entityframeworkcore.design\10.0.5\lib\net10.0\Microsoft.EntityFrameworkCore.Design.dll --nullable --working-dir C:\Users\Pedro\2026-ei-engsof-bc4\BlazorProject --verbose
+Using assembly 'BlazorProject'.
+Using startup assembly 'BlazorProject'.
+Using application base 'C:\Users\Pedro\2026-ei-engsof-bc4\BlazorProject\bin\Debug\net10.0'.
+Using working directory 'C:\Users\Pedro\2026-ei-engsof-bc4\BlazorProject'.
+Using root namespace 'BlazorProject'.
+Using project directory 'C:\Users\Pedro\2026-ei-engsof-bc4\BlazorProject\'.
+Remaining arguments: .
+Finding DbContext classes...
+Using environment 'Development'.
+Finding IDesignTimeDbContextFactory implementations...
+Finding DbContext classes in the project...
+Found DbContext 'EiEngsofContext'.
+Finding application service provider in assembly 'BlazorProject'...
+Finding Microsoft.Extensions.Hosting service provider...
+Using application service provider from Microsoft.Extensions.Hosting.
+Using context 'EiEngsofContext'.
+Finding design-time services referenced by assembly 'BlazorProject'...
+Finding design-time services referenced by assembly 'BlazorProject'...
+No referenced design-time services were found.
+Finding design-time services for provider 'Npgsql.EntityFrameworkCore.PostgreSQL'...
+Using design-time services from provider 'Npgsql.EntityFrameworkCore.PostgreSQL'.
+Finding IDesignTimeServices implementations in assembly 'BlazorProject'...
+No design-time services were found.
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (61ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      SELECT "MigrationId", "ProductVersion"
+      FROM "__EFMigrationsHistory"
+      ORDER BY "MigrationId";
+Executed DbCommand (61ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+SELECT "MigrationId", "ProductVersion"
+FROM "__EFMigrationsHistory"
+ORDER BY "MigrationId";
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (49ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      SELECT 1
+Executed DbCommand (49ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+SELECT 1
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (56ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      CREATE TABLE IF NOT EXISTS "__EFMigrationsHistory" (
+          "MigrationId" character varying(150) NOT NULL,
+          "ProductVersion" character varying(32) NOT NULL,
+          CONSTRAINT "PK___EFMigrationsHistory" PRIMARY KEY ("MigrationId")
+      );
+Executed DbCommand (56ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+CREATE TABLE IF NOT EXISTS "__EFMigrationsHistory" (
+    "MigrationId" character varying(150) NOT NULL,
+    "ProductVersion" character varying(32) NOT NULL,
+    CONSTRAINT "PK___EFMigrationsHistory" PRIMARY KEY ("MigrationId")
+);
+info: Microsoft.EntityFrameworkCore.Migrations[20411]
+      Acquiring an exclusive lock for migration application. See https://aka.ms/efcore-docs-migrations-lock for more information if this takes too long.
+Acquiring an exclusive lock for migration application. See https://aka.ms/efcore-docs-migrations-lock for more information if this takes too long.
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (46ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      LOCK TABLE "__EFMigrationsHistory" IN ACCESS EXCLUSIVE MODE
+Executed DbCommand (46ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+LOCK TABLE "__EFMigrationsHistory" IN ACCESS EXCLUSIVE MODE
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (47ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      SELECT "MigrationId", "ProductVersion"
+      FROM "__EFMigrationsHistory"
+      ORDER BY "MigrationId";
+Executed DbCommand (47ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+SELECT "MigrationId", "ProductVersion"
+FROM "__EFMigrationsHistory"
+ORDER BY "MigrationId";
+info: Microsoft.EntityFrameworkCore.Migrations[20402]
+      Applying migration '20260426083312_AddUtilizadorProfileColumns'.
+Applying migration '20260426083312_AddUtilizadorProfileColumns'.
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (49ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      ALTER TABLE utilizador ADD foto_caminho text;
+Executed DbCommand (49ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+ALTER TABLE utilizador ADD foto_caminho text;
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (46ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      ALTER TABLE utilizador ADD foto_nome character varying(200);
+Executed DbCommand (46ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+ALTER TABLE utilizador ADD foto_nome character varying(200);
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (46ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      ALTER TABLE exame_medico ADD ficheiro_caminho text;
+Executed DbCommand (46ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+ALTER TABLE exame_medico ADD ficheiro_caminho text;
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (45ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      ALTER TABLE exame_medico ADD ficheiro_nome character varying(200);
+Executed DbCommand (45ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+ALTER TABLE exame_medico ADD ficheiro_nome character varying(200);
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (46ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
+      VALUES ('20260426083312_AddUtilizadorProfileColumns', '10.0.5');
+Executed DbCommand (46ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
+VALUES ('20260426083312_AddUtilizadorProfileColumns', '10.0.5');
+Done.

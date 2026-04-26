@@ -7,8 +7,22 @@
 
     <!-- Header com user info -->
     <div class="sb-header">
-        <h2 class="sb-name">@GetDisplayName()</h2>
-        <p class="sb-role">@GetRole()</p>
+        <div class="sb-user">
+            <div class="sb-avatar">
+                @if (!string.IsNullOrWhiteSpace(CurrentUser?.FotoCaminho))
+                {
+                    <img src="@CurrentUser.FotoCaminho" alt="Avatar do utilizador" />
+                }
+                else
+                {
+                    <span>👤</span>
+                }
+            </div>
+            <div>
+                <h2 class="sb-name">@GetDisplayName()</h2>
+                <p class="sb-role">@GetRole()</p>
+            </div>
+        </div>
     </div>
 
     <!-- Navegação principal -->
@@ -108,9 +122,26 @@
 
 </div>
 
+@implements IDisposable
+
 @code {
     private Utilizador? CurrentUser => LoggedInUserContext.CurrentUser;
     private bool IsAdmin => CurrentUser?.IsAdmin ?? false;
+
+    protected override void OnInitialized()
+    {
+        LoggedInUserContext.CurrentUserChanged += HandleCurrentUserChanged;
+    }
+
+    private void HandleCurrentUserChanged()
+    {
+        InvokeAsync(StateHasChanged);
+    }
+
+    public void Dispose()
+    {
+        LoggedInUserContext.CurrentUserChanged -= HandleCurrentUserChanged;
+    }
 
     private void HandleLogout()
     {

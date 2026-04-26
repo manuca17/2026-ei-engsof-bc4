@@ -1,9 +1,11 @@
 @page "/profile"
 @using BlazorProject.Data.Models
 @using BlazorProject.Services
+@using Microsoft.AspNetCore.Components.Forms
 @rendermode InteractiveServer
 @inject NavigationManager NavigationManager
 @inject IJSRuntime JSRuntime
+@inject IWebHostEnvironment Environment
 @inject UtilizadorService UtilizadorService
 @inject ConsultasService ConsultasService
 
@@ -24,6 +26,34 @@ else
             <div>
                 <h1 class="h3 mb-2">Meu Perfil</h1>
                 <p class="text-muted mb-0">Gerir as suas informações pessoais</p>
+            </div>
+        </div>
+        @CurrentUser.FotoNome
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Foto de Perfil</h5>
+            </div>
+            <div class="card-body text-center">
+                @if (!string.IsNullOrWhiteSpace(CurrentUser?.FotoCaminho))
+                {
+                    <img src="@CurrentUser.FotoCaminho" alt="Foto de Perfil" class="rounded-circle mb-3" style="width:120px;height:120px;object-fit:cover;" />
+                }
+                else
+                {
+                    <div class="rounded-circle bg-secondary text-white d-inline-flex align-items-center justify-content-center mb-3" style="width:120px;height:120px;font-size:2rem;">👤</div>
+                }
+
+                <div class="mb-3">
+                    <label class="form-label">Selecione uma nova foto</label>
+                    <InputFile OnChange="HandleProfilePhotoSelected" accept="image/*" />
+                    @if (!string.IsNullOrWhiteSpace(SelectedProfilePhotoName))
+                    {
+                        <div class="small text-muted mt-1">Arquivo selecionado: @SelectedProfilePhotoName</div>
+                    }
+                </div>
+                <button class="btn btn-primary btn-sm" type="button" @onclick="SaveProfileAsync" disabled="@(string.IsNullOrWhiteSpace(SelectedProfilePhotoName))">
+                    Salvar Foto
+                </button>
             </div>
         </div>
 
@@ -241,6 +271,8 @@ else
     private Utilizador? CurrentUser;
     private ProfileForm FormData { get; set; } = new();
     private List<ConsultasService.PendingInviteItem> PendingInvites { get; set; } = [];
+    private IBrowserFile? SelectedProfilePhoto;
+    private string? SelectedProfilePhotoName;
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -281,6 +313,15 @@ else
             CodPostal = CurrentUser.CodPostal ?? string.Empty,
             Senha = string.Empty
         };
+
+        SelectedProfilePhoto = null;
+        SelectedProfilePhotoName = null;
+    }
+
+    private void HandleProfilePhotoSelected(InputFileChangeEventArgs e)
+    {
+        SelectedProfilePhoto = e.File;
+        SelectedProfilePhotoName = SelectedProfilePhoto?.Name;
     }
 
     private async Task SaveProfileAsync()
@@ -315,6 +356,22 @@ else
             return;
         }
 
+        string? profilePhotoName = CurrentUser.FotoNome;
+        string? profilePhotoPath = CurrentUser.FotoCaminho;
+        if (SelectedProfilePhoto is not null)
+        {
+            var upload = await SaveUploadedFileAsync(SelectedProfilePhoto, "profiles");
+            if (upload is null)
+            {
+                await JSRuntime.InvokeVoidAsync("alert", "Não foi possível salvar a foto de perfil.");
+                return;
+            }
+
+            var (originalFileName, relativePath) = upload.Value;
+            profilePhotoName = originalFileName;
+            profilePhotoPath = relativePath;
+        }
+
         var updatedUser = new Utilizador(
             CurrentUser.IdUtilizador,
             CurrentUser.IsManager,
@@ -329,6 +386,8 @@ else
             string.IsNullOrWhiteSpace(FormData.CodPostal) ? null : FormData.CodPostal.Trim(),
             CurrentUser.NumCarteira,
             string.IsNullOrWhiteSpace(FormData.Especialidade) ? null : FormData.Especialidade.Trim(),
+            profilePhotoName,
+            profilePhotoPath,
             CurrentUser.CodPostalNavigation);
 
         var savedUser = await UtilizadorService.UpdateAsync(updatedUser);
@@ -398,5 +457,27 @@ else
         public string NumPorta { get; set; } = string.Empty;
         public string CodPostal { get; set; } = string.Empty;
         public string Senha { get; set; } = string.Empty;
+    }
+
+    private async Task<(string OriginalFileName, string RelativePath)?> SaveUploadedFileAsync(IBrowserFile file, string folder)
+    {
+        try
+        {
+            var uploadsFolder = Path.Combine(Environment.WebRootPath, "uploads", folder);
+            Directory.CreateDirectory(uploadsFolder);
+            var extension = Path.GetExtension(file.Name);
+            var generatedFileName = $"{Guid.NewGuid()}{extension}";
+            var fullPath = Path.Combine(uploadsFolder, generatedFileName);
+
+            await using var fileStream = File.Create(fullPath);
+            await using var sourceStream = file.OpenReadStream(1024 * 1024 * 20);
+            await sourceStream.CopyToAsync(fileStream);
+
+            return (file.Name, $"/uploads/{folder}/{generatedFileName}");
+        }
+        catch
+        {
+            return null;
+        }
     }
 }

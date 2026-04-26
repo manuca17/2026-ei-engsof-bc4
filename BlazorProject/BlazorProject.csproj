@@ -20,4 +20,10 @@
     <Compile Remove="Data\Models\ConsultaExame.cs" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Content Remove="release\**\*" />
+    <None Remove="release\**\*" />
+    <Compile Remove="release\**\*" />
+  </ItemGroup>
+
 </Project>

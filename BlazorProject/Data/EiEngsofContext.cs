@@ -168,6 +168,11 @@ public partial class EiEngsofContext : DbContext
                 .HasColumnName("dh_exame");
             entity.Property(e => e.IdUtilizador).HasColumnName("id_utilizador");
             entity.Property(e => e.Resultado).HasColumnName("resultado");
+            entity.Property(e => e.FicheiroNome)
+                .HasMaxLength(200)
+                .HasColumnName("ficheiro_nome");
+            entity.Property(e => e.FicheiroCaminho)
+                .HasColumnName("ficheiro_caminho");
             entity.Property(e => e.Tipo)
                 .HasMaxLength(100)
                 .HasColumnName("tipo");
@@ -301,6 +306,11 @@ public partial class EiEngsofContext : DbContext
             entity.Property(e => e.Telefone)
                 .HasMaxLength(20)
                 .HasColumnName("telefone");
+            entity.Property(e => e.FotoNome)
+                .HasMaxLength(200)
+                .HasColumnName("foto_nome");
+            entity.Property(e => e.FotoCaminho)
+                .HasColumnName("foto_caminho");
             entity.Property(e => e.Username)
                 .HasMaxLength(100)
                 .HasColumnName("username");

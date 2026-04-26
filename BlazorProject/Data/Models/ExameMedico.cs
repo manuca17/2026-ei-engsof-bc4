@@ -13,6 +13,10 @@ public partial class ExameMedico
 
     public string? Resultado { get; set; }
 
+    public string? FicheiroNome { get; set; }
+
+    public string? FicheiroCaminho { get; set; }
+
     public int? IdUtilizador { get; set; }
 
     public virtual ICollection<ExameMedicoConsulta> ExameMedicoConsultas { get; set; } = new List<ExameMedicoConsulta>();
