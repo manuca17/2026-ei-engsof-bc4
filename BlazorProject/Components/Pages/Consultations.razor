@@ -178,6 +178,10 @@
     [SupplyParameterFromQuery(Name = "patient")]
     public string? PatientIdFromQuery { get; set; }
 
+    [Parameter]
+    [SupplyParameterFromQuery(Name = "openForm")]
+    public string? OpenFormFromQuery { get; set; }
+
     private bool DialogOpen;
     private bool IsLoading = true;
     private bool IsCreating;
@@ -214,6 +218,11 @@
         if (!string.IsNullOrWhiteSpace(PatientIdFromQuery))
         {
             FilterPatient = PatientIdFromQuery;
+        }
+
+        if (OpenFormFromQuery == "true")
+        {
+            DialogOpen = true;
         }
 
         await LoadPageDataAsync();
