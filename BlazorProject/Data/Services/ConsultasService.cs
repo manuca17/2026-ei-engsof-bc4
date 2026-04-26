@@ -122,6 +122,7 @@ public class ConsultasService
             .Select(c => new
             {
                 Consulta = c,
+                NomePaciente = c.IdPacienteNavigation != null ? c.IdPacienteNavigation.Nome : "Paciente sem nome",
                 LatestEstado = c.Estados.OrderByDescending(e => e.DhRegisto).FirstOrDefault(),
                 Owner = c.UtilizadorConsulta
                     .Where(uc => uc.IsCriador)
@@ -201,7 +202,7 @@ public class ConsultasService
         {
             Id = consulta.Consulta.IdConsulta,
             PatientId = consulta.Consulta.IdPaciente,
-            PatientName = consulta.Consulta.IdPacienteNavigation != null ? consulta.Consulta.IdPacienteNavigation.Nome : "Paciente sem nome",
+            PatientName = consulta.NomePaciente,
             Description = consulta.LatestEstado?.Comentario ?? "Consulta médica",
             Status = MapStatus(consulta.LatestEstado?.EstadoTo),
             ChargingType = consulta.Consulta.ValorHora.HasValue && consulta.Consulta.ValorHora.Value > 0 ? ChargingType.PorHora : ChargingType.Fixo,
@@ -229,6 +230,7 @@ public class ConsultasService
             .Select(c => new
             {
                 Consulta = c,
+                NomePaciente = c.IdPacienteNavigation != null ? c.IdPacienteNavigation.Nome : "Paciente sem nome",
                 LatestEstado = c.Estados.OrderByDescending(e => e.DhRegisto).FirstOrDefault(),
                 Owner = c.UtilizadorConsulta
                     .Where(uc => uc.IsCriador)
@@ -306,7 +308,7 @@ public class ConsultasService
         {
             Id = consulta.Consulta.IdConsulta,
             PatientId = consulta.Consulta.IdPaciente,
-            PatientName = consulta.Consulta.IdPacienteNavigation != null ? consulta.Consulta.IdPacienteNavigation.Nome : "Paciente sem nome",
+            PatientName = consulta.NomePaciente,
             Description = consulta.LatestEstado?.Comentario ?? "Consulta médica",
             Status = MapStatus(consulta.LatestEstado?.EstadoTo),
             ChargingType = consulta.Consulta.ValorHora.HasValue && consulta.Consulta.ValorHora.Value > 0 ? ChargingType.PorHora : ChargingType.Fixo,
