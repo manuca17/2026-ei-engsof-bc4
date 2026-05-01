@@ -64,9 +64,7 @@ public class ConsultasService
                     .OrderByDescending(e => e.DhRegisto)
                     .Select(e => e.EstadoTo)
                     .FirstOrDefault()),
-                ChargingType = c.ValorHora.HasValue && c.ValorHora.Value > 0
-                    ? ChargingType.PorHora
-                    : ChargingType.Fixo,
+                ChargingType = DetermineChargingType(c.ValorTotal, c.ValorHora),
                 FixedPrice = c.ValorTotal,
                 HourlyPrice = c.ValorHora,
                 StartAt = c.DhInicio,
@@ -98,9 +96,7 @@ public class ConsultasService
                     .OrderByDescending(e => e.DhRegisto)
                     .Select(e => e.EstadoTo)
                     .FirstOrDefault()),
-                ChargingType = c.ValorHora.HasValue && c.ValorHora.Value > 0
-                    ? ChargingType.PorHora
-                    : ChargingType.Fixo,
+                ChargingType = DetermineChargingType(c.ValorTotal, c.ValorHora),
                 FixedPrice = c.ValorTotal,
                 HourlyPrice = c.ValorHora,
                 StartAt = c.DhInicio,
@@ -205,7 +201,7 @@ public class ConsultasService
             PatientName = consulta.NomePaciente,
             Description = consulta.LatestEstado?.Comentario ?? "Consulta médica",
             Status = MapStatus(consulta.LatestEstado?.EstadoTo),
-            ChargingType = consulta.Consulta.ValorHora.HasValue && consulta.Consulta.ValorHora.Value > 0 ? ChargingType.PorHora : ChargingType.Fixo,
+            ChargingType = DetermineChargingType(consulta.Consulta.ValorTotal, consulta.Consulta.ValorHora),
             FixedPrice = consulta.Consulta.ValorTotal,
             HourlyPrice = consulta.Consulta.ValorHora,
             StartAt = consulta.Consulta.DhInicio,
@@ -311,7 +307,7 @@ public class ConsultasService
             PatientName = consulta.NomePaciente,
             Description = consulta.LatestEstado?.Comentario ?? "Consulta médica",
             Status = MapStatus(consulta.LatestEstado?.EstadoTo),
-            ChargingType = consulta.Consulta.ValorHora.HasValue && consulta.Consulta.ValorHora.Value > 0 ? ChargingType.PorHora : ChargingType.Fixo,
+            ChargingType = DetermineChargingType(consulta.Consulta.ValorTotal, consulta.Consulta.ValorHora),
             FixedPrice = consulta.Consulta.ValorTotal,
             HourlyPrice = consulta.Consulta.ValorHora,
             StartAt = consulta.Consulta.DhInicio,
@@ -953,6 +949,13 @@ public class ConsultasService
         }
 
         return ConsultationStatus.Agendada;
+    }
+    
+    private static ChargingType DetermineChargingType(decimal? valorTotal, decimal? valorHora)
+    {
+        return valorHora.HasValue && valorHora.Value > 0 
+            ? ChargingType.PorHora 
+            : ChargingType.Fixo;
     }
 
     public enum ConsultationStatus
