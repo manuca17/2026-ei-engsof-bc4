@@ -7,6 +7,7 @@ namespace BlazorProject.Services;
 public class ConsultasService
 {
     private readonly IDbContextFactory<EiEngsofContext> _factory;
+    private readonly ChargingCalculator _chargingCalculator = new();
 
     public ConsultasService(IDbContextFactory<EiEngsofContext> factory)
     {
@@ -863,9 +864,14 @@ public class ConsultasService
             ? Math.Max(0d, (DhFim.Value - DhInicio).TotalHours)
             : 0d;
 
-        public decimal Price => IsHourly
-            ? Math.Round((decimal)Hours * (ValorHora ?? 0m), 2)
-            : (ValorTotal ?? 0m);
+        public decimal Price => ReportConsultationItem.CalculatePrice(Hours, IsHourly, ValorHora, ValorTotal);
+
+        private static decimal CalculatePrice(double hours, bool isHourly, decimal? hourlyRate, decimal? fixedPrice)
+        {
+            if (isHourly)
+                return Math.Round((decimal)hours * (hourlyRate ?? 0m), 2);
+            return fixedPrice ?? 0m;
+        }
     }
 
     public async Task<DashboardStats> GetDashboardStatsAsync(int idUtilizador)
@@ -905,18 +911,11 @@ public class ConsultasService
         decimal monthlyRevenue = 0m;
         foreach (var c in consultations.Where(c => c.DhInicio >= startOfMonth && c.DhInicio < startOfNextMonth))
         {
-            if (c.ValorHora.HasValue && c.ValorHora.Value > 0)
-            {
-                if (c.DhFim.HasValue)
-                {
-                    var hours = (decimal)(c.DhFim.Value - c.DhInicio).TotalHours;
-                    monthlyRevenue += c.ValorHora.Value * Math.Max(0, hours);
-                }
-            }
-            else if (c.ValorTotal.HasValue)
-            {
-                monthlyRevenue += c.ValorTotal.Value;
-            }
+            monthlyRevenue += _chargingCalculator.CalculatePrice(
+                c.DhInicio,
+                c.DhFim,
+                c.ValorTotal,
+                c.ValorHora);
         }
 
         return new DashboardStats
@@ -1066,5 +1065,32 @@ public class ConsultasService
         public string PatientName { get; init; } = string.Empty;
         public string OwnerName { get; init; } = string.Empty;
         public DateTime? StartAt { get; init; }
+    }
+    
+    public sealed class ChargingCalculator
+    {
+        /// <summary>
+        /// Calculates consultation price based on charging type.
+        /// This centralizes pricing logic for OCP compliance.
+        /// If new pricing types are added, only this class needs modification.
+        /// </summary>
+        public decimal CalculatePrice(DateTime startTime, DateTime? endTime, decimal? fixedPrice, decimal? hourlyPrice)
+        {
+            // Hourly charging takes priority
+            if (hourlyPrice.HasValue && hourlyPrice.Value > 0)
+            {
+                if (!endTime.HasValue)
+                    return 0m;
+                
+                var hours = (decimal)(endTime.Value - startTime).TotalHours;
+                return Math.Round(Math.Max(0, hours) * hourlyPrice.Value, 2);
+            }
+            
+            // Fall back to fixed price
+            if (fixedPrice.HasValue && fixedPrice.Value > 0)
+                return fixedPrice.Value;
+            
+            return 0m;
+        }
     }
 }
