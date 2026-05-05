@@ -1,3 +1,18 @@
+window.themeManager = {
+    getTheme: function () {
+        return localStorage.getItem('theme') || 'light';
+    },
+    setTheme: function (theme) {
+        localStorage.setItem('theme', theme);
+        document.documentElement.setAttribute('data-theme', theme);
+    },
+    initTheme: function () {
+        var theme = localStorage.getItem('theme') || 'light';
+        document.documentElement.setAttribute('data-theme', theme);
+        return theme;
+    }
+};
+
 window.profileStorage = {
   getCurrentUser: function () {
     try {
