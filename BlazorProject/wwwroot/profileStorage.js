@@ -1,3 +1,12 @@
+window.languageManager = {
+    getLanguage: function () {
+        return localStorage.getItem('language') || 'pt';
+    },
+    setLanguage: function (lang) {
+        localStorage.setItem('language', lang);
+    }
+};
+
 window.themeManager = {
     getTheme: function () {
         return localStorage.getItem('theme') || 'light';

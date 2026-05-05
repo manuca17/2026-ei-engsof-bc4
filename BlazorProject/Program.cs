@@ -21,6 +21,7 @@ builder.Services.AddScoped<PacienteService>();
 builder.Services.AddScoped<ConsultasService>();
 builder.Services.AddScoped<AdminService>();
 builder.Services.AddScoped<ExameMedico>();
+builder.Services.AddScoped<LanguageService>();
 var app = builder.Build();
 
 // ── DB Connection Test ──────────────────────────────────────────────────────

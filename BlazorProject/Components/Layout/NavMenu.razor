@@ -3,6 +3,7 @@
 @using BlazorProject.Services
 @inject NavigationManager NavigationManager
 @inject IJSRuntime JS
+@inject LanguageService Lang
 
 <div class="sb-wrapper">
 
@@ -38,7 +39,7 @@
                     <rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/>
                     <rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/>
                 </svg>
-                Dashboard
+                @Lang.T("nav_dashboard")
             </NavLink>
 
             <NavLink class="sb-link" href="patients">
@@ -49,7 +50,7 @@
                     <path d="M22 21v-2a4 4 0 0 0-3-3.87"/>
                     <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
                 </svg>
-                Pacientes
+                @Lang.T("nav_patients")
             </NavLink>
 
             <NavLink class="sb-link" href="consultations">
@@ -59,7 +60,7 @@
                     <line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/>
                     <line x1="3" x2="21" y1="10" y2="10"/>
                 </svg>
-                Consultas
+                @Lang.T("nav_consultations")
             </NavLink>
 
             <NavLink class="sb-link" href="reports">
@@ -68,7 +69,7 @@
                     <line x1="18" x2="18" y1="20" y2="10"/><line x1="12" x2="12" y1="20" y2="4"/>
                     <line x1="6" x2="6" y1="20" y2="14"/>
                 </svg>
-                Relatórios
+                @Lang.T("nav_reports")
             </NavLink>
             
             <NavLink class="sb-link" href="profile">
@@ -77,13 +78,13 @@
                     <circle cx="12" cy="7" r="4"/>
                     <path d="M5.5 21a6.5 6.5 0 0 1 13 0"/>
                 </svg>
-                Perfil
+                @Lang.T("nav_profile")
             </NavLink>
         }
         else
         {
             <!-- Links de Administração -->
-            <div class="sb-section-label">Administração</div>
+            <div class="sb-section-label">@Lang.T("nav_administration")</div>
 
             <NavLink class="sb-link" href="user-management">
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
@@ -92,7 +93,7 @@
                     <circle cx="9" cy="7" r="4"/>
                     <path d="M19 8v6"/><path d="M22 11h-6"/>
                 </svg>
-                Gestão de Utilizadores
+                @Lang.T("nav_user_management")
             </NavLink>
 
             <NavLink class="sb-link" href="global-records">
@@ -102,7 +103,7 @@
                     <path d="M3 5V19A9 3 0 0 0 21 19V5"/>
                     <path d="M3 12A9 3 0 0 0 21 12"/>
                 </svg>
-                Registos Globais
+                @Lang.T("nav_global_records")
             </NavLink>
         }
 
@@ -110,7 +111,7 @@
 
     <!-- Footer com botão Sair e toggle de tema -->
     <div class="sb-footer">
-        <button class="sb-theme-toggle" @onclick="ToggleTheme" title="@(_isDark ? "Mudar para modo claro" : "Mudar para modo escuro")">
+        <button class="sb-theme-toggle" @onclick="ToggleTheme" title="@(_isDark ? Lang.T("nav_light_mode") : Lang.T("nav_dark_mode"))">
             @if (_isDark)
             {
                 <!-- Ícone sol (modo claro) -->
@@ -119,7 +120,7 @@
                     <circle cx="12" cy="12" r="4"/>
                     <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/>
                 </svg>
-                <span>Modo Claro</span>
+                <span>@Lang.T("nav_light_mode")</span>
             }
             else
             {
@@ -128,7 +129,7 @@
                      stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
                 </svg>
-                <span>Modo Escuro</span>
+                <span>@Lang.T("nav_dark_mode")</span>
             }
         </button>
 
@@ -139,7 +140,7 @@
                 <polyline points="16 17 21 12 16 7"/>
                 <line x1="21" x2="9" y1="12" y2="12"/>
             </svg>
-            Sair
+            @Lang.T("nav_logout")
         </button>
     </div>
 
@@ -155,6 +156,7 @@
     protected override void OnInitialized()
     {
         LoggedInUserContext.CurrentUserChanged += HandleCurrentUserChanged;
+        Lang.LanguageChanged += HandleLanguageChanged;
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -163,6 +165,10 @@
         {
             var theme = await JS.InvokeAsync<string>("themeManager.initTheme");
             _isDark = theme == "dark";
+
+            var lang = await JS.InvokeAsync<string>("languageManager.getLanguage");
+            Lang.Init(lang);
+
             StateHasChanged();
         }
     }
@@ -172,9 +178,15 @@
         InvokeAsync(StateHasChanged);
     }
 
+    private void HandleLanguageChanged()
+    {
+        InvokeAsync(StateHasChanged);
+    }
+
     public void Dispose()
     {
         LoggedInUserContext.CurrentUserChanged -= HandleCurrentUserChanged;
+        Lang.LanguageChanged -= HandleLanguageChanged;
     }
 
     private async Task ToggleTheme()

@@ -5,6 +5,8 @@
 @inject NavigationManager NavigationManager
 @inject PacienteService PacienteService
 @inject ConsultasService ConsultasService
+@inject LanguageService Lang
+@implements IDisposable
 
 <PageTitle>Dashboard</PageTitle>
 
@@ -12,15 +14,15 @@
 
     <!-- Header -->
     <div class="dash-header">
-        <h1>Dashboard</h1>
-        <p class="dash-subtitle">Bem-vindo de volta, @DoctorName</p>
+        <h1>@Lang.T("nav_dashboard")</h1>
+        <p class="dash-subtitle">@Lang.T("dash_welcome"), @DoctorName</p>
     </div>
 
     <!-- Stat Cards -->
     <div class="stats-grid">
         <div class="stat-card">
             <div class="stat-top">
-                <span class="stat-label">Total de Pacientes</span>
+                <span class="stat-label">@Lang.T("dash_total_patients")</span>
                 <div class="stat-icon bg-blue">
                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
                          stroke="#2563eb" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -36,7 +38,7 @@
 
         <div class="stat-card">
             <div class="stat-top">
-                <span class="stat-label">Total de Consultas</span>
+                <span class="stat-label">@Lang.T("dash_total_consultations")</span>
                 <div class="stat-icon bg-green">
                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
                          stroke="#16a34a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -52,7 +54,7 @@
 
         <div class="stat-card">
             <div class="stat-top">
-                <span class="stat-label">Consultas Pendentes</span>
+                <span class="stat-label">@Lang.T("dash_pending_consultations")</span>
                 <div class="stat-icon bg-orange">
                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
                          stroke="#ea580c" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -66,7 +68,7 @@
 
         <div class="stat-card">
             <div class="stat-top">
-                <span class="stat-label">Receita Mensal</span>
+                <span class="stat-label">@Lang.T("dash_monthly_revenue")</span>
                 <div class="stat-icon bg-purple">
                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
                          stroke="#9333ea" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -85,7 +87,7 @@
         <!-- Ações Rápidas -->
         <div class="info-card">
             <div class="card-header">
-                <h5>Ações Rápidas</h5>
+                <h5>@Lang.T("dash_quick_actions")</h5>
             </div>
             <div class="card-body actions-list">
                 <button class="action-btn" @onclick='() => NavigationManager.NavigateTo("/patients?newPatient=true")'>
@@ -96,7 +98,7 @@
                         <path d="M22 21v-2a4 4 0 0 0-3-3.87"/>
                         <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
                     </svg>
-                    Registar Novo Paciente
+                    @Lang.T("dash_register_patient")
                 </button>
                 <button class="action-btn" @onclick='() => NavigationManager.NavigateTo("/consultations?openForm=true")'>
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
@@ -106,7 +108,7 @@
                         <line x1="8" x2="8" y1="2" y2="6"/>
                         <line x1="3" x2="21" y1="10" y2="10"/>
                     </svg>
-                    Agendar Consulta
+                    @Lang.T("dash_schedule_consultation")
                 </button>
                 <button class="action-btn" @onclick='() => NavigationManager.NavigateTo("/reports")'>
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
@@ -114,7 +116,7 @@
                         <circle cx="12" cy="12" r="10"/>
                         <polyline points="12 6 12 12 16 14"/>
                     </svg>
-                    Ver Relatórios
+                    @Lang.T("dash_view_reports")
                 </button>
             </div>
         </div>
@@ -128,6 +130,21 @@
     private int PendingConsultations { get; set; }
     private decimal MonthlyRevenue { get; set; }
     private bool IsLoading = true;
+
+    protected override void OnInitialized()
+    {
+        Lang.LanguageChanged += HandleLanguageChanged;
+    }
+
+    private void HandleLanguageChanged()
+    {
+        InvokeAsync(StateHasChanged);
+    }
+
+    public void Dispose()
+    {
+        Lang.LanguageChanged -= HandleLanguageChanged;
+    }
 
     protected override async Task OnInitializedAsync()
     {

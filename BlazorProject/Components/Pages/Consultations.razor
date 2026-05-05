@@ -5,31 +5,33 @@
 @inject NavigationManager NavigationManager
 @inject IJSRuntime JSRuntime
 @inject ConsultasService ConsultasService
+@inject LanguageService Lang
+@implements IDisposable
 
-<PageTitle>Consultations</PageTitle>
+<PageTitle>@Lang.T("consult_title")</PageTitle>
 
 <div class="consult-page">
     <div class="consult-header">
         <div>
-            <h1>Gestao de Consultas</h1>
-            <p>Total de @ConsultationItems.Count consulta@(ConsultationItems.Count == 1 ? "" : "s")</p>
+            <h1>@Lang.T("consult_title")</h1>
+            <p>@ConsultationItems.Count consulta@(ConsultationItems.Count == 1 ? "" : "s")</p>
         </div>
         <button class="btn-primary" @onclick="OpenDialog">
             <span>+</span>
-            Nova Consulta
+            @Lang.T("consult_new")
         </button>
     </div>
 
     <section class="panel">
         <div class="panel-title-row">
-            <h3>Filtros</h3>
+            <h3>@Lang.T("consult_filters")</h3>
         </div>
 
         <div class="filter-grid">
             <div class="field">
-                <label>Estado</label>
+                <label>@Lang.T("consult_status")</label>
                 <select @bind="FilterStatus">
-                    <option value="all">Todos</option>
+                    <option value="all">@Lang.T("consult_all")</option>
                     <option value="agendada">Agendada</option>
                     <option value="em_andamento">Em andamento</option>
                     <option value="encerrada">Encerrada</option>
@@ -37,9 +39,9 @@
             </div>
 
             <div class="field">
-                <label>Paciente</label>
+                <label>@Lang.T("consult_patient")</label>
                 <select @bind="FilterPatient">
-                    <option value="all">Todos</option>
+                    <option value="all">@Lang.T("consult_all")</option>
                     @foreach (var patient in PatientOptions)
                     {
                         <option value="@patient.Id">@patient.Name</option>
@@ -48,26 +50,26 @@
             </div>
 
             <div class="field">
-                <label>Data inicio</label>
+                <label>@Lang.T("consult_date_from")</label>
                 <input type="date" @bind="DateFromInput" @bind:format="yyyy-MM-dd" />
             </div>
 
             <div class="field">
-                <label>Data fim</label>
+                <label>@Lang.T("consult_date_to")</label>
                 <input type="date" @bind="DateToInput" @bind:format="yyyy-MM-dd" />
             </div>
         </div>
 
         <div class="filter-actions">
-            <button class="btn-secondary" @onclick="ApplyDateFilter">Aplicar filtro de data</button>
-            <button class="btn-outline" @onclick="ClearDateFilter">Limpar datas</button>
+            <button class="btn-secondary" @onclick="ApplyDateFilter">@Lang.T("consult_apply_filter")</button>
+            <button class="btn-outline" @onclick="ClearDateFilter">@Lang.T("consult_clear_dates")</button>
         </div>
     </section>
 
     @if (IsLoading)
     {
         <section class="panel empty">
-            A carregar consultas...
+            @Lang.T("consult_loading")
         </section>
     }
     else if (!string.IsNullOrWhiteSpace(LoadError))
@@ -79,7 +81,7 @@
     else if (FilteredConsultations.Count == 0)
     {
         <section class="panel empty">
-            Nenhuma consulta encontrada
+            @Lang.T("consult_none_found")
         </section>
     }
     else
@@ -118,15 +120,15 @@
     <div class="modal-backdrop" @onclick="CloseDialog">
         <div class="dialog-panel" @onclick:stopPropagation="true">
             <div class="dialog-header">
-                <h3>Criar Nova Consulta</h3>
-                <p>Preencha os dados da consulta abaixo</p>
+                <h3>@Lang.T("consult_create_title")</h3>
+                <p>@Lang.T("consult_create_subtitle")</p>
             </div>
 
             <div class="dialog-body">
                 <div class="field">
-                    <label>Paciente</label>
+                    <label>@Lang.T("consult_patient")</label>
                     <select @bind="FormPatientId">
-                        <option value="">Selecione um paciente</option>
+                        <option value="">@Lang.T("consult_select_patient")</option>
                         @foreach (var patient in PatientOptions)
                         {
                             <option value="@patient.Id">@patient.Name</option>
@@ -165,9 +167,9 @@
 
             <div class="dialog-actions">
                 <button class="btn-primary" @onclick="CreateConsultationAsync" disabled="@IsCreating">
-                    @(IsCreating ? "A criar..." : "Criar Consulta")
+                    @(IsCreating ? Lang.T("consult_creating") : Lang.T("consult_create_btn"))
                 </button>
-                <button class="btn-outline" @onclick="CloseDialog">Cancelar</button>
+                <button class="btn-outline" @onclick="CloseDialog">@Lang.T("consult_cancel")</button>
             </div>
         </div>
     </div>
@@ -203,6 +205,21 @@
     private string FormChargingType = "fixo";
     private decimal? FormFixedPrice = 80m;
     private decimal? FormHourlyPrice = 60m;
+
+    protected override void OnInitialized()
+    {
+        Lang.LanguageChanged += HandleLanguageChanged;
+    }
+
+    private void HandleLanguageChanged()
+    {
+        InvokeAsync(StateHasChanged);
+    }
+
+    public void Dispose()
+    {
+        Lang.LanguageChanged -= HandleLanguageChanged;
+    }
 
     protected override async Task OnInitializedAsync()
     {

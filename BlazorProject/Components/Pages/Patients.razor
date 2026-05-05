@@ -6,26 +6,28 @@
 @inject IJSRuntime JSRuntime
 @inject PacienteService PatientService
 @inject NavigationManager NavigationManager
+@inject LanguageService Lang
+@implements IDisposable
 
-<PageTitle>Pacientes</PageTitle>
+<PageTitle>@Lang.T("patients_title")</PageTitle>
 
 <div class="patients-page p-4">
     <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mb-4">
         <div>
-            <h1 class="h3 mb-1">Gestão de Pacientes</h1>
+            <h1 class="h3 mb-1">@Lang.T("patients_title")</h1>
             <p class="text-muted mb-0">
-                Total de @PatientList.Count paciente@(@PatientList.Count == 1 ? "" : "s")
+                @PatientList.Count paciente@(@PatientList.Count == 1 ? "" : "s")
             </p>
         </div>
         <button class="btn btn-primary" @onclick="() => DialogOpen = true">
             <span class="me-2">+</span>
-            Novo Paciente
+            @Lang.T("patients_new")
         </button>
     </div>
 
     <div class="mb-4">
         <input class="form-control"
-               placeholder="Pesquisar pacientes por nome..."
+               placeholder="@Lang.T("patients_search")"
                @bind="SearchTerm"
                @bind:event="oninput" />
     </div>
@@ -34,7 +36,7 @@
     {
         <div class="card">
             <div class="card-body text-center text-muted py-5">
-                @(string.IsNullOrWhiteSpace(SearchTerm) ? "Nenhum paciente registado ainda" : "Nenhum paciente encontrado")
+                @(string.IsNullOrWhiteSpace(SearchTerm) ? Lang.T("patients_none_registered") : Lang.T("patients_none_found"))
             </div>
         </div>
     }
@@ -56,12 +58,12 @@
                             </div>
 
                             <div class="mb-2">
-                                <div class="small text-muted">Telefone</div>
+                                <div class="small text-muted">@Lang.T("patients_phone")</div>
                                 <div>@(patient.Telefone ?? "---")</div>
                             </div>
 
                             <button class="btn btn-outline-primary w-100 mt-auto" @onclick="() => NavigateToPatientConsultations(patient.IdPaciente)">
-                                Ver Consultas
+                                @Lang.T("patients_view_consultations")
                             </button>
                         </div>
                     </div>
@@ -77,12 +79,12 @@
         <div class="modal-dialog modal-dialog-centered" @onclick:stopPropagation="true">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">Registar Novo Paciente</h5>
+                    <h5 class="modal-title">@Lang.T("patients_register_title")</h5>
                     <button type="button" class="btn-close" @onclick="CloseDialog"></button>
                 </div>
                 <div class="modal-body">
                     <div class="mb-3">
-                        <label class="form-label">Nome Completo *</label>
+                        <label class="form-label">@Lang.T("profile_full_name") *</label>
                         <input class="form-control" @bind="NewPatient.Nome" />
                     </div>
                     <div class="mb-3">
@@ -91,21 +93,21 @@
                         <input type="date" class="form-control" @bind="BirthDateHelper" />
                     </div>
                     <div class="mb-3">
-                        <label class="form-label">Telefone *</label>
+                        <label class="form-label">@Lang.T("patients_phone") *</label>
                         <input type="tel" class="form-control" @bind="NewPatient.Telefone" />
                     </div>
                     <div class="mb-3">
-                        <label class="form-label">Email</label>
+                        <label class="form-label">@Lang.T("profile_email")</label>
                         <input type="email" class="form-control" @bind="NewPatient.Email" />
                     </div>
                     <div class="mb-3">
-                        <label class="form-label">Rua / Porta</label>
+                        <label class="form-label">@Lang.T("profile_street") / @Lang.T("profile_door_number")</label>
                         <input class="form-control" @bind="NewPatient.Rua" />
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-outline-secondary" @onclick="CloseDialog">Cancelar</button>
-                    <button type="button" class="btn btn-primary" @onclick="SavePatient">Registar Paciente</button>
+                    <button type="button" class="btn btn-outline-secondary" @onclick="CloseDialog">@Lang.T("profile_cancel")</button>
+                    <button type="button" class="btn btn-primary" @onclick="SavePatient">@Lang.T("patients_register_title")</button>
                 </div>
             </div>
         </div>
@@ -125,6 +127,21 @@
         .Where(p => string.IsNullOrWhiteSpace(SearchTerm) || 
                     p.Nome.Contains(SearchTerm, StringComparison.InvariantCultureIgnoreCase))
         .ToList();
+
+    protected override void OnInitialized()
+    {
+        Lang.LanguageChanged += HandleLanguageChanged;
+    }
+
+    private void HandleLanguageChanged()
+    {
+        InvokeAsync(StateHasChanged);
+    }
+
+    public void Dispose()
+    {
+        Lang.LanguageChanged -= HandleLanguageChanged;
+    }
 
     protected override async Task OnInitializedAsync()
     {

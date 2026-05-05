@@ -5,13 +5,15 @@
 @rendermode InteractiveServer
 @inject IJSRuntime JSRuntime
 @inject ConsultasService ConsultasService
+@inject LanguageService Lang
+@implements IDisposable
 
-<PageTitle>Relatórios</PageTitle>
+<PageTitle>@Lang.T("reports_title")</PageTitle>
 
 @if (IsLoading)
 {
     <div class="reports-page">
-        <section class="reports-card reports-empty">A carregar relatórios...</section>
+        <section class="reports-card reports-empty">@Lang.T("reports_loading")</section>
     </div>
 }
 else
@@ -19,8 +21,8 @@ else
     <div class="reports-page">
         <div class="reports-header">
             <div>
-                <h1>Relatórios</h1>
-                <p>Consulte relatórios mensais detalhados</p>
+                <h1>@Lang.T("reports_title")</h1>
+                <p>@Lang.T("reports_subtitle")</p>
             </div>
             <button class="btn-primary" @onclick="GeneratePdfReportAsync" disabled="@(IsGeneratingPdf || (ActiveTab == ReportsTab.Patient && string.IsNullOrWhiteSpace(SelectedPatientId)))">
                 <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
@@ -29,18 +31,18 @@ else
                     <polyline points="7 10 12 15 17 10"/>
                     <line x1="12" y1="15" x2="12" y2="3"/>
                 </svg>
-                @(IsGeneratingPdf ? "A gerar..." : "Gerar Relatório")
+                @(IsGeneratingPdf ? Lang.T("reports_generating") : Lang.T("reports_generate"))
             </button>
         </div>
 
         <section class="reports-card filters-card">
             <div class="section-heading">
-                <h2>Período do Relatório</h2>
+                <h2>@Lang.T("reports_period")</h2>
             </div>
 
             <div class="filters-grid">
                 <div class="field">
-                    <label>Mês</label>
+                    <label>@Lang.T("reports_month")</label>
                     <select @bind="SelectedMonth" @bind:after="OnPeriodChanged">
                         @foreach (var month in Months)
                         {
@@ -50,7 +52,7 @@ else
                 </div>
 
                 <div class="field">
-                    <label>Ano</label>
+                    <label>@Lang.T("reports_year")</label>
                     <select @bind="SelectedYear" @bind:after="OnPeriodChanged">
                         @foreach (var year in Years)
                         {
@@ -65,12 +67,12 @@ else
             <button type="button"
                     class="@(ActiveTab == ReportsTab.User ? "tab-button active" : "tab-button")"
                     @onclick='() => ActiveTab = ReportsTab.User'>
-                Meu Relatório
+                @Lang.T("reports_my_report")
             </button>
             <button type="button"
                     class="@(ActiveTab == ReportsTab.Patient ? "tab-button active" : "tab-button")"
                     @onclick='() => ActiveTab = ReportsTab.Patient'>
-                Relatório por Paciente
+                @Lang.T("reports_by_patient")
             </button>
         </div>
 
@@ -299,6 +301,21 @@ else
     private MonthlyReport PatientReport { get; set; } = MonthlyReport.Empty();
 
     private string SelectedMonthLabel => Months.First(month => month.Value == SelectedMonth).Label;
+
+    protected override void OnInitialized()
+    {
+        Lang.LanguageChanged += HandleLanguageChanged;
+    }
+
+    private void HandleLanguageChanged()
+    {
+        InvokeAsync(StateHasChanged);
+    }
+
+    public void Dispose()
+    {
+        Lang.LanguageChanged -= HandleLanguageChanged;
+    }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
