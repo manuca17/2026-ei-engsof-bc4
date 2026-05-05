@@ -1,0 +1,225 @@
+@page "/calendar"
+@using BlazorProject.Services
+@rendermode InteractiveServer
+@inject ConsultasService ConsultasService
+@inject NavigationManager NavigationManager
+
+<PageTitle>Calendário</PageTitle>
+
+<div class="calendar-page">
+    <div class="cal-header">
+        <div>
+            <h1>Calendário de Consultas</h1>
+            <p>@CurrentMonthLabel @CurrentYear</p>
+        </div>
+        <div class="cal-nav">
+            <button class="btn-outline" @onclick="PrevMonth">‹ Anterior</button>
+            <button class="btn-outline" @onclick="GoToToday">Hoje</button>
+            <button class="btn-outline" @onclick="NextMonth">Próximo ›</button>
+        </div>
+    </div>
+
+    @if (IsLoading)
+    {
+        <div class="cal-loading">A carregar consultas...</div>
+    }
+    else
+    {
+        <div class="cal-grid-wrapper">
+            <div class="cal-weekdays">
+                <div>Dom</div>
+                <div>Seg</div>
+                <div>Ter</div>
+                <div>Qua</div>
+                <div>Qui</div>
+                <div>Sex</div>
+                <div>Sáb</div>
+            </div>
+
+            <div class="cal-grid">
+                @for (int i = 0; i < CalendarCells.Count; i++)
+                {
+                    var cell = CalendarCells[i];
+                    var isToday = cell.Date == Today;
+                    var isCurrentMonth = cell.IsCurrentMonth;
+                    <div class="cal-cell @(isCurrentMonth ? "" : "cal-cell-other") @(isToday ? "cal-cell-today" : "")">
+                        <div class="cal-day-number">@cell.Date.Day</div>
+                        <div class="cal-events">
+                            @foreach (var consultation in cell.Consultations.Take(3))
+                            {
+                                <div class="cal-event @StatusClass(consultation.Status)"
+                                     title="@consultation.PatientName - @consultation.Description"
+                                     @onclick='() => NavigationManager.NavigateTo($"/consultations/{consultation.Id}")'>
+                                    <span class="cal-event-dot"></span>
+                                    <span class="cal-event-name">@consultation.PatientName</span>
+                                </div>
+                            }
+                            @if (cell.Consultations.Count > 3)
+                            {
+                                <div class="cal-event-more">+@(cell.Consultations.Count - 3) mais</div>
+                            }
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+
+        <!-- Legend -->
+        <div class="cal-legend">
+            <div class="cal-legend-item">
+                <span class="cal-legend-dot status-gray"></span> Agendada
+            </div>
+            <div class="cal-legend-item">
+                <span class="cal-legend-dot status-blue"></span> Em andamento
+            </div>
+            <div class="cal-legend-item">
+                <span class="cal-legend-dot status-green"></span> Encerrada
+            </div>
+        </div>
+
+        <!-- Monthly summary -->
+        @if (MonthConsultations.Count > 0)
+        {
+            <div class="cal-summary-card">
+                <h2>Resumo de @CurrentMonthLabel</h2>
+                <div class="cal-summary-stats">
+                    <div class="cal-summary-stat">
+                        <strong>@MonthConsultations.Count</strong>
+                        <span>Consultas totais</span>
+                    </div>
+                    <div class="cal-summary-stat">
+                        <strong>@MonthConsultations.Count(c => c.Status == ConsultasService.ConsultationStatus.Encerrada)</strong>
+                        <span>Encerradas</span>
+                    </div>
+                    <div class="cal-summary-stat">
+                        <strong>@MonthConsultations.Count(c => c.Status == ConsultasService.ConsultationStatus.Agendada)</strong>
+                        <span>Agendadas</span>
+                    </div>
+                    <div class="cal-summary-stat">
+                        <strong>@MonthConsultations.Count(c => c.Status == ConsultasService.ConsultationStatus.EmAndamento)</strong>
+                        <span>Em andamento</span>
+                    </div>
+                </div>
+            </div>
+        }
+    }
+</div>
+
+@code {
+    private bool IsLoading = true;
+    private int CurrentYear = DateTime.Today.Year;
+    private int CurrentMonth = DateTime.Today.Month;
+    private DateOnly Today = DateOnly.FromDateTime(DateTime.Today);
+    private List<ConsultasService.ConsultationListItem> AllConsultations = [];
+    private List<ConsultasService.ConsultationListItem> MonthConsultations = [];
+    private List<CalendarCell> CalendarCells = [];
+
+    private static readonly string[] MonthNames =
+    [
+        "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
+        "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"
+    ];
+
+    private string CurrentMonthLabel => MonthNames[CurrentMonth - 1];
+
+    protected override async Task OnInitializedAsync()
+    {
+        var loggedUser = LoggedInUserContext.CurrentUser;
+        if (loggedUser is null)
+        {
+            NavigationManager.NavigateTo("/");
+            return;
+        }
+
+        try
+        {
+            AllConsultations = await ConsultasService.GetForDoctorAsync(loggedUser.IdUtilizador);
+        }
+        finally
+        {
+            IsLoading = false;
+        }
+
+        BuildCalendar();
+    }
+
+    private void BuildCalendar()
+    {
+        var firstOfMonth = new DateOnly(CurrentYear, CurrentMonth, 1);
+        var lastOfMonth = firstOfMonth.AddMonths(1).AddDays(-1);
+
+        // Filter consultations for this month
+        MonthConsultations = AllConsultations
+            .Where(c => c.StartAt.HasValue
+                        && c.StartAt.Value.Year == CurrentYear
+                        && c.StartAt.Value.Month == CurrentMonth)
+            .ToList();
+
+        // Group by date
+        var byDate = MonthConsultations
+            .Where(c => c.StartAt.HasValue)
+            .GroupBy(c => DateOnly.FromDateTime(c.StartAt!.Value.Date))
+            .ToDictionary(g => g.Key, g => g.ToList());
+
+        // Build cells: start from the Sunday before the first day
+        var startDay = firstOfMonth;
+        var startOffset = (int)startDay.DayOfWeek; // 0=Sun
+        var gridStart = startDay.AddDays(-startOffset);
+
+        // 6 rows × 7 cols = 42 cells
+        CalendarCells = [];
+        for (int i = 0; i < 42; i++)
+        {
+            var cellDate = gridStart.AddDays(i);
+            byDate.TryGetValue(cellDate, out var consultations);
+            CalendarCells.Add(new CalendarCell
+            {
+                Date = cellDate,
+                IsCurrentMonth = cellDate >= firstOfMonth && cellDate <= lastOfMonth,
+                Consultations = consultations ?? []
+            });
+        }
+
+        // Trim trailing empty rows
+        while (CalendarCells.Count > 7 && CalendarCells.TakeLast(7).All(c => !c.IsCurrentMonth && c.Consultations.Count == 0))
+        {
+            CalendarCells.RemoveRange(CalendarCells.Count - 7, 7);
+        }
+    }
+
+    private void PrevMonth()
+    {
+        CurrentMonth--;
+        if (CurrentMonth < 1) { CurrentMonth = 12; CurrentYear--; }
+        BuildCalendar();
+    }
+
+    private void NextMonth()
+    {
+        CurrentMonth++;
+        if (CurrentMonth > 12) { CurrentMonth = 1; CurrentYear++; }
+        BuildCalendar();
+    }
+
+    private void GoToToday()
+    {
+        CurrentYear = DateTime.Today.Year;
+        CurrentMonth = DateTime.Today.Month;
+        BuildCalendar();
+    }
+
+    private static string StatusClass(ConsultasService.ConsultationStatus status) => status switch
+    {
+        ConsultasService.ConsultationStatus.Agendada => "status-gray",
+        ConsultasService.ConsultationStatus.EmAndamento => "status-blue",
+        ConsultasService.ConsultationStatus.Encerrada => "status-green",
+        _ => "status-gray"
+    };
+
+    private sealed class CalendarCell
+    {
+        public DateOnly Date { get; init; }
+        public bool IsCurrentMonth { get; init; }
+        public List<ConsultasService.ConsultationListItem> Consultations { get; init; } = [];
+    }
+}

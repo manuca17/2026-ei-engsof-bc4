@@ -17,11 +17,37 @@
                 Total de @PatientList.Count paciente@(@PatientList.Count == 1 ? "" : "s")
             </p>
         </div>
-        <button class="btn btn-primary" @onclick="() => DialogOpen = true">
-            <span class="me-2">+</span>
-            Novo Paciente
-        </button>
+        <div class="d-flex gap-2 flex-wrap">
+            <button class="btn btn-outline-secondary" @onclick="ExportCsvAsync" title="Exportar lista de pacientes como CSV">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                     stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="me-1">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                    <polyline points="7 10 12 15 17 10"/>
+                    <line x1="12" y1="15" x2="12" y2="3"/>
+                </svg>
+                Exportar CSV
+            </button>
+            <button class="btn btn-primary" @onclick="() => DialogOpen = true">
+                <span class="me-2">+</span>
+                Novo Paciente
+            </button>
+        </div>
     </div>
+
+    @if (IncompletePatients.Count > 0)
+    {
+        <div class="alert-incomplete mb-4">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                 stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+                <line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+            </svg>
+            <div>
+                <strong>@IncompletePatients.Count paciente@(IncompletePatients.Count == 1 ? "" : "s") com dados incompletos</strong>
+                <span class="ms-2 text-muted small">(@string.Join(", ", IncompletePatients.Take(3).Select(p => p.Nome))@(IncompletePatients.Count > 3 ? $" e mais {IncompletePatients.Count - 3}..." : ""))</span>
+            </div>
+        </div>
+    }
 
     <div class="mb-4">
         <input class="form-control"
@@ -57,12 +83,40 @@
 
                             <div class="mb-2">
                                 <div class="small text-muted">Telefone</div>
-                                <div>@(patient.Telefone ?? "---")</div>
+                                <div>
+                                    @if (string.IsNullOrWhiteSpace(patient.Telefone))
+                                    {
+                                        <span class="text-danger small">⚠ Não registado</span>
+                                    }
+                                    else
+                                    {
+                                        @patient.Telefone
+                                    }
+                                </div>
                             </div>
 
-                            <button class="btn btn-outline-primary w-100 mt-auto" @onclick="() => NavigateToPatientConsultations(patient.IdPaciente)">
-                                Ver Consultas
-                            </button>
+                            <div class="mb-2">
+                                <div class="small text-muted">Email</div>
+                                <div>
+                                    @if (string.IsNullOrWhiteSpace(patient.Email))
+                                    {
+                                        <span class="text-danger small">⚠ Não registado</span>
+                                    }
+                                    else
+                                    {
+                                        @patient.Email
+                                    }
+                                </div>
+                            </div>
+
+                            <div class="d-flex gap-2 mt-auto">
+                                <button class="btn btn-outline-primary flex-fill" @onclick="() => NavigateToPatientConsultations(patient.IdPaciente)">
+                                    Ver Consultas
+                                </button>
+                                <button class="btn btn-outline-secondary flex-fill" @onclick="() => NavigateToPatientHistory(patient.IdPaciente)" title="Ver histórico clínico completo">
+                                    Histórico
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -126,6 +180,10 @@
                     p.Nome.Contains(SearchTerm, StringComparison.InvariantCultureIgnoreCase))
         .ToList();
 
+    private IReadOnlyList<Paciente> IncompletePatients => PatientList
+        .Where(p => string.IsNullOrWhiteSpace(p.Telefone) || string.IsNullOrWhiteSpace(p.Email))
+        .ToList();
+
     protected override async Task OnInitializedAsync()
     {
         await LoadPatients();
@@ -149,6 +207,11 @@
     private void NavigateToPatientConsultations(int patientId)
     {
         NavigationManager.NavigateTo($"/consultations?patient={patientId}");
+    }
+
+    private void NavigateToPatientHistory(int patientId)
+    {
+        NavigationManager.NavigateTo($"/patients/{patientId}/history");
     }
 
     private int CalculateAge(DateOnly? birthDate)
@@ -207,6 +270,30 @@
             await JSRuntime.InvokeVoidAsync("alert", "Erro ao guardar: " + ex.Message);
         }
     }
+
+    private async Task ExportCsvAsync()
+    {
+        var patients = FilteredPatients;
+        if (patients.Count == 0)
+        {
+            await JSRuntime.InvokeVoidAsync("alert", "Não há pacientes para exportar.");
+            return;
+        }
+
+        var sb = new System.Text.StringBuilder();
+        sb.AppendLine("Nome,Data de Nascimento,Telefone,Email,Morada");
+        foreach (var p in patients)
+        {
+            var dob = p.DtNasc.HasValue ? p.DtNasc.Value.ToString("dd/MM/yyyy") : "";
+            sb.AppendLine($"\"{EscapeCsv(p.Nome)}\",\"{dob}\",\"{EscapeCsv(p.Telefone)}\",\"{EscapeCsv(p.Email)}\",\"{EscapeCsv(p.Rua)}\"");
+        }
+
+        var fileName = $"pacientes_{DateTime.Now:yyyy-MM-dd}.csv";
+        await JSRuntime.InvokeVoidAsync("downloadCsv", sb.ToString(), fileName);
+    }
+
+    private static string EscapeCsv(string? value) =>
+        (value ?? string.Empty).Replace("\"", "\"\"");
 
     private void CloseDialog()
     {

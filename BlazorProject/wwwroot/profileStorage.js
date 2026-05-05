@@ -41,6 +41,23 @@ window.profileStorage = {
   }
 };
 
+window.downloadCsv = function (content, fileName) {
+  try {
+    const blob = new Blob(['\uFEFF' + content], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.setAttribute('href', url);
+    link.setAttribute('download', fileName);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  } catch (error) {
+    console.error('Erro ao exportar CSV:', error);
+    alert('Erro ao exportar CSV. Tente novamente.');
+  }
+};
+
 window.printToPdf = function (htmlContent, fileName) {
   try {
     const printWindow = window.open('', '_blank');

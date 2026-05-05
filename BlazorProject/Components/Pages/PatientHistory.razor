@@ -1,0 +1,200 @@
+@page "/patients/{PatientId:int}/history"
+@using BlazorProject.Data.Models
+@using BlazorProject.Data.Services
+@using BlazorProject.Services
+@rendermode InteractiveServer
+@inject PacienteService PatientService
+@inject ConsultasService ConsultasService
+@inject NavigationManager NavigationManager
+
+<PageTitle>Histórico do Paciente</PageTitle>
+
+@if (IsLoading)
+{
+    <div class="patient-history-page">
+        <section class="ph-card ph-empty">A carregar histórico...</section>
+    </div>
+}
+else if (Patient is null)
+{
+    <div class="patient-history-page">
+        <section class="ph-card ph-empty">
+            <h2>Paciente não encontrado</h2>
+            <button class="btn-outline" @onclick='() => NavigationManager.NavigateTo("/patients")'>Voltar</button>
+        </section>
+    </div>
+}
+else
+{
+    <div class="patient-history-page">
+        <div class="ph-header">
+            <button class="btn-outline back-btn" @onclick='() => NavigationManager.NavigateTo("/patients")'>
+                <span aria-hidden="true">←</span> Voltar
+            </button>
+            <div>
+                <h1>@Patient.Nome</h1>
+                <p>Histórico clínico completo</p>
+            </div>
+        </div>
+
+        <!-- Patient Info Card -->
+        <section class="ph-card">
+            <h2 class="ph-section-title">Informações do Paciente</h2>
+            <div class="ph-info-grid">
+                <div class="ph-info-item">
+                    <span class="ph-info-label">Data de Nascimento</span>
+                    <strong>@(Patient.DtNasc.HasValue ? Patient.DtNasc.Value.ToString("dd/MM/yyyy") + $" ({CalculateAge(Patient.DtNasc)} anos)" : "N/A")</strong>
+                </div>
+                <div class="ph-info-item">
+                    <span class="ph-info-label">Telefone</span>
+                    <strong>
+                        @if (string.IsNullOrWhiteSpace(Patient.Telefone))
+                        {
+                            <span class="ph-missing">Não registado</span>
+                        }
+                        else
+                        {
+                            @Patient.Telefone
+                        }
+                    </strong>
+                </div>
+                <div class="ph-info-item">
+                    <span class="ph-info-label">Email</span>
+                    <strong>
+                        @if (string.IsNullOrWhiteSpace(Patient.Email))
+                        {
+                            <span class="ph-missing">Não registado</span>
+                        }
+                        else
+                        {
+                            @Patient.Email
+                        }
+                    </strong>
+                </div>
+                <div class="ph-info-item">
+                    <span class="ph-info-label">Morada</span>
+                    <strong>@(string.IsNullOrWhiteSpace(Patient.Rua) ? "Não registada" : Patient.Rua)</strong>
+                </div>
+            </div>
+        </section>
+
+        <!-- Summary Stats -->
+        <div class="ph-stats-row">
+            <div class="ph-stat">
+                <span class="ph-stat-value">@Consultations.Count</span>
+                <span class="ph-stat-label">Consultas</span>
+            </div>
+            <div class="ph-stat">
+                <span class="ph-stat-value">@Consultations.Count(c => c.Status == ConsultasService.ConsultationStatus.Encerrada)</span>
+                <span class="ph-stat-label">Encerradas</span>
+            </div>
+            <div class="ph-stat">
+                <span class="ph-stat-value">@Consultations.Count(c => c.Status != ConsultasService.ConsultationStatus.Encerrada)</span>
+                <span class="ph-stat-label">Ativas / Agendadas</span>
+            </div>
+            <div class="ph-stat">
+                <span class="ph-stat-value">@Consultations.Sum(c => c.ExamsCount)</span>
+                <span class="ph-stat-label">Exames</span>
+            </div>
+        </div>
+
+        <!-- Consultations Timeline -->
+        <section class="ph-card">
+            <h2 class="ph-section-title">Histórico de Consultas (@Consultations.Count)</h2>
+
+            @if (Consultations.Count == 0)
+            {
+                <div class="ph-empty">Nenhuma consulta registada para este paciente.</div>
+            }
+            else
+            {
+                <div class="ph-timeline">
+                    @foreach (var c in Consultations)
+                    {
+                        <article class="ph-timeline-item @StatusClass(c.Status)" @onclick='() => NavigationManager.NavigateTo($"/consultations/{c.Id}")'>
+                            <div class="ph-timeline-dot"></div>
+                            <div class="ph-timeline-content">
+                                <div class="ph-timeline-header">
+                                    <span class="ph-status-badge @StatusClass(c.Status)">@StatusLabel(c.Status)</span>
+                                    <span class="ph-timeline-date">@(c.StartAt?.ToString("dd/MM/yyyy HH:mm") ?? "Data desconhecida")</span>
+                                </div>
+                                <p class="ph-timeline-desc">@c.Description</p>
+                                <div class="ph-timeline-meta">
+                                    <span>💊 @c.ExamsCount exame(s)</span>
+                                    <span>📝 @c.NotesCount anotação(ões)</span>
+                                    <span>@ChargingText(c)</span>
+                                </div>
+                            </div>
+                        </article>
+                    }
+                </div>
+            }
+        </section>
+    </div>
+}
+
+@code {
+    [Parameter]
+    public int PatientId { get; set; }
+
+    private bool IsLoading = true;
+    private Paciente? Patient;
+    private List<ConsultasService.ConsultationListItem> Consultations = [];
+
+    protected override async Task OnInitializedAsync()
+    {
+        var loggedUser = LoggedInUserContext.CurrentUser;
+        if (loggedUser is null)
+        {
+            NavigationManager.NavigateTo("/");
+            return;
+        }
+
+        try
+        {
+            var patientTask = PatientService.GetPacienteByIdAsync(PatientId);
+            var consultationsTask = ConsultasService.GetForPatientAsync(loggedUser.IdUtilizador, PatientId);
+
+            await Task.WhenAll(patientTask, consultationsTask);
+
+            Patient = patientTask.Result;
+            Consultations = consultationsTask.Result;
+        }
+        finally
+        {
+            IsLoading = false;
+        }
+    }
+
+    private static int CalculateAge(DateOnly? birthDate)
+    {
+        if (!birthDate.HasValue) return 0;
+        var today = DateOnly.FromDateTime(DateTime.Today);
+        var age = today.Year - birthDate.Value.Year;
+        if (birthDate.Value > today.AddYears(-age)) age--;
+        return age;
+    }
+
+    private static string StatusClass(ConsultasService.ConsultationStatus status) => status switch
+    {
+        ConsultasService.ConsultationStatus.Agendada => "status-gray",
+        ConsultasService.ConsultationStatus.EmAndamento => "status-blue",
+        ConsultasService.ConsultationStatus.Encerrada => "status-green",
+        _ => "status-gray"
+    };
+
+    private static string StatusLabel(ConsultasService.ConsultationStatus status) => status switch
+    {
+        ConsultasService.ConsultationStatus.Agendada => "Agendada",
+        ConsultasService.ConsultationStatus.EmAndamento => "Em andamento",
+        ConsultasService.ConsultationStatus.Encerrada => "Encerrada",
+        _ => "Desconhecido"
+    };
+
+    private static string ChargingText(ConsultasService.ConsultationListItem c)
+    {
+        if (c.ChargingType == ConsultasService.ChargingType.Fixo)
+            return $"€{c.FixedPrice ?? 0:F2} (fixo)";
+        return $"€{c.HourlyPrice ?? 0:F2}/hora";
+    }
+}
