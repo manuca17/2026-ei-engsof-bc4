@@ -2,6 +2,7 @@
 @using BlazorProject.Data.Models
 @using BlazorProject.Data.Services
 @using BlazorProject.Services
+@using BlazorProject.Utils
 @rendermode InteractiveServer
 @inject IJSRuntime JSRuntime
 @inject PacienteService PatientService
@@ -44,7 +45,7 @@
             </svg>
             <div>
                 <strong>@IncompletePatients.Count paciente@(IncompletePatients.Count == 1 ? "" : "s") com dados incompletos</strong>
-                <span class="ms-2 text-muted small">(@string.Join(", ", IncompletePatients.Take(3).Select(p => p.Nome))@(IncompletePatients.Count > 3 ? $" e mais {IncompletePatients.Count - 3}..." : ""))</span>
+                <span class="ms-2 text-muted small">(@IncompletePatientsSummary)</span>
             </div>
         </div>
     }
@@ -184,6 +185,16 @@
         .Where(p => string.IsNullOrWhiteSpace(p.Telefone) || string.IsNullOrWhiteSpace(p.Email))
         .ToList();
 
+    private string IncompletePatientsSummary
+    {
+        get
+        {
+            var names = string.Join(", ", IncompletePatients.Take(3).Select(p => p.Nome));
+            var extra = IncompletePatients.Count > 3 ? $" e mais {IncompletePatients.Count - 3}..." : "";
+            return names + extra;
+        }
+    }
+
     protected override async Task OnInitializedAsync()
     {
         await LoadPatients();
@@ -285,15 +296,14 @@
         foreach (var p in patients)
         {
             var dob = p.DtNasc.HasValue ? p.DtNasc.Value.ToString("dd/MM/yyyy") : "";
-            sb.AppendLine($"\"{EscapeCsv(p.Nome)}\",\"{dob}\",\"{EscapeCsv(p.Telefone)}\",\"{EscapeCsv(p.Email)}\",\"{EscapeCsv(p.Rua)}\"");
+            sb.AppendLine($"\"{CsvHelper.EscapeField(p.Nome)}\",\"{dob}\",\"{CsvHelper.EscapeField(p.Telefone)}\",\"{CsvHelper.EscapeField(p.Email)}\",\"{CsvHelper.EscapeField(p.Rua)}\"");
         }
 
         var fileName = $"pacientes_{DateTime.Now:yyyy-MM-dd}.csv";
         await JSRuntime.InvokeVoidAsync("downloadCsv", sb.ToString(), fileName);
     }
 
-    private static string EscapeCsv(string? value) =>
-        (value ?? string.Empty).Replace("\"", "\"\"");
+    private static string EscapeCsv(string? value) => CsvHelper.EscapeField(value);
 
     private void CloseDialog()
     {

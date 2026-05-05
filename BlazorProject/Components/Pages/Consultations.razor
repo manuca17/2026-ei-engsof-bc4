@@ -1,5 +1,6 @@
 @page "/consultations"
 @using BlazorProject.Services
+@using BlazorProject.Utils
 @using ConsultationData = BlazorProject.Services.ConsultasService
 @rendermode InteractiveServer
 @inject NavigationManager NavigationManager
@@ -293,15 +294,14 @@
             var value = c.ChargingType == ConsultationData.ChargingType.Fixo
                 ? $"{c.FixedPrice ?? 0:F2}"
                 : $"{c.HourlyPrice ?? 0:F2}/h";
-            sb.AppendLine($"\"{EscapeCsv(c.PatientName)}\",\"{status}\",\"{date}\",\"{charging}\",\"{value}\",{c.ExamsCount},{c.NotesCount}");
+            sb.AppendLine($"\"{CsvHelper.EscapeField(c.PatientName)}\",\"{status}\",\"{date}\",\"{charging}\",\"{value}\",{c.ExamsCount},{c.NotesCount}");
         }
 
         var fileName = $"consultas_{DateTime.Now:yyyy-MM-dd}.csv";
         await JSRuntime.InvokeVoidAsync("downloadCsv", sb.ToString(), fileName);
     }
 
-    private static string EscapeCsv(string? value) =>
-        (value ?? string.Empty).Replace("\"", "\"\"");
+    private static string EscapeCsv(string? value) => CsvHelper.EscapeField(value);
 
     private void ApplyDateFilter()
     {

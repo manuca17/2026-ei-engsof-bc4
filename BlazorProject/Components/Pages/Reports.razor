@@ -2,6 +2,7 @@
 @page "/relatorios"
 @using System.Text.Json.Serialization
 @using BlazorProject.Services
+@using BlazorProject.Utils
 @rendermode InteractiveServer
 @inject IJSRuntime JSRuntime
 @inject ConsultasService ConsultasService
@@ -592,14 +593,12 @@ else
         else
             sb.AppendLine($"TOTAL,,{report.TotalHoras:F2},{report.TotalPreco:F2}");
 
-        var reportLabel = ActiveTab == ReportsTab.User ? "meu" : EscapeCsvFileName(patientName);
-        var fileName = $"relatorio_{reportLabel}_{monthLabel}_{SelectedYear}.csv";
+            var patientLabel = ActiveTab == ReportsTab.User ? "meu" : CsvHelper.SafeFileName(patientName);
+        var fileName = $"relatorio_{patientLabel}_{monthLabel}_{SelectedYear}.csv";
         await JSRuntime.InvokeVoidAsync("downloadCsv", sb.ToString(), fileName);
     }
 
-    private static string EscapeCsv(string? value) =>
-        (value ?? string.Empty).Replace("\"", "\"\"");
+    private static string EscapeCsv(string? value) => CsvHelper.EscapeField(value);
 
-    private static string EscapeCsvFileName(string name) =>
-        string.Concat(name.Where(c => char.IsLetterOrDigit(c) || c == '_' || c == '-')).ToLower();
+    private static string EscapeCsvFileName(string name) => CsvHelper.SafeFileName(name);
 }

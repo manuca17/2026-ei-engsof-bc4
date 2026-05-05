@@ -109,20 +109,20 @@ else
             else
             {
                 <div class="ph-timeline">
-                    @foreach (var c in Consultations)
+                    @foreach (var consultation in Consultations)
                     {
-                        <article class="ph-timeline-item @StatusClass(c.Status)" @onclick='() => NavigationManager.NavigateTo($"/consultations/{c.Id}")'>
+                        <article class="ph-timeline-item @StatusClass(consultation.Status)" @onclick='() => NavigationManager.NavigateTo($"/consultations/{consultation.Id}")'>
                             <div class="ph-timeline-dot"></div>
                             <div class="ph-timeline-content">
                                 <div class="ph-timeline-header">
-                                    <span class="ph-status-badge @StatusClass(c.Status)">@StatusLabel(c.Status)</span>
-                                    <span class="ph-timeline-date">@(c.StartAt?.ToString("dd/MM/yyyy HH:mm") ?? "Data desconhecida")</span>
+                                    <span class="ph-status-badge @StatusClass(consultation.Status)">@StatusLabel(consultation.Status)</span>
+                                    <span class="ph-timeline-date">@(consultation.StartAt?.ToString("dd/MM/yyyy HH:mm") ?? "Data desconhecida")</span>
                                 </div>
-                                <p class="ph-timeline-desc">@c.Description</p>
+                                <p class="ph-timeline-desc">@consultation.Description</p>
                                 <div class="ph-timeline-meta">
-                                    <span>💊 @c.ExamsCount exame(s)</span>
-                                    <span>📝 @c.NotesCount anotação(ões)</span>
-                                    <span>@ChargingText(c)</span>
+                                    <span>💊 @consultation.ExamsCount exame(s)</span>
+                                    <span>📝 @consultation.NotesCount anotação(ões)</span>
+                                    <span>@ChargingText(consultation)</span>
                                 </div>
                             </div>
                         </article>
