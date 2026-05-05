@@ -297,12 +297,12 @@ else
     protected override void OnInitialized()
     {
         Lang.LanguageChanged += HandleLanguageChanged;
+        SelectedLanguage = Lang.CurrentLanguage;
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (!firstRender) return;
-        SelectedLanguage = Lang.CurrentLanguage;
         await LoadUserAsync();
     }
 

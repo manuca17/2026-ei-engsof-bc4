@@ -46,9 +46,10 @@ public sealed class LanguageService
             { "de", "Deutsch" }
         };
 
-    private static readonly Dictionary<string, Dictionary<string, string>> _translations = new()
-    {
-        ["pt"] = new()
+    private static readonly IReadOnlyDictionary<string, IReadOnlyDictionary<string, string>> _translations =
+        new Dictionary<string, IReadOnlyDictionary<string, string>>
+        {
+            ["pt"] = new Dictionary<string, string>
         {
             // NavMenu
             ["nav_dashboard"]        = "Dashboard",
@@ -153,7 +154,7 @@ public sealed class LanguageService
             ["um_loading"]       = "A carregar utilizadores...",
             ["um_none"]          = "Nenhum médico registado no sistema.",
         },
-        ["en"] = new()
+        ["en"] = new Dictionary<string, string>
         {
             // NavMenu
             ["nav_dashboard"]        = "Dashboard",
@@ -258,7 +259,7 @@ public sealed class LanguageService
             ["um_loading"]       = "Loading users...",
             ["um_none"]          = "No doctors registered in the system.",
         },
-        ["es"] = new()
+        ["es"] = new Dictionary<string, string>
         {
             // NavMenu
             ["nav_dashboard"]        = "Panel",
@@ -363,7 +364,7 @@ public sealed class LanguageService
             ["um_loading"]       = "Cargando usuarios...",
             ["um_none"]          = "Ningún médico registrado en el sistema.",
         },
-        ["fr"] = new()
+        ["fr"] = new Dictionary<string, string>
         {
             // NavMenu
             ["nav_dashboard"]        = "Tableau de bord",
@@ -468,7 +469,7 @@ public sealed class LanguageService
             ["um_loading"]       = "Chargement des utilisateurs...",
             ["um_none"]          = "Aucun médecin enregistré dans le système.",
         },
-        ["de"] = new()
+        ["de"] = new Dictionary<string, string>
         {
             // NavMenu
             ["nav_dashboard"]        = "Dashboard",
