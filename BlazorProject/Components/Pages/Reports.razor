@@ -2,6 +2,7 @@
 @page "/relatorios"
 @using System.Text.Json.Serialization
 @using BlazorProject.Services
+@using BlazorProject.Utils
 @rendermode InteractiveServer
 @inject IJSRuntime JSRuntime
 @inject ConsultasService ConsultasService
@@ -22,15 +23,26 @@ else
                 <h1>Relatórios</h1>
                 <p>Consulte relatórios mensais detalhados</p>
             </div>
-            <button class="btn-primary" @onclick="GeneratePdfReportAsync" disabled="@(IsGeneratingPdf || (ActiveTab == ReportsTab.Patient && string.IsNullOrWhiteSpace(SelectedPatientId)))">
-                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
-                     stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-                    <polyline points="7 10 12 15 17 10"/>
-                    <line x1="12" y1="15" x2="12" y2="3"/>
-                </svg>
-                @(IsGeneratingPdf ? "A gerar..." : "Gerar Relatório")
-            </button>
+            <div class="reports-header-actions">
+                <button class="btn-secondary" @onclick="ExportCsvReportAsync" disabled="@(ActiveTab == ReportsTab.Patient && string.IsNullOrWhiteSpace(SelectedPatientId))">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                         stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                        <polyline points="7 10 12 15 17 10"/>
+                        <line x1="12" y1="15" x2="12" y2="3"/>
+                    </svg>
+                    Exportar CSV
+                </button>
+                <button class="btn-primary" @onclick="GeneratePdfReportAsync" disabled="@(IsGeneratingPdf || (ActiveTab == ReportsTab.Patient && string.IsNullOrWhiteSpace(SelectedPatientId)))">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                         stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                        <polyline points="7 10 12 15 17 10"/>
+                        <line x1="12" y1="15" x2="12" y2="3"/>
+                    </svg>
+                    @(IsGeneratingPdf ? "A gerar..." : "Gerar Relatório")
+                </button>
+            </div>
         </div>
 
         <section class="reports-card filters-card">
@@ -541,4 +553,52 @@ else
             </body>
             </html>";
     }
+
+    private async Task ExportCsvReportAsync()
+    {
+        var report = ActiveTab == ReportsTab.User ? UserReport : PatientReport;
+        var monthLabel = SelectedMonthLabel;
+
+        if (report.Dias.Count == 0)
+        {
+            await JSRuntime.InvokeVoidAsync("alert", "Não há dados para exportar neste período.");
+            return;
+        }
+
+        var patientName = ActiveTab == ReportsTab.Patient
+            ? AvailablePatients.FirstOrDefault(p => p.Id == SelectedPatientId)?.Name ?? "Paciente"
+            : string.Empty;
+
+        var sb = new System.Text.StringBuilder();
+
+        if (ActiveTab == ReportsTab.User)
+            sb.AppendLine("Dia,Paciente,Descrição,Horas,Preço (EUR)");
+        else
+            sb.AppendLine("Dia,Descrição,Horas,Preço (EUR)");
+
+        foreach (var day in report.Dias)
+        {
+            foreach (var c in day.Consultas)
+            {
+                if (ActiveTab == ReportsTab.User)
+                    sb.AppendLine($"{day.Dia}/{SelectedMonth}/{SelectedYear},\"{EscapeCsv(c.PacienteNome)}\",\"{EscapeCsv(c.Descricao)}\",{c.Horas:F2},{c.Preco:F2}");
+                else
+                    sb.AppendLine($"{day.Dia}/{SelectedMonth}/{SelectedYear},\"{EscapeCsv(c.Descricao)}\",{c.Horas:F2},{c.Preco:F2}");
+            }
+        }
+
+        // Totals row
+        if (ActiveTab == ReportsTab.User)
+            sb.AppendLine($"TOTAL,,,{report.TotalHoras:F2},{report.TotalPreco:F2}");
+        else
+            sb.AppendLine($"TOTAL,,{report.TotalHoras:F2},{report.TotalPreco:F2}");
+
+            var patientLabel = ActiveTab == ReportsTab.User ? "meu" : CsvHelper.SafeFileName(patientName);
+        var fileName = $"relatorio_{patientLabel}_{monthLabel}_{SelectedYear}.csv";
+        await JSRuntime.InvokeVoidAsync("downloadCsv", sb.ToString(), fileName);
+    }
+
+    private static string EscapeCsv(string? value) => CsvHelper.EscapeField(value);
+
+    private static string EscapeCsvFileName(string name) => CsvHelper.SafeFileName(name);
 }
