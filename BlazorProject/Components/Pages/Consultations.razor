@@ -180,10 +180,10 @@
             </div>
 
             <div class="dialog-actions">
+                <button class="btn-outline" @onclick="CloseDialog">Cancelar</button>
                 <button class="btn-primary" @onclick="CreateConsultationAsync" disabled="@IsCreating">
                     @(IsCreating ? "A criar..." : "Criar Consulta")
                 </button>
-                <button class="btn-outline" @onclick="CloseDialog">Cancelar</button>
             </div>
         </div>
     </div>
