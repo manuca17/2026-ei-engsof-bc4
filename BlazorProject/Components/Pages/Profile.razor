@@ -28,24 +28,32 @@ else
                 <p class="text-muted mb-0">Gerir as suas informações pessoais</p>
             </div>
         </div>
-        @CurrentUser.FotoNome
         <div class="card">
             <div class="card-header d-flex justify-content-between align-items-center">
                 <h5 class="mb-0">Foto de Perfil</h5>
             </div>
-            <div class="card-body text-center">
-                @if (!string.IsNullOrWhiteSpace(CurrentUser?.FotoCaminho))
-                {
-                    <img src="@CurrentUser.FotoCaminho" alt="Foto de Perfil" class="rounded-circle mb-3" style="width:120px;height:120px;object-fit:cover;" />
-                }
-                else
-                {
-                    <div class="rounded-circle bg-secondary text-white d-inline-flex align-items-center justify-content-center mb-3" style="width:120px;height:120px;font-size:2rem;">👤</div>
-                }
+            <div class="card-body text-center d-flex flex-column align-items-center">
+                <div class="mb-3 d-flex justify-content-center">
+                    @if (!string.IsNullOrWhiteSpace(CurrentUser?.FotoCaminho))
+                    {
+                        <img src="@CurrentUser.FotoCaminho" class="profile-avatar" />
+                    }
+                    else
+                    {
+                        <div class="profile-avatar placeholder">
+                            <span>👤</span>
+                        </div>
+                    }
+                </div>
 
                 <div class="mb-3">
-                    <label class="form-label">Selecione uma nova foto</label>
-                    <InputFile OnChange="HandleProfilePhotoSelected" accept="image/*" />
+                    <label class="form-label text-muted">Selecione uma nova foto</label>
+
+                    <InputFile OnChange="HandleProfilePhotoSelected" accept="image/*" class="d-none" id="fileInput" />
+
+                    <label for="fileInput" class="upload-btn">
+                        Escolher ficheiro
+                    </label>
                     @if (!string.IsNullOrWhiteSpace(SelectedProfilePhotoName))
                     {
                         <div class="small text-muted mt-1">Arquivo selecionado: @SelectedProfilePhotoName</div>
