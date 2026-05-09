@@ -1,0 +1,9 @@
+﻿.stat-icon {
+    width: 2.25rem;
+    height: 2.25rem;
+    border-radius: .6rem;
+    display: grid;
+    place-items: center;
+}
+
+.bg-blue { background: #eff6ff; }

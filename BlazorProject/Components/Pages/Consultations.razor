@@ -129,9 +129,13 @@
 {
     <div class="modal-backdrop" @onclick="CloseDialog">
         <div class="dialog-panel" @onclick:stopPropagation="true">
-            <div class="dialog-header">
-                <h3>Criar Nova Consulta</h3>
-                <p>Preencha os dados da consulta abaixo</p>
+            <div class="dialog-header d-flex justify-content-between align-items-start">
+                <div>
+                    <h3 class="mb-1">Criar Nova Consulta</h3>
+                    <p class="mb-0">Preencha os dados da consulta abaixo</p>
+                </div>
+
+                <button class="btn-close" @onclick="CloseDialog"></button>
             </div>
 
             <div class="dialog-body">
@@ -176,10 +180,10 @@
             </div>
 
             <div class="dialog-actions">
+                <button class="btn-outline" @onclick="CloseDialog">Cancelar</button>
                 <button class="btn-primary" @onclick="CreateConsultationAsync" disabled="@IsCreating">
                     @(IsCreating ? "A criar..." : "Criar Consulta")
                 </button>
-                <button class="btn-outline" @onclick="CloseDialog">Cancelar</button>
             </div>
         </div>
     </div>
