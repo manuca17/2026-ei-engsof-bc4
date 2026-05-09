@@ -63,6 +63,11 @@ public class PacienteService
     public async Task SavePacienteAsync(Paciente paciente, int? creatorUserId = null)
     {
         using var context = _contextFactory.CreateDbContext();
+
+        if (paciente.DtNasc.HasValue && !BlazorProject.Utils.DateOfBirthValidator.TryValidate(paciente.DtNasc, out var birthDateError))
+        {
+            throw new ArgumentException(birthDateError, nameof(paciente));
+        }
         
         if (paciente.IdPaciente == 0)
         {

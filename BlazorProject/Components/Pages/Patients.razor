@@ -143,7 +143,11 @@
                     <div class="mb-3">
                         <label class="form-label">Data de Nascimento *</label>
                         @* Bind to the Helper because standard HTML date inputs prefer DateTime *@
-                        <input type="date" class="form-control" @bind="BirthDateHelper" />
+                        <input type="date"
+                               class="form-control"
+                               min="@DateOfBirthValidator.MinimumDateInputValue"
+                               max="@DateOfBirthValidator.MaximumDateInputValue"
+                               @bind="BirthDateHelper" />
                     </div>
                     <div class="mb-3">
                         <label class="form-label">Telefone *</label>
@@ -265,10 +269,17 @@
             return;
         }
 
+        var dateOfBirth = DateOnly.FromDateTime(BirthDateHelper.Value);
+        if (!DateOfBirthValidator.TryValidate(dateOfBirth, out var birthDateError))
+        {
+            await JSRuntime.InvokeVoidAsync("alert", birthDateError);
+            return;
+        }
+
         try 
         {
             // Transfer helper date to model
-            NewPatient.DtNasc = DateOnly.FromDateTime(BirthDateHelper.Value);
+            NewPatient.DtNasc = dateOfBirth;
 
             await PatientService.SavePacienteAsync(NewPatient, doctorId);
             
