@@ -7,6 +7,9 @@ Sistema web desenvolvido para médicos independentes gerirem consultas, paciente
 - Compilar o código (usando o build) 
 - Selecionar o perfil `https` e clicar em Run.
 
+## Manual de utilizador
+https://www.manula.com/manuals/consultas-medicas/consultas-medicas/1/en/topic/login
+
 ##  Autores
 - Manuel Ferreira - 33196
 - Pedro Araujo - 33412
