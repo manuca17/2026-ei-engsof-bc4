@@ -16,6 +16,26 @@
     color: #64748b;
 }
 
+.icon-placeholder {
+    display: none;
+}
+
+.icon-box {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border-radius: 8px;
+    background-color: #e2e8f0;
+    flex-shrink: 0;
+}
+
+.icon-box i {
+    font-size: 1.25rem;
+    color: #475569;
+}
+
 /* hide default input */
 .custom-upload input[type="file"] {
     display: none;
