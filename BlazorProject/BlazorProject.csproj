@@ -26,4 +26,10 @@
     <Compile Remove="release\**\*" />
   </ItemGroup>
 
+  <ItemGroup>
+    <_ContentIncludedByDefault Remove="BlazorProject.Tests.BLL\obj\BlazorProject.Tests.BLL.csproj.nuget.dgspec.json" />
+    <_ContentIncludedByDefault Remove="BlazorProject.Tests.BLL\obj\project.assets.json" />
+    <_ContentIncludedByDefault Remove="BlazorProject.Tests.BLL\obj\project.packagespec.json" />
+  </ItemGroup>
+
 </Project>
