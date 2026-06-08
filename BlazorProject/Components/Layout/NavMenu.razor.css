@@ -3,14 +3,14 @@
     display: flex;
     flex-direction: column;
     height: 100%;
-    background: #ffffff;
-    border-right: 1px solid #e2e8f0;
+    background: var(--theme-sb-bg, #ffffff);
+    border-right: 1px solid var(--theme-border, #e2e8f0);
 }
 
 /* ===== Header ===== */
 .sb-header {
     padding: 1.5rem;
-    border-bottom: 1px solid #e2e8f0;
+    border-bottom: 1px solid var(--theme-border, #e2e8f0);
 }
 
 .sb-user {
@@ -28,8 +28,8 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    background-color: #e2e8f0;
-    color: #475569;
+    background-color: var(--theme-sb-avatar-bg, #e2e8f0);
+    color: var(--theme-sb-avatar-color, #475569);
     font-size: 1.25rem;
 }
 
@@ -43,13 +43,13 @@
 .sb-name {
     font-size: 1.1rem;
     font-weight: 600;
-    color: #1e293b;
+    color: var(--theme-sb-name, #1e293b);
     margin: 0 0 0.2rem 0;
 }
 
 .sb-role {
     font-size: 0.8rem;
-    color: #64748b;
+    color: var(--theme-sb-role, #64748b);
     margin: 0;
 }
 
@@ -70,37 +70,37 @@
     gap: 0.75rem;
     padding: 0.6rem 0.85rem;
     border-radius: 8px;
-    border: 1px solid #e2e8f0;
+    border: 1px solid var(--theme-sb-link-border, #e2e8f0);
     font-size: 0.875rem;
     font-weight: 500;
-    color: #374151;
+    color: var(--theme-sb-link-color, #374151);
     text-decoration: none !important;
     background-color: transparent;
     transition: background-color 0.15s, color 0.15s, border-color 0.15s;
 }
 
 .sb-nav ::deep a:hover {
-    background-color: #f1f5f9;
-    color: #1e293b !important;
-    border-color: #cbd5e1;
+    background-color: var(--theme-sb-hover-bg, #f1f5f9);
+    color: var(--theme-sb-name, #1e293b) !important;
+    border-color: var(--theme-border, #cbd5e1);
     text-decoration: none !important;
 }
 
 /* Estado ativo — Blazor adiciona a classe "active" automaticamente */
 .sb-nav ::deep a.active {
-    background-color: #0f172a !important;
-    color: #ffffff !important;
-    border-color: #0f172a !important;
+    background-color: var(--theme-sb-active-bg, #0f172a) !important;
+    color: var(--theme-sb-active-text, #ffffff) !important;
+    border-color: var(--theme-sb-active-bg, #0f172a) !important;
 }
 
 .sb-nav ::deep a.active svg {
-    stroke: #ffffff !important;
+    stroke: var(--theme-sb-active-text, #ffffff) !important;
 }
 
 /* ===== Separador ===== */
 .sb-separator {
     height: 1px;
-    background-color: #e2e8f0;
+    background-color: var(--theme-border, #e2e8f0);
     margin: 0.5rem 0.25rem;
 }
 
@@ -108,15 +108,18 @@
     padding: 0.25rem 0.85rem 0.25rem;
     font-size: 0.7rem;
     font-weight: 700;
-    color: #94a3b8;
+    color: var(--theme-sb-section, #94a3b8);
     text-transform: uppercase;
     letter-spacing: 0.06em;
 }
 
-/* ===== Footer / Logout ===== */
+/* ===== Footer / Logout + Theme Toggle ===== */
 .sb-footer {
     padding: 0.75rem;
-    border-top: 1px solid #e2e8f0;
+    border-top: 1px solid var(--theme-sb-footer-border, #e2e8f0);
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
 }
 
 .sb-logout {
@@ -128,15 +131,39 @@
     border-radius: 8px;
     font-size: 0.875rem;
     font-weight: 500;
-    color: #dc2626;
+    color: var(--theme-sb-logout-color, #dc2626);
     background: transparent;
     border: none;
     cursor: pointer;
     text-align: left;
-    transition: background-color 0.15s;
+    transition: background-color 0.15s, color 0.15s;
 }
 
 .sb-logout:hover {
-    background-color: #fef2f2;
-    color: #b91c1c;
+    background-color: var(--theme-sb-logout-hover-bg, #fef2f2);
+    color: var(--theme-sb-logout-hover-color, #b91c1c);
+}
+
+/* ===== Dark/Light Mode Toggle Button ===== */
+.sb-theme-toggle {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    width: 100%;
+    padding: 0.6rem 0.85rem;
+    border-radius: 8px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--theme-sb-link-color, #374151);
+    background: transparent;
+    border: 1px solid var(--theme-sb-link-border, #e2e8f0);
+    cursor: pointer;
+    text-align: left;
+    transition: background-color 0.15s, color 0.15s, border-color 0.15s;
+}
+
+.sb-theme-toggle:hover {
+    background-color: var(--theme-sb-hover-bg, #f1f5f9);
+    color: var(--theme-sb-name, #1e293b);
+    border-color: var(--theme-border, #cbd5e1);
 }

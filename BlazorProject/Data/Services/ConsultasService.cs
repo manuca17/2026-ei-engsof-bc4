@@ -1057,6 +1057,42 @@ public class ConsultasService
         public string UserName { get; init; } = string.Empty;
     }
 
+    public async Task<List<ConsultationListItem>> GetForPatientAsync(int idUtilizador, int idPaciente)
+    {
+        await using var context = await _factory.CreateDbContextAsync();
+
+        return await context.UtilizadorConsulta
+            .AsNoTracking()
+            .Where(link => link.IdUtilizador == idUtilizador && (link.IsCriador || link.ConviteAceite))
+            .Select(link => link.IdConsultaNavigation)
+            .Where(c => c.IdPaciente == idPaciente)
+            .OrderByDescending(c => c.DhInicio)
+            .Select(c => new ConsultationListItem
+            {
+                Id = c.IdConsulta,
+                PatientId = c.IdPaciente,
+                PatientName = c.IdPacienteNavigation != null ? c.IdPacienteNavigation.Nome : "Paciente sem nome",
+                Description = c.Estados
+                    .OrderByDescending(e => e.DhRegisto)
+                    .Select(e => e.Comentario)
+                    .FirstOrDefault() ?? "Consulta médica",
+                Status = MapStatus(c.Estados
+                    .OrderByDescending(e => e.DhRegisto)
+                    .Select(e => e.EstadoTo)
+                    .FirstOrDefault()),
+                ChargingType = c.ValorHora.HasValue && c.ValorHora.Value > 0
+                    ? ChargingType.PorHora
+                    : ChargingType.Fixo,
+                FixedPrice = c.ValorTotal,
+                HourlyPrice = c.ValorHora,
+                StartAt = c.DhInicio,
+                ExamsCount = c.ExamesDaConsulta.Count(),
+                NotesCount = c.Anotacaos.Count(),
+                InvitesCount = c.UtilizadorConsulta.Count(uc => !uc.IsCriador)
+            })
+            .ToListAsync();
+    }
+
     public sealed class PendingInviteItem
     {
         public int IdConsulta { get; init; }

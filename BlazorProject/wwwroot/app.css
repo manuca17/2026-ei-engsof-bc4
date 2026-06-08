@@ -1,3 +1,151 @@
+/* ===== Theme CSS Variables ===== */
+:root {
+    --theme-bg-page: #f8fafc;
+    --theme-bg-surface: #ffffff;
+    --theme-bg-surface-2: #f8fafc;
+    --theme-bg-input: #ffffff;
+    --theme-text-primary: #111827;
+    --theme-text-secondary: #6b7280;
+    --theme-text-muted: #94a3b8;
+    --theme-border: #e2e8f0;
+    --theme-border-2: #e5e7eb;
+    --theme-sb-bg: #ffffff;
+    --theme-sb-name: #1e293b;
+    --theme-sb-role: #64748b;
+    --theme-sb-link-color: #374151;
+    --theme-sb-link-border: #e2e8f0;
+    --theme-sb-hover-bg: #f1f5f9;
+    --theme-sb-active-bg: #0f172a;
+    --theme-sb-active-text: #ffffff;
+    --theme-sb-section: #94a3b8;
+    --theme-sb-footer-border: #e2e8f0;
+    --theme-sb-avatar-bg: #e2e8f0;
+    --theme-sb-avatar-color: #475569;
+    --theme-sb-logout-color: #dc2626;
+    --theme-sb-logout-hover-bg: #fef2f2;
+    --theme-sb-logout-hover-color: #b91c1c;
+}
+
+html[data-theme="dark"] {
+    color-scheme: dark;
+    --theme-bg-page: #0f172a;
+    --theme-bg-surface: #1e293b;
+    --theme-bg-surface-2: #162032;
+    --theme-bg-input: #273449;
+    --theme-text-primary: #e2e8f0;
+    --theme-text-secondary: #94a3b8;
+    --theme-text-muted: #64748b;
+    --theme-border: #334155;
+    --theme-border-2: #334155;
+    --theme-sb-bg: #1e293b;
+    --theme-sb-name: #f1f5f9;
+    --theme-sb-role: #94a3b8;
+    --theme-sb-link-color: #cbd5e1;
+    --theme-sb-link-border: #334155;
+    --theme-sb-hover-bg: #273449;
+    --theme-sb-active-bg: #3b82f6;
+    --theme-sb-active-text: #ffffff;
+    --theme-sb-section: #64748b;
+    --theme-sb-footer-border: #334155;
+    --theme-sb-avatar-bg: #334155;
+    --theme-sb-avatar-color: #94a3b8;
+    --theme-sb-logout-color: #f87171;
+    --theme-sb-logout-hover-bg: rgba(239, 68, 68, 0.15);
+    --theme-sb-logout-hover-color: #fca5a5;
+}
+
+/* ===== Dark Mode - Page Content Overrides ===== */
+html[data-theme="dark"] body {
+    background-color: var(--theme-bg-page);
+    color: var(--theme-text-primary);
+}
+
+/* Cards and surfaces */
+html[data-theme="dark"] .stat-card,
+html[data-theme="dark"] .detail-card,
+html[data-theme="dark"] .dialog-panel,
+html[data-theme="dark"] .confirm-dialog,
+html[data-theme="dark"] .existing-selection-card,
+html[data-theme="dark"] .invite-block,
+html[data-theme="dark"] .exam-card,
+html[data-theme="dark"] .note-card,
+html[data-theme="dark"] .record-card,
+html[data-theme="dark"] .consult-card,
+html[data-theme="dark"] .user-card,
+html[data-theme="dark"] .patient-card,
+html[data-theme="dark"] .reports-card {
+    background: var(--theme-bg-surface) !important;
+    border-color: var(--theme-border) !important;
+    color: var(--theme-text-primary) !important;
+}
+
+/* Info items and surface-2 backgrounds */
+html[data-theme="dark"] .info-item,
+html[data-theme="dark"] .existing-preview-placeholder,
+html[data-theme="dark"] .existing-empty-state {
+    background: var(--theme-bg-surface-2) !important;
+    border-color: var(--theme-border-2) !important;
+}
+
+/* Headings and text */
+html[data-theme="dark"] .detail-header h1,
+html[data-theme="dark"] .detail-header h2,
+html[data-theme="dark"] .list-card-top h3,
+html[data-theme="dark"] .stat-value,
+html[data-theme="dark"] .stat-label,
+html[data-theme="dark"] .info-label,
+html[data-theme="dark"] .field label {
+    color: var(--theme-text-primary) !important;
+}
+
+html[data-theme="dark"] .detail-header p,
+html[data-theme="dark"] .list-card-top p,
+html[data-theme="dark"] .detail-empty {
+    color: var(--theme-text-secondary) !important;
+}
+
+/* Form inputs */
+html[data-theme="dark"] .field input,
+html[data-theme="dark"] .field select,
+html[data-theme="dark"] .field textarea {
+    background: var(--theme-bg-input) !important;
+    border-color: var(--theme-border-2) !important;
+    color: var(--theme-text-primary) !important;
+}
+
+/* Tabs */
+html[data-theme="dark"] .reports-tabs,
+html[data-theme="dark"] .toggle-row {
+    background: rgba(30, 41, 59, 0.8) !important;
+}
+
+html[data-theme="dark"] .tab-button {
+    color: #93c5fd !important;
+}
+
+html[data-theme="dark"] .tab-button.active {
+    background: var(--theme-bg-surface) !important;
+    color: var(--theme-text-primary) !important;
+}
+
+/* Borders */
+html[data-theme="dark"] .exam-mode-row {
+    border-bottom-color: var(--theme-border) !important;
+}
+
+/* Bootstrap utility class overrides for dark mode */
+html[data-theme="dark"] .bg-light {
+    background-color: var(--theme-bg-surface-2) !important;
+}
+
+html[data-theme="dark"] .text-muted {
+    color: var(--theme-text-secondary) !important;
+}
+
+html[data-theme="dark"] .fw-semibold {
+    color: var(--theme-text-primary);
+}
+
 html, body {
     font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
 }
@@ -57,4 +205,30 @@ h1:focus {
 
 .form-floating > .form-control-plaintext:focus::placeholder, .form-floating > .form-control:focus::placeholder {
     text-align: start;
+}
+
+/* Patient incomplete data alert */
+.alert-incomplete {
+    display: flex;
+    align-items: flex-start;
+    gap: .75rem;
+    background: #fffbeb;
+    border: 1px solid #f59e0b;
+    border-radius: .75rem;
+    padding: .85rem 1rem;
+    color: #92400e;
+    font-size: .9rem;
+}
+
+.alert-incomplete svg {
+    flex-shrink: 0;
+    margin-top: .1rem;
+    color: #f59e0b;
+}
+
+/* Dark mode for alert-incomplete */
+html[data-theme="dark"] .alert-incomplete {
+    background: rgba(245, 158, 11, 0.12);
+    border-color: #d97706;
+    color: #fcd34d;
 }

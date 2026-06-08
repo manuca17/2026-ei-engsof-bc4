@@ -6,12 +6,12 @@
 
 main {
     flex: 1;
-    background-color: #f8fafc;
+    background-color: var(--theme-bg-page, #f8fafc);
     min-height: 100vh;
 }
 
 .sidebar {
-    background: #ffffff;
+    background: var(--theme-sb-bg, #ffffff);
 }
 
 .content {

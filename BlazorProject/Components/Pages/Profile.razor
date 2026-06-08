@@ -28,24 +28,32 @@ else
                 <p class="text-muted mb-0">Gerir as suas informações pessoais</p>
             </div>
         </div>
-        @CurrentUser.FotoNome
         <div class="card">
             <div class="card-header d-flex justify-content-between align-items-center">
                 <h5 class="mb-0">Foto de Perfil</h5>
             </div>
-            <div class="card-body text-center">
-                @if (!string.IsNullOrWhiteSpace(CurrentUser?.FotoCaminho))
-                {
-                    <img src="@CurrentUser.FotoCaminho" alt="Foto de Perfil" class="rounded-circle mb-3" style="width:120px;height:120px;object-fit:cover;" />
-                }
-                else
-                {
-                    <div class="rounded-circle bg-secondary text-white d-inline-flex align-items-center justify-content-center mb-3" style="width:120px;height:120px;font-size:2rem;">👤</div>
-                }
+            <div class="card-body text-center d-flex flex-column align-items-center">
+                <div class="mb-3 d-flex justify-content-center">
+                    @if (!string.IsNullOrWhiteSpace(CurrentUser?.FotoCaminho))
+                    {
+                        <img src="@CurrentUser.FotoCaminho" class="profile-avatar" />
+                    }
+                    else
+                    {
+                        <div class="profile-avatar placeholder">
+                            <span class="icon-placeholder">&#128100;</span>
+                        </div>
+                    }
+                </div>
 
                 <div class="mb-3">
-                    <label class="form-label">Selecione uma nova foto</label>
-                    <InputFile OnChange="HandleProfilePhotoSelected" accept="image/*" />
+                    <label class="form-label text-muted">Selecione uma nova foto</label>
+
+                    <InputFile OnChange="HandleProfilePhotoSelected" accept="image/*" class="d-none" id="fileInput" />
+
+                    <label for="fileInput" class="upload-btn">
+                        Escolher ficheiro
+                    </label>
                     @if (!string.IsNullOrWhiteSpace(SelectedProfilePhotoName))
                     {
                         <div class="small text-muted mt-1">Arquivo selecionado: @SelectedProfilePhotoName</div>
@@ -63,7 +71,7 @@ else
                 @if (!IsEditingPersonal)
                 {
                     <button class="btn btn-sm btn-primary" @onclick="() => IsEditingPersonal = true">
-                        <span class="me-2">✎</span>
+                        <i class="bi bi-pencil-square me-2"></i>
                         Editar
                     </button>
                 }
@@ -73,7 +81,9 @@ else
                 {
                     <div class="space-y-4">
                         <div class="d-flex align-items-center gap-3 p-3 bg-light rounded">
-                            <span class="fs-5 text-secondary">👤</span>
+                            <div class="icon-box">
+                                <i class="bi bi-person-fill"></i>
+                            </div>
                             <div class="flex-grow-1">
                                 <p class="text-muted small mb-0">Nome Completo</p>
                                 <p class="fw-semibold mb-0">@CurrentUser.Nome</p>
@@ -81,7 +91,9 @@ else
                         </div>
 
                         <div class="d-flex align-items-center gap-3 p-3 bg-light rounded">
-                            <span class="fs-5 text-secondary">🆔</span>
+                            <div class="icon-box">
+                                <i class="bi bi-at"></i>
+                            </div>
                             <div class="flex-grow-1">
                                 <p class="text-muted small mb-0">Username</p>
                                 <p class="fw-semibold mb-0">@CurrentUser.Username</p>
@@ -89,7 +101,9 @@ else
                         </div>
 
                         <div class="d-flex align-items-center gap-3 p-3 bg-light rounded">
-                            <span class="fs-5 text-secondary">✉️</span>
+                            <div class="icon-box">
+                                <i class="bi bi-envelope-fill"></i>
+                            </div>
                             <div class="flex-grow-1">
                                 <p class="text-muted small mb-0">Email</p>
                                 <p class="fw-semibold mb-0">@CurrentUser.Email</p>
@@ -97,7 +111,9 @@ else
                         </div>
 
                         <div class="d-flex align-items-center gap-3 p-3 bg-light rounded">
-                            <span class="fs-5 text-secondary">💼</span>
+                            <div class="icon-box">
+                                <i class="bi bi-briefcase-fill"></i>
+                            </div>
                             <div class="flex-grow-1">
                                 <p class="text-muted small mb-0">Especialidade</p>
                                 <p class="fw-semibold mb-0">@(!string.IsNullOrWhiteSpace(CurrentUser.Especialidade) ? CurrentUser.Especialidade : "Não definida")</p>
@@ -105,7 +121,9 @@ else
                         </div>
 
                         <div class="d-flex align-items-center gap-3 p-3 bg-light rounded">
-                            <span class="fs-5 text-secondary">📞</span>
+                            <div class="icon-box">
+                                <i class="bi bi-telephone-fill"></i>
+                            </div>
                             <div class="flex-grow-1">
                                 <p class="text-muted small mb-0">Telefone</p>
                                 <p class="fw-semibold mb-0">@(!string.IsNullOrWhiteSpace(CurrentUser.Telefone) ? CurrentUser.Telefone : "Não definido")</p>
@@ -161,7 +179,7 @@ else
                 @if (!IsEditingAddress)
                 {
                     <button class="btn btn-sm btn-primary" @onclick="() => IsEditingAddress = true">
-                        <span class="me-2">✎</span>
+                        <i class="bi bi-pencil-square me-2"></i>
                         Editar
                     </button>
                 }
@@ -171,7 +189,9 @@ else
                 {
                     <div class="space-y-4">
                         <div class="d-flex align-items-center gap-3 p-3 bg-light rounded">
-                            <span class="fs-5 text-secondary">🏠</span>
+                            <div class="icon-box">
+                                <i class="bi bi-house-fill"></i>
+                            </div>
                             <div class="flex-grow-1">
                                 <p class="text-muted small mb-0">Rua</p>
                                 <p class="fw-semibold mb-0">@(!string.IsNullOrWhiteSpace(CurrentUser.Rua) ? CurrentUser.Rua : "Não definida")</p>
@@ -179,7 +199,9 @@ else
                         </div>
 
                         <div class="d-flex align-items-center gap-3 p-3 bg-light rounded">
-                            <span class="fs-5 text-secondary">#</span>
+                            <div class="icon-box">
+                                <i class="bi bi-hash"></i>
+                            </div>
                             <div class="flex-grow-1">
                                 <p class="text-muted small mb-0">Número da Porta</p>
                                 <p class="fw-semibold mb-0">@(!string.IsNullOrWhiteSpace(CurrentUser.NumPorta) ? CurrentUser.NumPorta : "Não definido")</p>
@@ -187,7 +209,9 @@ else
                         </div>
 
                         <div class="d-flex align-items-center gap-3 p-3 bg-light rounded">
-                            <span class="fs-5 text-secondary">📮</span>
+                            <div class="icon-box">
+                                <i class="bi bi-mailbox-flag"></i>
+                            </div>
                             <div class="flex-grow-1">
                                 <p class="text-muted small mb-0">Código Postal</p>
                                 <p class="fw-semibold mb-0">@(!string.IsNullOrWhiteSpace(CurrentUser.CodPostal) ? CurrentUser.CodPostal : "Não definido")</p>

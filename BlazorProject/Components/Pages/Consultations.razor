@@ -1,5 +1,6 @@
 @page "/consultations"
 @using BlazorProject.Services
+@using BlazorProject.Utils
 @using ConsultationData = BlazorProject.Services.ConsultasService
 @rendermode InteractiveServer
 @inject NavigationManager NavigationManager
@@ -14,10 +15,21 @@
             <h1>Gestao de Consultas</h1>
             <p>Total de @ConsultationItems.Count consulta@(ConsultationItems.Count == 1 ? "" : "s")</p>
         </div>
-        <button class="btn-primary" @onclick="OpenDialog">
-            <span>+</span>
-            Nova Consulta
-        </button>
+        <div class="consult-header-actions">
+            <button class="btn-secondary" @onclick="ExportCsvAsync" title="Exportar consultas filtradas como CSV">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                     stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                    <polyline points="7 10 12 15 17 10"/>
+                    <line x1="12" y1="15" x2="12" y2="3"/>
+                </svg>
+                CSV
+            </button>
+            <button class="btn-primary" @onclick="OpenDialog">
+                <span>+</span>
+                Nova Consulta
+            </button>
+        </div>
     </div>
 
     <section class="panel">
@@ -117,9 +129,13 @@
 {
     <div class="modal-backdrop" @onclick="CloseDialog">
         <div class="dialog-panel" @onclick:stopPropagation="true">
-            <div class="dialog-header">
-                <h3>Criar Nova Consulta</h3>
-                <p>Preencha os dados da consulta abaixo</p>
+            <div class="dialog-header d-flex justify-content-between align-items-start">
+                <div>
+                    <h3 class="mb-1">Criar Nova Consulta</h3>
+                    <p class="mb-0">Preencha os dados da consulta abaixo</p>
+                </div>
+
+                <button class="btn-close" @onclick="CloseDialog"></button>
             </div>
 
             <div class="dialog-body">
@@ -164,10 +180,10 @@
             </div>
 
             <div class="dialog-actions">
+                <button class="btn-outline" @onclick="CloseDialog">Cancelar</button>
                 <button class="btn-primary" @onclick="CreateConsultationAsync" disabled="@IsCreating">
                     @(IsCreating ? "A criar..." : "Criar Consulta")
                 </button>
-                <button class="btn-outline" @onclick="CloseDialog">Cancelar</button>
             </div>
         </div>
     </div>
@@ -262,6 +278,34 @@
     private void OpenDialog() => DialogOpen = true;
 
     private void CloseDialog() => DialogOpen = false;
+
+    private async Task ExportCsvAsync()
+    {
+        var items = FilteredConsultations;
+        if (items.Count == 0)
+        {
+            await JSRuntime.InvokeVoidAsync("alert", "Não há consultas para exportar.");
+            return;
+        }
+
+        var sb = new System.Text.StringBuilder();
+        sb.AppendLine("Paciente,Estado,Data/Hora,Tipo de Cobrança,Valor,Exames,Anotações");
+        foreach (var c in items)
+        {
+            var status = StatusLabel(c.Status);
+            var date = c.StartAt?.ToString("dd/MM/yyyy HH:mm") ?? "";
+            var charging = c.ChargingType == ConsultationData.ChargingType.Fixo ? "Fixo" : "Por hora";
+            var value = c.ChargingType == ConsultationData.ChargingType.Fixo
+                ? $"{c.FixedPrice ?? 0:F2}"
+                : $"{c.HourlyPrice ?? 0:F2}/h";
+            sb.AppendLine($"\"{CsvHelper.EscapeField(c.PatientName)}\",\"{status}\",\"{date}\",\"{charging}\",\"{value}\",{c.ExamsCount},{c.NotesCount}");
+        }
+
+        var fileName = $"consultas_{DateTime.Now:yyyy-MM-dd}.csv";
+        await JSRuntime.InvokeVoidAsync("downloadCsv", sb.ToString(), fileName);
+    }
+
+    private static string EscapeCsv(string? value) => CsvHelper.EscapeField(value);
 
     private void ApplyDateFilter()
     {
