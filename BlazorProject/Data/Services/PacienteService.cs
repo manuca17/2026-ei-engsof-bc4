@@ -3,7 +3,7 @@ using BlazorProject.Data.Models; // Ensure this matches your context namespace
 
 namespace BlazorProject.Data.Services;
 
-public class PacienteService
+public class PacienteService : IPacienteQueryService
 {
     private readonly IDbContextFactory<EiEngsofContext> _contextFactory;
 
